@@ -1,0 +1,4807 @@
+=== 123.md ===
+# JoyData 大数据平台前端 — 完整设计文档
+
+> **项目名称**：big-data-platform
+> **仓库地址**：http://git.intra.123u.com/frontend/big-data-client
+> **当前版本**：v1.0.3  
+
+---
+
+## 目录
+
+1. [项目概述](#1-项目概述)
+2. [技术栈全览](#2-技术栈全览)
+3. [目录结构详解](#3-目录结构详解)
+4. [应用入口与启动流程](#4-应用入口与启动流程)
+5. [路由系统](#5-路由系统)
+6. [布局系统（Layout）](#6-布局系统layout)
+7. [状态管理体系](#7-状态管理体系)
+8. [API 层与请求封装](#8-api-层与请求封装)
+9. [国际化系统（i18n）](#9-国际化系统i18n)
+10. [业务模块详解](#10-业务模块详解)
+11. [公共组件库](#11-公共组件库)
+12. [自定义 Hooks](#12-自定义-hooks)
+13. [工具函数体系](#13-工具函数体系)
+14. [常量与枚举](#14-常量与枚举)
+15. [样式系统](#15-样式系统)
+16. [构建与工程化配置](#16-构建与工程化配置)
+17. [鉴权与权限体系](#17-鉴权与权限体系)
+18. [事件追踪系统](#18-事件追踪系统)
+19. [外链嵌入模式](#19-外链嵌入模式)
+20. [五大版本规划（功能复现 + 架构优化）](#20-五大版本规划)
+
+---
+
+## 1. 项目概述
+
+**JoyData** 是一个面向游戏公司（欢乐互娱）的内部大数据分析平台，为运营、市场、产品等团队提供以下核心能力：
+
+| 能力域 | 说明 |
+|--------|------|
+| 行为分析 | 事件分析、留存分析、漏斗分析、分布分析、间隔分析、SQL 分析 |
+| 数据看板 | 多报表聚合看板，支持拖拽布局、移动端适配、外链嵌入 |
+| 埋点管理 | Story（需求文档）管理、事件管理、数据核查 |
+| 用户分析 | 用户搜索、用户详情、行为序列 |
+| 标签管理 | 多类型标签创建（SQL/条件/指标/首末次/ID），标签组管理 |
+| 数据资产 | 数据表管理、数据集（SQL/关联/条件）管理、属性管理 |
+| 指标管理 | 指标定义、预览、关联看板/报表 |
+| 预警管理 | 监控规则配置、预警列表、预警历史 |
+| 管理功能 | 看板管理、报表管理、订阅管理、推送管理、任务管理、下载管理、枚举管理 |
+| 财务模块 | 应收账款、流水对账、成本上传、历史数据归档等 |
+| KoCRM | 社媒投放（达人/物料/账户管理）、营销模块（KOC 管理/一键联系） |
+| 版本日历 | 版本信息标注日历 |
+
+**主要用户**：公司内部各业务线运营、产品、数据人员（8种语言多国用户）
+
+---
+
+## 2. 技术栈全览
+
+### 2.1 核心框架
+
+| 类别 | 技术 | 版本 | 说明 |
+|------|------|------|------|
+| UI 框架 | React | ^16.9.0 | 注意：使用 React 16，非 18 |
+| 语言 | TypeScript | ^4.1.2 | 全量 TS |
+| 构建工具 | Vite | ^5.2.12 | 含 SWC 编译加速 |
+| UI 组件库 | Ant Design | ^5.24.2 | antd 5.x |
+| 路由 | react-router 5.x + react-router-config | ^5.2.0 | 配置式路由 |
+
+### 2.2 状态管理
+
+| 库 | 位置 | 用途 |
+|---|---|---|
+| Zustand ^4.5.2 | `src/stores/` | **新**全局状态（主推） |
+| Redux ^4.0.5 + redux-thunk | `src/store/` | **旧**模块级状态（逐步迁移） |
+| immer ^7.0.9 | Redux reducer | 不可变数据处理 |
+
+### 2.3 数据请求
+
+| 库 | 版本 | 说明 |
+|---|---|---|
+| axios | ^1.7.2 | HTTP 客户端，自定义封装 |
+| ahooks | ^2.10.14 | 旧版 hooks（部分页面） |
+| ahooks3 (ahooks@3) | ^3.8.0 | 新版 hooks（`useRequest` 主力） |
+
+### 2.4 图表与可视化
+
+| 库 | 用途 |
+|---|---|
+| @antv/g2 ^5.4.3 | 通用图表 |
+| @ant-design/charts ^1.0.18 | 基于 G2 的 React 封装 |
+| echarts ^5.6.0 + echarts-for-react | 折线/柱状/词云图 |
+| @antv/s2 + @antv/s2-react ^2.x | 电子表格（透视表） |
+| @antv/x6 ^1.21.3 | 流程图/DAG |
+| react-grid-layout ^1.5.0 | 看板拖拽布局 |
+
+### 2.5 样式
+
+| 技术 | 说明 |
+|---|---|
+| Tailwind CSS ^3.4.3 | 原子化 CSS，优先使用 |
+| SCSS | 复杂组件样式，CSS Modules |
+| Less | 部分旧页面 |
+| styled-components ^6.1.11 | 个别动态样式 |
+
+### 2.6 编辑器与富文本
+
+| 库 | 用途 |
+|---|---|
+| CodeMirror 5 + react-codemirror2 | SQL 编辑器 |
+| ace-builds + react-ace | 代码编辑器备选 |
+| @wangeditor/editor ^5.1.23 | 富文本编辑器 |
+| react-quill ^2.0.0 | 富文本备选 |
+| Slate + slate-react | 自定义编辑器 |
+
+### 2.7 其他关键库
+
+| 库 | 用途 |
+|---|---|
+| dayjs ^1.11.13 | 日期处理 |
+| lodash ^4.17.20 | 工具函数 |
+| i18next ^19.8.4 + react-i18next | 国际化 |
+| @sentry/react ^7.90.0 | 错误监控 |
+| thinkingdata-browser ^2.1.2 | 行为数据上报 |
+| mitt ^3.0.1 | 事件总线 |
+| exceljs + xlsx + file-saver | Excel 导出 |
+| html2canvas | 截图 |
+| @joyu/auth ^0.2.20 | 内部 SSO 鉴权库 |
+| @joyu/upload-global-cdn | CDN 上传 |
+| handsontable + @handsontable/react | 电子表格编辑 |
+| react-beautiful-dnd | 拖拽排序 |
+| spark-md5 | 文件 MD5 |
+| sql-formatter ^15.3.1 | SQL 格式化 |
+| qs ^6.12.1 | URL 参数序列化 |
+| uuid ^14.0.0 | UUID 生成 |
+
+---
+
+## 3. 目录结构详解
+
+```
+d:\CODE\worktrees\feature\
+├── env/                          # 多环境变量文件
+│   ├── .env.dev                  # VITE_APP_URL=joydata-dev.123u.com
+│   ├── .env.ready                # VITE_APP_URL=joydata-ready.123u.com
+│   ├── .env.pre                  # VITE_APP_URL=joydata-pre.123u.com
+│   └── .env.prd                  # VITE_APP_URL=joydata.123u.com
+├── public/                       # 静态资源
+├── scripts/                      # 辅助脚本
+├── src/
+│   ├── index.tsx                 # ★ 应用入口，SSO token 同步，Sentry 初始化
+│   ├── App.tsx                   # ★ 根组件，鉴权体系，Provider 嵌套
+│   ├── App.css                   # 全局样式
+│   ├── index.css                 # 入口样式
+│   ├── tailwind.css              # Tailwind 引入
+│   │
+│   ├── routes/                   # ★ 路由配置
+│   │   ├── index.tsx             # 路由树定义（主路由 + 按模块导入子路由）
+│   │   ├── renderRouters.jsx     # 自定义路由渲染（带权限判断）
+│   │   ├── util.ts               # RoutePath 枚举 + routerNames 映射
+│   │   └── data.ts               # 数据管理子路由配置
+│   │
+│   ├── stores/                   # ★ Zustand 状态（新）
+│   │   ├── index.ts              # 统一导出
+│   │   ├── global.ts             # 全局状态（用户信息/项目/颜色/看板状态）
+│   │   ├── cache.ts              # 选中缓存/授权项目
+│   │   ├── datatable.ts          # 数据表状态
+│   │   ├── dataset.ts            # 数据集状态
+│   │   ├── event.ts              # 事件状态
+│   │   ├── filter.ts             # 筛选器状态
+│   │   ├── media.ts              # 社媒平台状态
+│   │   ├── sqlAnalysis.ts        # SQL 分析状态
+│   │   ├── story.ts              # Story 状态
+│   │   └── tag.ts                # 标签状态
+│   │
+│   ├── store/                    # Redux 状态（旧）
+│   │   ├── index.ts              # createStore + middleware
+│   │   ├── reducer.ts            # combineReducers（18个子 reducer）
+│   │   └── type.ts               # StoreState 类型
+│   │
+│   ├── services/                 # 旧版 API（axios 封装，逐步废弃）
+│   ├── services-new/             # ★ 新版 API
+│   │   ├── index.ts              # 统一导出所有接口函数
+│   │   ├── api.ts                # API enum（所有接口 URL 定义，400+条）
+│   │   ├── typing.ts             # 请求/响应类型定义
+│   │   ├── global.ts             # 全局接口（项目列表/登录/筛选等）
+│   │   ├── dashboard.ts          # 看板相关接口
+│   │   ├── analysis.ts           # 分析相关接口
+│   │   ├── story.ts              # 埋点 Story 接口
+│   │   ├── tag.ts                # 标签接口
+│   │   ├── indicator.ts          # 指标接口
+│   │   ├── datatable.ts          # 数据表接口
+│   │   ├── dataset.ts            # 数据集接口
+│   │   ├── finance.ts            # 财务接口（13KB）
+│   │   ├── kocrm.ts              # KoCRM 接口
+│   │   ├── property.ts           # 属性接口
+│   │   ├── warning.ts            # 预警接口
+│   │   ├── user.ts               # 用户接口
+│   │   ├── task.ts               # 任务接口
+│   │   ├── download.ts           # 下载接口
+│   │   ├── reports.ts            # 报表接口
+│   │   ├── strategy.ts           # 策略接口
+│   │   ├── enum.ts               # 枚举接口
+│   │   ├── event.ts              # 事件接口
+│   │   ├── calendar.ts           # 版本日历接口
+│   │   ├── ai.ts                 # AI 接口
+│   │   ├── auth.ts               # 权限接口
+│   │   ├── project.ts            # 项目接口
+│   │   ├── joyPrivate.ts         # Joy 个人报表接口
+│   │   └── common.ts             # 公共接口
+│   │
+│   ├── pages/                    # ★ 业务页面（65个模块）
+│   │   ├── Dashboard/            # 数据看板
+│   │   ├── EventAnalysis/        # 事件分析
+│   │   ├── SelfServiceAnalysis/  # 自助分析
+│   │   ├── KeepAnalysis/         # 留存分析
+│   │   ├── FunnelAnalysis/       # 漏斗分析
+│   │   ├── ScatterAnalysis/      # 分布分析
+│   │   ├── IntervalAnalysis/     # 间隔分析
+│   │   ├── SQLAna/               # SQL 分析（行为分析内）
+│   │   ├── LogAnalysis/          # 日志分析
+│   │   ├── SqlAnalysis/          # SQL 分析（独立）
+│   │   ├── EventTracking/        # 埋点管理（Story/事件/核查）
+│   │   ├── User/                 # 用户模块（搜索/列表/详情）
+│   │   ├── TagManagement/        # 标签管理
+│   │   ├── Tags/                 # 标签组（CustomTag）
+│   │   ├── IndicatorManagement/  # 指标管理
+│   │   ├── DataManagement/       # 数据资产（表+数据集）
+│   │   ├── EarlyWarning/         # 预警管理
+│   │   ├── ReportManagement/     # 报表管理
+│   │   ├── DashboardManagement/  # 看板管理
+│   │   ├── VersionCalendar/      # 版本日历
+│   │   ├── PushManagement/       # 推送管理
+│   │   ├── SubscriptionManagement/ # 订阅管理
+│   │   ├── TaskManagement/       # 任务管理
+│   │   ├── DownloadManagement/   # 下载管理
+│   │   ├── EnumManage/           # 枚举管理
+│   │   ├── ConfigManage/         # 配置管理
+│   │   ├── Finance/              # 财务模块（10+子页面）
+│   │   ├── kocrm/
+│   │   │   ├── Delivery/         # 投放管理
+│   │   │   └── Marketing/        # 营销管理
+│   │   ├── CBB/                  # 策略模块
+│   │   ├── AnalysisCommon/       # 分析公共组件
+│   │   ├── AnalysisUserList/     # 分析用户列表
+│   │   ├── Login/                # 登录页
+│   │   ├── NoPower/              # 无权限页
+│   │   ├── 404/                  # 404 页
+│   │   ├── JoyPrivateReport/     # Joy 私有报表（外链）
+│   │   ├── DashboardShot/        # 看板截图
+│   │   ├── HueSqlScratchpad/     # Hue SQL 编辑器（已注释）
+│   │   └── ...（更多页面）
+│   │
+│   ├── components/               # ★ 公共组件（66个）
+│   │   ├── Layout/               # 全局布局（Header/RightMenu/ProjectSelector）
+│   │   ├── ChartSet/             # 图表集合
+│   │   ├── Chart/                # 基础图表封装
+│   │   ├── DashboardChart/       # 看板图表
+│   │   ├── CommonDatePanel/      # 日期选择器
+│   │   ├── NewDatePanel/         # 新日期选择器
+│   │   ├── DatePanel/            # 旧日期选择器
+│   │   ├── FilterSelect/         # 筛选选择器
+│   │   ├── CommonTable/          # 通用表格
+│   │   ├── ResizeTable/          # 可调列宽表格
+│   │   ├── AdaptiveTable/        # 自适应表格
+│   │   ├── EditableTable/        # 可编辑表格
+│   │   ├── CodeMirror/           # SQL 编辑器封装
+│   │   ├── ColumnSetting/        # 列设置
+│   │   ├── Common/               # 通用子组件集
+│   │   ├── Iconfont/             # 图标字体
+│   │   ├── ImageUpload/          # 图片上传
+│   │   ├── OnlineFile/           # 在线文件预览
+│   │   ├── ReportDrawer/         # 报表抽屉
+│   │   ├── SubscriptionConfig/   # 订阅配置
+│   │   ├── RelationSetting/      # 关联设置
+│   │   ├── GlobalTooltip/        # 全局 Tooltip
+│   │   ├── Websocket/            # WebSocket 封装
+│   │   └── ...（更多组件）
+│   │
+│   ├── hooks/                    # ★ 自定义 Hooks（30个）
+│   │   ├── index.ts              # 统一导出
+│   │   ├── useAuth.ts            # 权限检查
+│   │   ├── useAuthCheck.tsx      # 权限检查增强
+│   │   ├── useAuthProject.ts     # 项目权限
+│   │   ├── useConst.ts           # 全局常量（38KB，包含所有枚举映射）
+│   │   ├── useI18n.tsx           # i18n 工具
+│   │   ├── useExternalLinkAuth.ts # 外链鉴权
+│   │   ├── useExternalLinkData.ts # 外链数据
+│   │   ├── useRequestQueue.ts    # 请求队列管理（13KB）
+│   │   ├── useSearchFilter.ts    # 搜索筛选（7.7KB）
+│   │   ├── useDeviceDetection.ts # 设备检测
+│   │   ├── useResponsiveLayout.ts # 响应式布局
+│   │   ├── useScreenOrientationLock.ts # 屏幕方向锁定
+│   │   ├── useExcelHelper.ts     # Excel 导出工具
+│   │   ├── useChartTooltipHighlight.ts # 图表 Tooltip
+│   │   ├── useGridScrollTo.ts    # 表格滚动定位
+│   │   ├── useTableScrollAndFocus.ts # 表格聚焦
+│   │   ├── useLogOut.ts          # 退出登录
+│   │   ├── useNavigate.ts        # 路由跳转封装
+│   │   ├── useUrlParams.ts       # URL 参数解析
+│   │   ├── useHistoryRecord.ts   # 历史记录
+│   │   ├── useNetworkIdle.ts     # 网络空闲检测
+│   │   ├── useMicroAppLocation.ts # 微前端位置
+│   │   ├── useWinSize.ts         # 窗口尺寸
+│   │   ├── useElementHeight.ts   # 元素高度
+│   │   ├── useLoading.ts         # loading 状态
+│   │   ├── useClipboard.ts       # 剪贴板
+│   │   ├── useJudgeUser.tsx      # 用户判断
+│   │   ├── useFeItemFn.tsx       # 前端 Item 操作
+│   │   └── useSelector.ts        # Zustand selector 工具
+│   │
+│   ├── utils/                    # ★ 工具函数（22个文件）
+│   │   ├── utils.ts              # 主工具包（21KB）
+│   │   ├── request.ts            # ★ axios 封装（请求/响应拦截）
+│   │   ├── format.ts             # 数字/日期格式化
+│   │   ├── date.ts               # 日期处理
+│   │   ├── excel.ts              # Excel 工具
+│   │   ├── email.ts              # 邮件工具（14KB）
+│   │   ├── download.ts           # 下载工具
+│   │   ├── storage.ts            # localStorage 封装
+│   │   ├── cookie.ts             # Cookie 操作
+│   │   ├── auth.ts               # 鉴权工具
+│   │   ├── url.ts                # URL 处理
+│   │   ├── tree.ts               # 树形数据处理
+│   │   ├── type.ts               # 类型工具
+│   │   ├── index.ts              # 主导出（7.8KB）
+│   │   ├── temporary.ts          # 临时数据处理
+│   │   ├── kocrm.ts              # KoCRM 工具
+│   │   ├── keys.ts               # 键盘按键
+│   │   ├── deviceUtils.ts        # 设备工具
+│   │   ├── document.ts           # DOM 操作
+│   │   ├── errorMessage.tsx      # 错误提示
+│   │   ├── checkAnalysisObject.ts # 分析对象校验（17KB）
+│   │   └── dashboardHoverState.ts # 看板悬停状态
+│   │
+│   ├── lang/                     # 国际化资源
+│   │   ├── i18n.tsx              # i18n 初始化配置
+│   │   ├── zh-cn.json            # 简体中文（266KB，基础语言）
+│   │   ├── en-us.json            # 英文（290KB）
+│   │   ├── zh-tw.json            # 繁体中文（272KB）
+│   │   ├── ko-kr.json            # 韩语（311KB）
+│   │   ├── ja-jp.json            # 日语（337KB）
+│   │   ├── vi-vn.json            # 越南语（342KB）
+│   │   ├── in.json               # 印尼语（305KB）
+│   │   └── th.json               # 泰语（519KB）
+│   │
+│   ├── const/                    # 常量与枚举
+│   │   ├── index.ts              # 全局常量（操作符/语言映射/货币等）
+│   │   ├── enum.ts               # 全局枚举（DefaultEntityOptions/PD_NAME）
+│   │   ├── media.ts              # 社媒平台常量（7.7KB）
+│   │   ├── types.ts              # 常量类型
+│   │   └── breakpoints.ts        # 响应式断点
+│   │
+│   ├── typings/                  # 全局类型定义
+│   ├── types/                    # 补充类型定义
+│   ├── styles/                   # 全局样式文件
+│   │   ├── global.scss           # SCSS 全局变量（自动注入）
+│   │   └── global.less           # Less 全局变量（自动注入）
+│   ├── assets/                   # 静态资源（图片/SVG）
+│   ├── images/                   # 图片资源
+│   ├── icons/                    # 图标资源
+│   ├── contexts/                 # React Context
+│   ├── data/                     # 静态数据
+│   ├── event/                    # 事件追踪
+│   │   ├── index.ts              # useTrack hook
+│   │   └── utils.ts              # 追踪工具
+│   └── _utils/                   # 内部工具
+│
+├── index.html                    # HTML 入口模板
+├── vite.config.mts               # Vite 主配置
+├── vite.config.local.mts         # 本地开发配置
+├── tsconfig.json                 # TypeScript 配置
+├── tailwind.config.js            # Tailwind 配置
+├── postcss.config.js             # PostCSS 配置
+├── .eslintrc.js                  # ESLint 配置
+├── .stylelintrc.js               # Stylelint 配置
+├── .prettierrc.js                # Prettier 配置
+├── .cz-config.js                 # Commitizen 提交规范
+└── package.json                  # 依赖清单
+```
+
+---
+
+## 4. 应用入口与启动流程
+
+### 4.1 `src/index.tsx` — 应用入口
+
+```
+执行顺序：
+1. Sentry 初始化（DSN: sentry.123u.com/59）
+2. dayjs 扩展（weekOfYear）+ 设置中文 locale
+3. syncExternalLinkToken() — 外链 token 同步
+4. syncRedirectToken() — URL token 参数同步到 localStorage
+5. syncSsoToken() — SSO Cookie 同步到 localStorage
+6. isExternalEmbedPage() 判断是否为外链嵌入模式
+7. message.config() 设置 message 容器
+8. AppWithLocale 渲染
+   └── ConfigProvider（antd locale + 空状态图片 + 主题色 #333）
+       └── App
+```
+
+**关键 Token 存储规则**：
+```
+localStorage key: `${KEY_PRE}TOKEN`  (KEY_PRE 定义在 src/utils/index.ts)
+存储格式: JSON.stringify(token)  (即带双引号: `"token_value"`)
+优先级：URL ?token 参数 > SSO Cookie (sso_token) > joy_login_token
+```
+
+### 4.2 `src/App.tsx` — 根组件
+
+```
+Provider 嵌套结构：
+ErrorBoundary（捕获动态导入失败，自动刷新）
+└── <Provider store={reduxStore}>          # Redux store
+    └── <UserInfoProvider ...>             # @joyu/auth 用户信息
+        └── <AuthedProjectsProvider>       # @joyu/auth 项目权限
+            └── AuthedProject()
+                ├── useRequest(getEntityTypeList)  # 加载实体类型列表
+                ├── useRequest(getCategoryListLv2) # 加载分类列表
+                ├── useRequest(getCategoryTree)    # 加载分类树
+                ├── useRequest(initMediaPlatforms) # 加载社媒平台数据
+                └── AuthProvider → AuthedRoutes   # @joyu/auth 权限树
+                    └── BrowserRouter
+                        └── renderRoutes(routes, allAuth)
+```
+
+**特殊路由处理**：
+- `/joy-private-report` 路径跳过项目权限校验（skipAuth=true）
+- `currentProject.code === null`：无项目权限，显示空状态+联系人
+- `currentProject.code === undefined`：初始化中，显示 Spin
+
+---
+
+## 5. 路由系统
+
+### 5.1 路由树结构
+
+```
+/login          → Redirect to /
+/joy-private-report → JoyPrivateReport（skipAuth）
+/404            → NotFound
+/shot           → DashboardShot（截图专用）
+/sys-auth       → SysAuth（系统鉴权）
+/station-management → InStationManagement
+/project-management → ProjectManagement
+/                → Layout（主布局）
+  ├── /dashboard → Dashboard（数据看板）
+  ├── /behavior-analysis → DataManage（行为分析容器）
+  │   ├── /behavior-analysis/event-analysis     → EventAnalysis
+  │   ├── /behavior-analysis/self-service-analysis → SelfServiceAnalysis
+  │   ├── /behavior-analysis/keep-analysis      → KeepAnalysis
+  │   ├── /behavior-analysis/interval-analysis  → IntervalAnalysis
+  │   ├── /behavior-analysis/scatter-analysis   → ScatterAnalysis
+  │   ├── /behavior-analysis/funnel-analysis    → FunnelAnalysis
+  │   ├── /behavior-analysis/sql-analysis       → SQLAna
+  │   ├── /behavior-analysis/log-analysis       → LogAnalysis（hidden）
+  │   └── *-user-list （hidden，用户列表页）
+  ├── /delivery → kocrm/Delivery（投放）
+  │   └── deliveryRoutes（tools/dashboard/material等）
+  ├── /marketing → kocrm/Marketing（营销）
+  │   └── marketingRoutes（KOC/creator/onelink等）
+  ├── /customer → DataManage（客服看板）
+  │   ├── /customer/customer-dashboard → Dashboard
+  │   └── /customer/log-analysis → LogAnalysis
+  ├── /user → User（用户模块）
+  │   ├── userRoutes（user-search/user-list/user-detail）
+  │   ├── tagRoutes（tag-list/tag-edit等）
+  │   └── /user/tag/:id → CustomTag
+  ├── /management → TagManage（管理中心）
+  │   ├── boardRoutes（board-list）
+  │   ├── reportRoutes（report-list）
+  │   ├── indicatorRoutes（indicator-list/create/detail）
+  │   ├── versionCalendarRoutes（version-calendar-list）
+  │   ├── pushRoutes（push-list）
+  │   ├── subscriptionRoutes（subscription-list）
+  │   ├── taskRoutes（task-list）
+  │   ├── downloadRoutes（download-list）
+  │   ├── enumRoutes（enum-list/enum-all）
+  │   └── configManageRoutes（config-manage）
+  ├── /meta-data-manage → DataManagement（数据资产）
+  │   ├── data-management（数据表+数据集）
+  │   ├── eventRoutes（story/event管理）
+  │   ├── story-preview（埋点预览）
+  │   └── warningRoutes（预警）
+  ├── /finance → Finance（财务）
+  │   └── financeRoutes（应收/对账/成本等）
+  ├── /cbb → CBB（策略）
+  │   └── CBBRoutes
+  ├── /account → MemberManage（hidden）
+  ├── /no-power → NoPower（hidden）
+  └── /no-auth → NoAuthPage（hidden）
+```
+
+### 5.2 路由配置字段说明
+
+```typescript
+interface RouteConfig {
+  path: string;
+  component: React.ComponentType;
+  name?: string;        // i18n key，用于面包屑/菜单
+  checkAuth?: boolean;  // true = 需要权限校验（通过 @joyu/auth）
+  left?: boolean;       // true = 出现在左侧导航菜单
+  hidden?: boolean;     // true = 不在菜单显示
+  exact?: boolean;      // 精确匹配
+  icon?: string;        // iconfont 类名，用于菜单图标
+  routes?: RouteConfig[]; // 子路由
+}
+```
+
+### 5.3 RoutePath 枚举（关键路径）
+
+```typescript
+// src/routes/util.ts
+export enum RoutePath {
+  dashboard = 'dashboard',
+  eventAnalysis = 'event-analysis',
+  keepAnalysis = 'keep-analysis',
+  funnelAnalysis = 'funnel-analysis',
+  scatterAnalysis = 'scatter-analysis',
+  sqlAnalysis = 'sql-analysis',
+  // 埋点管理
+  dpStorysList = 'storys-list',
+  dpEventList = 'event-list',
+  dpDataExamine = 'data-examine',
+  // 用户
+  userDetail = 'user-detail',
+  // 标签管理（多种创建方式）
+  tagSqlCreate = 'sql-create-tag',
+  tagConditionCreate = 'condition-create',
+  tagQuotaCreate = 'quota-create-tag',
+  tagIdCreate = 'id-create',
+  // ...（完整见 src/routes/util.ts）
+}
+```
+
+### 5.4 路由渲染机制（renderRouters.jsx）
+
+自定义路由渲染替代 react-router-config 原版，核心逻辑：
+1. 扁平化路由树（flatRoutes）
+2. 未匹配路径 → Redirect to `/`
+3. 权限判断逻辑（`routeIsAccess`）目前已注释，由 Layout 层处理
+
+---
+
+## 6. 布局系统（Layout）
+
+### 6.1 整体结构（`src/components/Layout/index.tsx`）
+
+```
+LayOut（antd Layout）
+├── Header（fixed top, height=46px, zIndex=10）
+│   ├── Logo（点击跳转 joy.123u.com/guide）
+│   ├── [PC Only]
+│   │   ├── 意见反馈链接（飞书表单）
+│   │   ├── 使用说明链接（飞书知识库）
+│   │   ├── InStation（站内信）
+│   │   ├── UTC 时区显示
+│   │   └── Menus（right menu, left=false）
+│   ├── ProjectSelector（项目切换器，所有设备显示）
+│   ├── 语言切换 Dropdown（从 API filter_id=10 获取语言列表）
+│   └── Avator（用户头像+下拉）
+└── Content（marginTop=54px 避开 Header）
+    └── flex 布局
+        ├── RightMenu（左侧导航，收起/展开）
+        └── 内容区（flex-1）
+            └── Suspense → renderRoutes（子路由）
+                ├── 根路径 / → findFirstAuthRoute() → Redirect
+                ├── 无权限路径 → NoAuthPage
+                └── 正常路径 → 子页面组件
+```
+
+### 6.2 语言切换逻辑
+
+```
+API 返回语言列表（filter_id=10）→ 存 localStorage 'allLang'
+语言 value 映射：
+  'zh'     → 'zh_CN'（简体中文）
+  'zh_tw'  → 'zh_TW'（繁体中文）
+  'en'     → 'en_US'（英文）
+  'th'     → 'th_TH'（泰语）
+  'in'     → 'id_ID'（印尼语）
+  'vi'     → 'vi_VN'（越南语）
+  'ja'     → 'ja_JP'（日语）
+  'ko'     → 'ko_KR'（韩语）
+切换时：修改 localStorage 'lang' → i18n.changeLanguage() → location.reload()
+```
+
+### 6.3 权限路由跳转（findFirstAuthRoute）
+
+```
+遍历 left=true 且 hidden!=true 的顶级路由
+→ 递归查找第一个满足 routeIsAccess(path) 的叶子节点
+→ Redirect to 该路径
+```
+
+---
+
+## 7. 状态管理体系
+
+### 7.1 Zustand（新，优先使用）
+
+#### useGlobalStore（`src/stores/global.ts`）
+
+**主要状态字段**：
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `primaryColor` | string | 主题色（默认 #247fff） |
+| `projectId` | string | 当前项目 ID |
+| `project` | Project | 当前项目完整信息 |
+| `dpType` | DP_TYPE | 当前数据平台类型 |
+| `userInfo` | Record | 用户信息 |
+| `dashboard_filters` | any[] | 看板全局筛选器 |
+| `fullscreen` | boolean | 全屏状态 |
+| `mobileChartFullscreen` | boolean | 移动端图表全屏 |
+| `reportChartTypes` | Record | 每个报表的图表类型 |
+| `noAuthModalInfo` | AuthInfoType | 无权限弹窗信息 |
+| `feItemMap` | Record | 前端 Item 映射 |
+| `dashboard_edit` | boolean | 看板编辑模式 |
+| `dashboard_mobile` | boolean | 看板移动端模式 |
+| `entityTypeList` | Array | 实体类型列表 |
+| `categoryList` | Array | 分类列表（二级） |
+| `categoryTree` | Array | 分类树 |
+| `editReport` | Record | 正在编辑的报表 |
+| `relationSetting` | Record | 关联设置 |
+| `dashboardFolderTree` | Folder[] | 看板文件夹树 |
+
+**持久化字段**（存 localStorage `PAGE_INFO`）：
+`dpType`, `project`, `projectList`, `primaryColor`, `userInfo`, `dpUrl`, `sql`
+
+**主要 Actions**：
+```typescript
+setStoreState(params) // 批量更新任意字段
+setColor(color)       // 设置主题色
+setProjectId(id)      // 设置项目 ID
+setProject(project)   // 设置当前项目
+login(info, cb)       // 登录（调用 loginFun API）
+setUserInfo(info)     // 设置用户信息
+setNoAuthModalInfo()  // 显示无权限弹窗
+setEntityTypeList()   // 设置实体类型
+setDashboardEdit()    // 切换看板编辑模式
+setCategoryList()     // 设置分类列表
+setCategoryTree()     // 设置分类树
+```
+
+**API Loading 状态**：
+每个 API URL 作为键存储 boolean loading 状态，请求拦截器自动置 true/false
+
+#### 其他 Zustand Stores
+
+| Store | 文件 | 主要数据 |
+|-------|------|---------|
+| `useStoryStore` | stores/story.ts | Story 列表/当前 Story/编辑状态 |
+| `useEvtStore` | stores/event.ts | 事件列表/详情 |
+| `useTagStore` | stores/tag.ts | 标签列表/筛选 |
+| `useDTStore` | stores/datatable.ts | 数据表状态 |
+| `useDSetStore` | stores/dataset.ts | 数据集状态 |
+| `useSqlAnaStore` | stores/sqlAnalysis.ts | SQL 分析查询状态 |
+| `useFilterStore` | stores/filter.ts | 全局筛选状态 |
+| `useSelectionStore` | stores/cache.ts | 选中缓存/授权项目列表 |
+
+### 7.2 Redux（旧，逐步迁移）
+
+**store 创建**（`src/store/index.ts`）：
+```typescript
+createStore(rootReducer, applyMiddleware(thunk))
+```
+
+**rootReducer 模块**（18个）：
+
+| key | 来源模块 |
+|-----|---------|
+| login | pages/Login |
+| categories | pages/Categories |
+| user | pages/UserManage |
+| project | pages/ProjectManage |
+| metaEvents | pages/MetaEvents |
+| userProps | pages/UserPropsManage |
+| eventProps | pages/EventPropsManage |
+| Tags | pages/Tags |
+| eventApprove | pages/EventApproves |
+| dataSource | pages/DataSource |
+| userPropsAnalysis | pages/UserPropsAnalysis |
+| eventAnalysis | pages/EventAnalysis |
+| selfServiceAnalysis | pages/SelfServiceAnalysis |
+| keepAnalysis | pages/KeepAnalysis |
+| intervalAnalysis | pages/IntervalAnalysis |
+| dashboard | pages/Dashboard |
+| funnelAnalysis | pages/FunnelAnalysis |
+| scatterAnalysis | pages/ScatterAnalysis |
+| workFlowModelCategory | pages/WorkFlowModelCategory |
+| workFlowTask | pages/WorkFlowTask |
+| workFlowJob | pages/WorkFlowJob |
+| DashboardManage | pages/DashBoardManage |
+| dataGroupManage | pages/DataGroupManage |
+| DictManage | pages/DictManage |
+
+### 7.3 useSelector 工具（Zustand）
+
+```typescript
+// src/hooks/useSelector.ts
+// 用法：批量取 store 中多个字段
+const { fullscreen, dashboard_edit } = useGlobalStore(
+  useSelector(['fullscreen', 'dashboard_edit'])
+);
+```
+
+---
+
+## 8. API 层与请求封装
+
+### 8.1 Request 类（`src/utils/request.ts`）
+
+```typescript
+class Request {
+  // 创建 axios 实例
+  // baseURL = VITE_APP_BASE_URL
+  // withCredentials = true
+  // transformResponse: 自定义大数值 JSON 解析（parseJsonWithBigNumberSupport）
+
+  // 请求拦截器：设置 API Loading 状态
+
+  // 响应拦截器（handleSuccessResponse）：
+  // 1. 清除 Loading 状态
+  // 2. responseType=blob → 直接返回
+  // 3. code=20201 → 数据权限不足（setNoAuthModalInfo）
+  // 4. code 在 [401, 10001-10004] → handleUnauthenticated()（退出登录）
+  // 5. code !== 200 → errorMessage 弹出错误（可通过 forbiddenErrorMsg 禁止）
+  // 6. 非 GET 成功 → message.success('操作成功')（可通过 forbiddenToast 禁止）
+
+  // 请求头（自动注入）：
+  // - Authorization: Bearer {token}
+  // - PROJECT-ID: {currentProjectId}
+  // - trace-id: {requestId}（UUID）
+  // - config: JSON.stringify(headers.config ?? {})
+  // - X-UA: {设备UA信息}
+  // - href: {当前页面URL}
+  // - language: {当前语言对应API value}
+  // - 外链相关 headers（isExternalEmbedPage时）
+}
+```
+
+**调用规范**：
+```typescript
+const res = await someApi(params);
+// 正确数据路径（两层 data）：
+const list = res?.data?.data?.list;
+const item = res?.data?.data?.item;
+```
+
+### 8.2 API 枚举（`src/services-new/api.ts`）
+
+API URL 统一用 enum 管理，约 400+ 条，主要分组：
+
+| 分组 | 数量 | 前缀 |
+|------|------|------|
+| 全局 | 15 | `/api/project/`, `/api/filter/` |
+| AI | 4 | `/api/v1/ai-`, `/api/dashboard/v1/ai-` |
+| 站内信 | 10 | `/api/notice/v1/` |
+| 看板 | 20+ | `/api/dashboard/`, `/api/dashboards` |
+| 报表 | 5 | `/api/report/v1/` |
+| 版本日历 | 6 | `/api/calendar/v1/` |
+| 埋点/Story | 10 | `/api/story/v1/`, `/api/event/v1/` |
+| 标签 | 15 | `/api/user-tag`, `/api/user-tags` |
+| 指标 | 10 | `/api/metric/` |
+| 数据表 | 20 | `/api/datatable/v1/` |
+| 数据集 | 15 | `/api/dataset/v1/` |
+| 属性 | 15 | `/api/attribute/v1/` |
+| 用户 | 5 | `/api/user` |
+| 预警 | 8 | `/api/warning/` |
+| 财务 | 30+ | `/api/finance/` |
+| KoCRM | 40+ | `/api/kocrm/` |
+
+### 8.3 服务层文件（`src/services-new/*.ts`）
+
+每个业务模块有对应服务文件，统一通过 `request()` 调用：
+
+```typescript
+// 示例：src/services-new/dashboard.ts
+export const getDashboardList = (params) =>
+  request({ url: API.dashboardListApi, method: 'GET', params });
+
+export const createDashboard = (data) =>
+  request({ url: API.dashboardApi, method: 'POST', data });
+```
+
+### 8.4 特殊请求头配置
+
+```typescript
+// 禁止默认 toast（自定义成功提示）
+request({
+  url: '/api/xxx',
+  method: 'DELETE',
+  headers: { config: { forbiddenToast: true } } as any,
+});
+
+// 禁止错误提示（静默失败）
+request({
+  url: '/api/xxx',
+  method: 'POST',
+  headers: { config: { forbiddenErrorMsg: true } } as any,
+});
+
+// 禁止取消提示
+headers: { config: { forbiddenCancelMsg: true } }
+```
+
+---
+
+## 9. 国际化系统（i18n）
+
+### 9.1 初始化（`src/lang/i18n.tsx`）
+
+```
+语言优先级（高 → 低）：
+1. URL 参数 ?lang=xxx（读取后自动从 URL 移除）
+2. localStorage 'lang'
+3. 浏览器语言（zh-CN → zh_CN，其他 → en_US）
+```
+
+**支持语言**：
+
+| 语言 key | 文件 | 说明 |
+|---------|------|------|
+| zh_CN | zh-cn.json | 简体中文（主语言）|
+| en_US | en-us.json | 英文 |
+| zh_TW | zh-tw.json | 繁体中文 |
+| ko_KR | ko-kr.json | 韩语 |
+| ja_JP | ja-jp.json | 日语 |
+| vi_VN | vi-vn.json | 越南语 |
+| id_ID | in.json | 印尼语 |
+| th_TH | th.json | 泰语 |
+
+### 9.2 使用规范
+
+```typescript
+// ✅ 正确：使用 t()
+import { useTranslation } from 'react-i18next';
+const { t } = useTranslation();
+t('keyName');
+
+// ✅ 正确：非组件内（请求拦截器等）
+import i18next from 'i18next';
+i18next.t('doSuccess', '操作成功', getLngOptions());
+
+// ❌ 禁止：t('key') || '硬编码兜底'
+// ❌ 禁止：重复 key（先查找 zh-cn.json）
+// ❌ 禁止：只在一个语言文件中添加 key（必须8个语言文件同步添加）
+```
+
+### 9.3 antd 组件国际化
+
+```typescript
+// src/index.tsx → AppWithLocale
+// 监听 i18next 'languageChanged' 事件动态切换 antd locale
+const [locale, setLocale] = useState(getAntdLocale());
+i18next.on('languageChanged', () => setLocale(getAntdLocale()));
+```
+
+### 9.4 语言 API 映射（header 传值）
+
+```typescript
+// src/const/index.ts
+export const LANGUAGE_MAP = {
+  zh_CN: 'zh', zh_TW: 'zh-tw', ko_KR: 'ko',
+  ja_JP: 'ja', en_US: 'en', id_ID: 'in', th_TH: 'th', vi_VN: 'vi',
+};
+// 请求头 language 字段 = LANGUAGE_MAP[localStorage.getItem('lang')]
+```
+
+---
+
+## 10. 业务模块详解
+
+### 10.1 数据看板（Dashboard）
+
+**路径**：`/dashboard`，`src/pages/Dashboard/`
+
+**功能特性**：
+- 文件夹树形结构管理看板（FolderTree）
+- 看板内多报表拖拽布局（react-grid-layout）
+- 报表类型：图表报表、数据表报表、指标卡、SQL 报表、AI 报表
+- 全局筛选器（多字段联动过滤）
+- 看板编辑/预览模式切换
+- 移动端响应式适配（`dashboard_mobile` 模式）
+- 看板分享（软链/用户分享）
+- 看板截图（/shot 路由，html2canvas）
+- 看板 AI 摘要（AI Summary 功能）
+- 看板关联关系（血缘图谱）
+- 看板权限管理（项目级/成员级）
+- 外链嵌入模式（joy-private-report）
+
+**状态管理**：Redux `dashboard` slice + Zustand `useGlobalStore`（dashboard_edit/dashboard_filters 等）
+
+**关键文件**：
+- `index.tsx`（43KB，主看板页面）
+- `store/` — Redux 状态
+- `hooks/` — useDashboardAuth（权限树），useAutoSave 等
+- `components/` — 报表编辑器、筛选器等
+
+### 10.2 行为分析（BehaviorAnalysis）
+
+**路径**：`/behavior-analysis/xxx`
+
+| 子模块 | 路径 | 说明 |
+|--------|------|------|
+| 事件分析 | event-analysis | 指标/分组/筛选/图表/表格 |
+| 自助分析 | self-service-analysis | 类 SQL 自助查询 |
+| 留存分析 | keep-analysis | 留存曲线/热力图 |
+| 漏斗分析 | funnel-analysis | 转化漏斗 |
+| 分布分析 | scatter-analysis | 用户属性分布 |
+| 间隔分析 | interval-analysis | 事件间隔分布 |
+| SQL 分析 | sql-analysis | CodeMirror SQL 编辑器 |
+| 日志分析 | log-analysis | 原始日志查询（hidden） |
+
+**公共分析组件**：`src/pages/AnalysisCommon/`
+- 分析模型选择（事件/用户/等）
+- 日期时间选择器
+- 指标配置（聚合方式/分组/筛选）
+- 图表类型切换
+
+**通用查询流程**：
+```
+配置分析参数（指标+分组+筛选+时间）
+→ useRequestQueue 管理多并发请求
+→ 查询结果 → 图表渲染（ChartSet）
+→ 下钻用户列表（*-user-list）
+```
+
+### 10.3 埋点管理（EventTracking）
+
+**路径**：`/meta-data-manage/storys-manage/...`
+
+**子模块**：
+```
+StoryList（Story 列表）
+├── EditStory（创建/编辑 Story）
+│   └── Preview（Story 预览，/meta-data-manage/story-preview）
+├── StoryDetail（Story 详情）
+├── EventList（事件列表）
+│   ├── EvtDetail（事件详情）
+│   └── EvtValueList（事件值列表）
+├── CheckEvt（数据核查）
+└── ExamineList（问题事件列表）
+```
+
+**Story 流程**：
+创建Story → 添加事件 → 配置事件属性 → 提交审批 → 审批通过 → 数据验收
+
+### 10.4 用户模块（User）
+
+**路径**：`/user/xxx`
+
+```
+/user/user-search    → 用户搜索
+/user/user-list      → 用户列表
+/user/user-detail    → 用户详情（行为序列）
+```
+
+**标签管理**（合并在 /user 路径下）：
+```
+/user/tag-list         → 标签列表
+/user/tag-edit/:id     → 编辑标签
+/user/sql-create-tag   → SQL 类型标签创建
+/user/condition-create → 条件类型标签创建
+/user/quota-create-tag → 指标类型标签创建
+/user/id-create        → ID 类型标签创建
+/user/times-create-tag → 首末次类型标签创建
+/user/group-create     → 标签组合创建
+/user/tag/:id          → CustomTag（标签组）
+```
+
+### 10.5 数据资产（MetaDataManage）
+
+**路径**：`/meta-data-manage/data-management/xxx`
+
+```
+/data-list             → 数据表列表
+/set-list              → 数据集列表
+/upload                → 文件上传
+/data-detail           → 数据表详情
+/sql-create            → SQL 类数据集创建
+/relation-create       → 关联类数据集创建
+/option-create         → 条件类数据集创建
+/set-edit/:id          → 数据集编辑
+/set-detail/:id        → 数据集详情
+/set-groups            → 数据分组
+```
+
+**属性管理（property）**：
+```
+/property              → 属性列表
+/property/detail/:id   → 属性详情
+/property/create       → 创建属性
+```
+
+### 10.6 管理中心（Management）
+
+**路径**：`/management/xxx`
+
+| 子模块 | 路径 | 说明 |
+|--------|------|------|
+| 看板管理 | board-list | 所有看板权限管理 |
+| 报表管理 | report-list | 报表列表 |
+| 指标管理 | indicator-list | 指标 CRUD |
+| 版本日历 | version-calendar-list | 日历事件标注 |
+| 推送管理 | push-list | 消息推送配置 |
+| 订阅管理 | subscription-list | 报表/看板订阅 |
+| 任务管理 | task-list | 定时任务 |
+| 下载管理 | download-list | 导出文件管理 |
+| 枚举管理 | enum-list / enum-all | 枚举值管理 |
+| 配置管理 | config-manage | 系统配置 |
+
+### 10.7 预警管理（EarlyWarning）
+
+**路径**：`/meta-data-manage/warning/xxx`
+
+```
+warning-list      → 预警列表
+warning-create    → 创建预警规则
+warning-detail    → 预警详情
+warning-dashboard → 预警看板
+warning-history   → 预警历史记录
+```
+
+**监控规则类型（MonitorRuleType）**：通过 useConst 提供的规则类型枚举配置
+
+### 10.8 财务模块（Finance）
+
+**路径**：`/finance/xxx`
+
+| 子模块 | 说明 |
+|--------|------|
+| AccountsReceivable | 应收账款 |
+| FlowReconciliation | 流水对账 |
+| FlowHalfMonth | 半月流水 |
+| ReceivableHalfMonth | 半月应收 |
+| ReconciliationManager | 对账管理 |
+| CustomerManager | 客户管理 |
+| CostDataUpload | 成本数据上传 |
+| HistoryDataArchive | 历史数据归档 |
+| ShareRatioManager | 分成比例管理 |
+| YearTargetManage | 年度目标管理 |
+
+**特殊逻辑**：`useFinanceCommon` 钩子，在 AuthedProject 挂载时初始化财务公共数据（`currentProject?.code !== 'finance'` 时跳过）
+
+### 10.9 KoCRM（kocrm）
+
+**投放（Delivery）**，路径：`/delivery/xxx`：
+
+| 路径 | 说明 |
+|------|------|
+| tools | 工具中心 |
+| delivery-dashboard | 投放看板 |
+| roi-dashboard | ROI 看板 |
+| material-dashboard | 素材看板 |
+| landing-page-dashboard | 落地页看板 |
+| material-library | 素材库 |
+| account-manage | 账户管理 |
+| media-manage | 媒体管理 |
+| tracking-link | Tracking Link |
+
+**营销（Marketing）**，路径：`/marketing/xxx`：
+
+| 路径 | 说明 |
+|------|------|
+| marketing-tools | 营销工具 |
+| marketing-dashboard | 营销看板 |
+| cooperation-info | 合作信息 |
+| creator | 创作者管理 |
+| creator-analysis | 创作者分析 |
+| koc / koc-info / koc-detail | KOC 管理 |
+| onelink-manage / onelink | One Link 管理 |
+| bulk-email | 批量邮件 |
+| attention-list | 关注列表 |
+| key-list | 关键词列表 |
+
+---
+
+## 11. 公共组件库
+
+### 11.1 图表组件体系
+
+```
+src/components/ChartSet/      # 图表集合（支持多种图表类型切换）
+src/components/Chart/         # G2/ECharts 基础封装
+src/components/DashboardChart/ # 看板专用图表
+src/components/DrillHeatMap/  # 下钻热力图
+src/components/MobileDashboardChart/ # 移动端图表
+src/components/MobileChartFullscreen/ # 移动端图表全屏
+```
+
+**支持图表类型**：折线图、柱状图、条形图、饼图、面积图、散点图、词云、热力图、地图、漏斗图、桑基图、透视表（S2）
+
+### 11.2 日期选择器
+
+```
+src/components/CommonDatePanel/  # 通用日期选择器（带快捷选项）
+src/components/NewDatePanel/     # 新版（带相对时间/动态时间）
+src/components/DatePanel/        # 旧版
+```
+
+**NewDatePanel 枚举**（`src/components/NewDatePanel/enum.ts`）：
+- `DATE_DYNAMIC`：动态时间选项（今天/昨天/近7天/近30天/本周/本月等）
+- `DATE_PANEL_FORMAT_TIME_STR`：时间格式字符串
+
+**RangePicker 规范**：
+```tsx
+<RangePicker
+  format="YYYY-MM-DD"
+  onChange={(_dates, dateStrs) => {
+    setParams({ start_date: dateStrs[0], end_date: dateStrs[1] });
+  }}
+/>
+```
+
+### 11.3 表格组件
+
+```
+CommonTable     # 通用表格（antd Table 封装）
+ResizeTable     # 可调列宽（@joyu/use-antd-resizable-header）
+AdaptiveTable   # 自适应列宽
+EditableTable   # 可编辑单元格
+ColumnSetting   # 列显隐/排序设置
+ColumnsSet      # 列设置增强
+TableHeader     # 表头封装
+```
+
+### 11.4 其他关键组件
+
+| 组件 | 说明 |
+|------|------|
+| `Layout/` | 全局布局（见第6节） |
+| `CodeMirror/` | SQL 编辑器，CodeMirror 5 封装 |
+| `FilterSelect/` | 带搜索的多选下拉 |
+| `SelectWithAll/` | 带全选的下拉 |
+| `BatchInput/` | 批量输入框 |
+| `ImageUpload/` | 图片上传（支持 CDN） |
+| `OnlineFile/` | 文件在线预览 |
+| `GlobalTooltip/` | 全局 Tooltip 渲染 |
+| `Websocket/` | WebSocket 连接管理 |
+| `ReportDrawer/` | 报表抽屉面板 |
+| `SubscriptionConfig/` | 订阅配置弹窗 |
+| `RelationSetting/` | 血缘关联设置 |
+| `PrintButton/` | 打印按钮 |
+| `Breadcrumb/` | 面包屑（基于 routerNames） |
+| `EditAlias/` | 别名编辑 |
+| `HoverEdit/` | 悬停编辑 |
+| `JSONViewer/` | JSON 数据展示 |
+| `DashboardOrReportShare/` | 分享配置 |
+| `QuotaSelectModal/` | 指标选择弹窗 |
+| `HistoryFavorite/` | 历史收藏 |
+| `CommonPage/` | 通用页面框架 |
+| `Impact/` | 影响分析展示 |
+| `Emitter/` | mitt 事件总线封装 |
+
+### 11.5 Select 过滤规范
+
+```typescript
+// ✅ 必须使用 commonSelectFilterFunc
+import { commonSelectFilterFunc } from '@/utils/utils';
+<Select
+  showSearch
+  filterOption={(input, option) => commonSelectFilterFunc(input, option, [])}
+/>
+// 第三参数 [] → 默认按 label 不区分大小写匹配
+// 传字段数组 → 按指定字段匹配
+```
+
+---
+
+## 12. 自定义 Hooks
+
+### 12.1 useConst（`src/hooks/useConst.ts` — 38KB）
+
+最重要的共享 Hook，返回系统所有配置常量（带 i18n 翻译）：
+
+```typescript
+const {
+  MapCalcActionValues,    // 计算操作符值映射（eq/ne/lt/gt/in/like...）
+  MapCalcActionLabels,    // 计算操作符标签映射（带 i18n）
+  MapAnalysisTypeValues,  // 分析类型值映射
+  MapChartTypeValues,     // 图表类型值映射
+  // ... 更多枚举映射
+} = useConst();
+```
+
+### 12.2 useRequestQueue（`src/hooks/useRequestQueue.ts` — 13KB）
+
+并发请求队列管理：
+- 支持多个分析查询并发执行
+- 自动取消过期请求（AbortController/CancelToken）
+- 队列状态管理（pending/running/done）
+
+### 12.3 useExternalLinkAuth（`src/hooks/useExternalLinkAuth.ts` — 6.7KB）
+
+外链嵌入鉴权：
+- `syncExternalLinkToken()`：同步外链 token 到 localStorage
+- `isExternalEmbedPage()`：判断是否为外链嵌入
+- `getExternalLinkHeaders()`：获取外链请求头
+
+### 12.4 useSearchFilter（`src/hooks/useSearchFilter.ts` — 7.7KB）
+
+通用搜索筛选逻辑：
+- 支持多字段筛选
+- 防抖处理
+- 与 URL 参数同步
+
+### 12.5 useDeviceDetection（`src/hooks/useDeviceDetection.ts` — 5.1KB）
+
+设备检测：
+- `isMobile()` 判断
+- 屏幕尺寸监听
+- UA 解析
+
+### 12.6 其他关键 Hooks
+
+| Hook | 说明 |
+|------|------|
+| `useAuth` | 路由权限检查（基于 @joyu/auth） |
+| `useAuthProject` | 项目权限列表 |
+| `useI18n` | i18n 工具（getAntdLocale/getLngOptions/fetchLng） |
+| `useLogOut` | 退出登录（清除 token/cookie/跳转） |
+| `useNavigate` | 封装 history.push/replace |
+| `useUrlParams` | 解析 URL 参数 |
+| `useExcelHelper` | Excel 导出工具 |
+| `useChartTooltipHighlight` | 图表 tooltip 联动 |
+| `useGridScrollTo` | antd Table 滚动到指定行 |
+| `useScreenOrientationLock` | 移动端横竖屏锁定（14KB） |
+| `useResponsiveLayout` | 响应式布局计算 |
+| `useNetworkIdle` | 网络空闲检测（批量请求优化） |
+| `useMicroAppLocation` | 微前端路由位置同步 |
+| `useWinSize` | 窗口尺寸监听 |
+| `useElementHeight` | DOM 元素高度监听 |
+
+---
+
+## 13. 工具函数体系
+
+### 13.1 utils/utils.ts（21KB，核心工具库）
+
+```typescript
+// 关键函数
+getProjectId()              // 从 localStorage 获取当前项目 ID
+getRequestId()              // 生成 UUID 作为 trace-id
+parseJsonWithBigNumberSupport() // 大数 JSON 解析（防精度丢失）
+routeIsAccess(path)         // 路由权限校验
+isMobile()                  // 移动端判断
+getTimezoneString()         // 获取时区字符串（如 +08:00）
+commonSelectFilterFunc(input, option, searchKey) // Select 过滤函数
+fetchLng()                  // 获取当前语言
+utcDayjs()                  // UTC 时间 dayjs
+getXUa()                    // 生成 X-UA 请求头
+```
+
+### 13.2 utils/format.ts（8.4KB，格式化）
+
+```typescript
+formatNumber(num, options)  // 数字格式化（千分位/精度）
+formatPercent(num)          // 百分比格式化
+formatDate(date, format)    // 日期格式化
+formatDuration(seconds)     // 时长格式化
+```
+
+### 13.3 utils/request.ts — 见第8节
+
+### 13.4 utils/storage.ts（3.5KB，存储工具）
+
+```typescript
+// localStorage 封装（带 KEY_PRE 前缀防冲突）
+setStorage(key, value)
+getStorage(key)
+removeStorage(key)
+clearStorage()
+```
+
+### 13.5 utils/cookie.ts（Cookie 工具）
+
+```typescript
+getAuthToken()    // 获取鉴权 token
+setAuthToken(t)   // 设置鉴权 token
+removeAuthToken() // 清除 token
+```
+
+### 13.6 utils/excel.ts（8.7KB，Excel 工具）
+
+```typescript
+exportExcel(data, columns, filename)  // 基于 ExcelJS 导出
+downloadExcel(blob, filename)         // 下载 Excel Blob
+```
+
+### 13.7 utils/checkAnalysisObject.ts（17KB）
+
+分析查询参数校验，在提交查询前验证必填项：
+- 指标是否配置
+- 时间范围是否合法
+- 筛选条件是否完整
+
+### 13.8 utils/auth.ts
+
+```typescript
+handleUnauthenticated()  // 处理401：清除token + 跳转登录
+```
+
+---
+
+## 14. 常量与枚举
+
+### 14.1 `src/const/index.ts`
+
+```typescript
+// 操作符
+OPERATORS = { GREATER_EQUALS, LESS_EQUALS, EQUALS, NOT_EQUALS, ... }
+COLUMN_FILTER_OPS = { GREATER_EQUALS: '>=', LESS_EQUALS: '<=', ... }
+
+// 语言映射
+LANGUAGE_MAP = { zh_CN: 'zh', en_US: 'en', ... }
+
+// 货币
+CURRENCY_OPTIONS = [{ value: 'cny', label: 'CNY' }, { value: 'usd', label: 'USD' }]
+
+// KoCRM 相关
+CooperationType = { KOL, Brand, Media }
+KocConnectedStatus = { NOT_CONNECTED, PENDING_CONNECT, CONNECTED, COOPERATED }
+
+// 数据类型
+DataType = { Number, String, Date, Boolean, Array, Object, ... }
+```
+
+### 14.2 `src/const/enum.ts`
+
+```typescript
+// 默认实体类型选项
+DefaultEntityOptions = [
+  { label: '用户', value: 'user' },
+  { label: '设备', value: 'device' },
+  // ...
+]
+PD_NAME = '管江城(jiangchengguan@huanle.com)'
+```
+
+### 14.3 `src/const/media.ts`（7.7KB）
+
+社媒平台相关常量：平台枚举、平台图标、平台配置
+
+### 14.4 `src/const/breakpoints.ts`
+
+响应式断点定义：
+```typescript
+BREAKPOINTS = { sm: 576, md: 768, lg: 992, xl: 1200, xxl: 1600 }
+```
+
+### 14.5 `src/types/typing.ts`
+
+全局公共类型：`DP_TYPE`、`Project`、通用分页类型等
+
+---
+
+## 15. 样式系统
+
+### 15.1 样式优先级
+
+```
+Tailwind CSS（首选）> SCSS Modules（复杂组件）> Less（旧代码）> styled-components（动态样式）
+```
+
+### 15.2 全局样式注入
+
+```typescript
+// vite.config.mts
+css: {
+  preprocessorOptions: {
+    scss: {
+      additionalData: `@use "@/styles/global.scss" as *;`, // 所有 SCSS 文件自动注入
+    },
+    less: {
+      additionalData: `@import "@/styles/global.less";`,   // 所有 Less 文件自动注入
+    }
+  }
+}
+```
+
+### 15.3 Tailwind 配置
+
+```javascript
+// tailwind.config.js
+module.exports = {
+  content: ['./src/**/*.{tsx,ts,jsx,js}'],
+  theme: { extend: {} },
+  plugins: [],
+}
+```
+
+### 15.4 CSS Modules
+
+```scss
+// 组件使用 .module.scss
+import styles from './style.module.scss';
+<div className={styles.HeaderFlex}>
+
+// 全局 class 不加 module
+import './App.css';
+```
+
+### 15.5 antd 主题配置
+
+```typescript
+// src/index.tsx ConfigProvider
+theme: {
+  token: {
+    colorText: '#333',
+  }
+}
+// 主题色通过 useGlobalStore.primaryColor 动态设置（#247fff）
+```
+
+---
+
+## 16. 构建与工程化配置
+
+### 16.1 环境变量
+
+```bash
+# env/.env.dev
+VITE_APP_URL=joydata-dev.123u.com
+VITE_APP_BASE_URL=/
+VITE_APP_ENV=dev
+
+# env/.env.ready（默认开发环境）
+VITE_APP_URL=joydata-ready.123u.com
+VITE_APP_ENV=ready
+
+# env/.env.pre
+VITE_APP_URL=joydata-pre.123u.com
+VITE_APP_ENV=pre
+
+# env/.env.prd
+VITE_APP_URL=joydata.123u.com
+VITE_APP_ENV=prd
+```
+
+### 16.2 Vite 配置（`vite.config.mts`）
+
+```typescript
+// 关键配置点：
+base: isProd && isBuild
+  ? `https://tc-cdn.123u.com/big-data-platform/${pkg.version}/dist/`
+  : '/'   // 生产 CDN 地址带版本号
+
+plugins: [
+  reactSwc(),                    // SWC 编译加速（useSwc=true）
+  webUpdateNotice(),             // 版本更新通知
+  viteCompression({ threshold: 1024000 }), // Gzip 压缩（>1MB 文件）
+  chunkSplitPlugin({             // 代码分割（仅 dev 模式）
+    customSplitting: {
+      common: [/src\/hooks/, /src\/services-new/, /src\/stores/],
+    }
+  }),
+  visualizer(),                  // 包体积分析（dev 模式，输出 test.html）
+]
+
+// 路径别名
+@ → src/
+@pages → src/pages/
+@components → src/components/
+@stores → src/stores/
+@services → src/services/
+@utils → src/utils/
+@assets → src/assets/
+
+// 开发服务器
+port: 8899
+proxy: {
+  '/api' → target: `https://${env.VITE_APP_URL}`
+  '/cos' → target: 'https://techcenter-common-storage-1251001122.cos.ap-shanghai.myqcloud.com'
+}
+
+// 构建优化
+chunkSizeWarningLimit: 1024   // 1MB 警告阈值
+minify: 'esbuild'
+target: 'esnext'
+```
+
+### 16.3 开发命令
+
+```bash
+pnpm start          # 开发（mode=ready，代理 ready 环境）
+pnpm start:dev      # 开发（mode=dev）
+pnpm local          # 本地配置（vite.config.local.mts）
+pnpm build:ready    # 构建 ready 环境
+pnpm build:pre      # 构建 pre 环境
+pnpm build:prd      # 构建生产环境（含 CDN base）
+pnpm lint           # ESLint + Stylelint
+pnpm lint-fix       # 自动修复
+```
+
+### 16.4 代码规范
+
+**ESLint（`.eslintrc.js`）**：
+- parser: @typescript-eslint/parser
+- 规则：react-hooks、import 排序
+
+**Stylelint（`.stylelintrc.js`）**：
+- scss 规范
+- stylelint-order 属性排序
+
+**Prettier（`.prettierrc.js`）**：
+- 统一格式化
+
+**Husky + lint-staged**：
+- pre-commit 自动 lint + format
+
+**Commitizen（`.cz-config.js`）**：
+```
+feat/fix/docs/style/refactor/perf/test/chore 规范提交
+```
+
+### 16.5 包管理
+
+```yaml
+# pnpm-workspace.yaml（Monorepo 配置）
+packages:
+  - '.'
+```
+
+```
+packageManager: pnpm
+registry: https://npm.huanle.com/（内部 npm 镜像）
+```
+
+---
+
+## 17. 鉴权与权限体系
+
+### 17.1 核心库：@joyu/auth ^0.2.20
+
+```
+Provider 层级：
+UserInfoProvider（用户信息）
+└── AuthedProjectsProvider（项目列表+当前项目）
+    └── AuthProvider（权限树）
+        └── useAllAuth()  // 获取所有权限
+        └── useAuthLoading() // 权限加载状态
+```
+
+### 17.2 权限校验流程
+
+```
+1. UserInfoProvider 挂载
+   → loginUser() API 获取用户信息
+   → setUserInfo() 存入 Zustand
+
+2. AuthedProjectsProvider 挂载
+   → useAuthProject() 获取授权项目列表
+   → 初始化 currentProject（第一个有权限的项目）
+   → setAuthedProjects 存入 useSelectionStore
+
+3. AuthProvider 挂载（以 currentProject 为上下文）
+   → 加载权限树（allAuth）
+   → 存入 localStorage（getAuthTreeKey()）
+
+4. 路由渲染时
+   → routeIsAccess(path) 检查权限树
+   → 无权限 → NoAuthPage 或 Redirect
+```
+
+### 17.3 数据权限（code=20201）
+
+```
+API 返回 code=20201 时：
+→ setNoAuthModalInfo({ authType: 'data', data_policy_keys: [...] })
+→ ShowNoAuthModal 弹窗展示（Layout 底部渲染）
+→ 用户可申请对应数据权限
+```
+
+### 17.4 Token 管理
+
+```
+存储位置：localStorage[`${KEY_PRE}TOKEN`]（JSON 序列化）
+获取：getAuthToken() → src/utils/cookie.ts
+注入：每次请求的 Authorization: Bearer {token}
+失效处理：handleUnauthenticated() → 清除 userInfo → 跳转登录页
+```
+
+### 17.5 项目切换
+
+```
+ProjectSelector 组件（Layout Header）
+→ 选择项目 → setProject(project) → Zustand global store
+→ PROJECT-ID 头自动注入（每次请求）
+→ 刷新各模块数据（refreshDeps: [currentProject?.code]）
+```
+
+---
+
+## 18. 事件追踪系统
+
+### 18.1 数据上报（thinkingdata-browser）
+
+```typescript
+// src/event/index.ts
+export const useTrack = ({ manual }) => {
+  // 初始化 ThinkingData SDK
+  // 上报用户行为事件
+}
+
+// src/App.tsx
+useTrack({ manual: false }); // 自动上报
+```
+
+### 18.2 用户行为埋点规范
+
+```typescript
+// src/services-new/index.ts（eventTrack 函数）
+eventTrack({
+  event_name: 'xxx',  // 事件名
+  properties: {       // 属性
+    page: '',
+    action: '',
+  }
+})
+```
+
+---
+
+## 19. 外链嵌入模式
+
+### 19.1 场景说明
+
+看板可通过"软链"生成嵌入链接，供第三方 iframe 嵌入使用。
+
+### 19.2 判断逻辑
+
+```typescript
+// src/hooks/useExternalLinkAuth.ts
+export const isExternalEmbedPage = () => {
+  // 判断是否为外链嵌入模式
+  // 通过 URL 参数或特定路径判断
+}
+```
+
+### 19.3 外链模式差异
+
+```
+正常模式：
+- message 容器 → document.body
+- getPopupContainer → document.body
+- Header 正常显示
+
+外链嵌入模式：
+- message 容器 → #dashboard-embed
+- getPopupContainer → #dashboard-embed || document.body
+- 简化版 UI（隐藏 Header 等）
+- 注入外链专用请求头（getExternalLinkHeaders()）
+```
+
+### 19.4 JoyPrivateReport（/joy-private-report）
+
+```
+路径：/joy-private-report
+特点：skipAuth=true，跳过项目权限校验
+用途：Joy 内部个人报表分享场景
+```
+
+---
+
+## 20. 五大版本规划
+
+> **目标**：以下规划分为5个版本，前3版为功能复现（按优先级），后2版为架构优化。每个版本可独立交付。
+
+---
+
+### Version 1：基础骨架复现（MVP）
+
+**目标**：搭建可运行的项目骨架，复现核心基础功能
+
+**功能范围**：
+- [ ] 项目初始化（Vite + React 16 + TypeScript + Tailwind + SCSS）
+- [ ] SSO 鉴权体系（@joyu/auth 集成，token 同步流程）
+- [ ] 全局 Layout（Header/侧边菜单/项目切换/语言切换）
+- [ ] 路由系统（react-router-config 配置式路由 + 权限控制）
+- [ ] Zustand 全局状态（useGlobalStore）
+- [ ] Redux store（旧模块兼容）
+- [ ] axios 请求封装（拦截器/权限码/loading/toast）
+- [ ] i18n 8语言（初始化/动态切换/持久化）
+- [ ] 数据看板（Dashboard）核心功能
+  - 文件夹树管理
+  - 多报表布局（react-grid-layout）
+  - 基础图表报表
+  - 全局筛选器
+  - 编辑/预览模式
+- [ ] 登录/无权限/404 页面
+- [ ] Sentry 错误监控
+- [ ] ESLint/Stylelint/Prettier/Husky 工程化
+
+**技术要点**：
+- React 版本必须是 16.x（`ReactDOM.render` 非 `createRoot`）
+- antd 5.x 的 ConfigProvider 动态 locale
+- @joyu/auth 内部库的 Provider 嵌套顺序
+
+---
+
+### Version 2：行为分析 + 数据资产复现
+
+**目标**：复现核心数据分析和资产管理功能
+
+**功能范围**：
+- [ ] 行为分析模块
+  - 事件分析（指标/分组/筛选/图表）
+  - 留存分析（留存曲线/热力图）
+  - 漏斗分析（多步骤转化漏斗）
+  - 分布分析（属性分布散点图）
+  - 间隔分析
+  - 自助分析（SQL 化查询）
+  - SQL 分析（CodeMirror 编辑器）
+  - 分析用户列表（下钻穿透）
+- [ ] AnalysisCommon 公共分析组件
+  - 指标选择器
+  - 筛选条件配置器
+  - 日期面板（NewDatePanel）
+  - 图表类型切换器
+- [ ] 数据资产模块
+  - 数据表列表/详情
+  - 数据集（SQL/关联/条件）CRUD
+  - 属性管理
+  - 文件上传
+- [ ] useRequestQueue 并发请求管理
+- [ ] useConst 全局常量 Hook（操作符/分析类型等）
+- [ ] ChartSet 图表集合组件
+- [ ] CommonDatePanel/NewDatePanel
+- [ ] 公共 hooks（useSearchFilter/useDeviceDetection 等）
+
+**技术要点**：
+- 分析查询接口通常为 POST，参数复杂（指标/分组/筛选/时间/粒度）
+- useRequestQueue 管理多并发查询，避免竞态条件
+- 大数值 JSON 解析（parseJsonWithBigNumberSupport）
+
+---
+
+### Version 3：管理模块 + 特殊功能复现
+
+**目标**：复现所有管理类模块和特殊场景功能
+
+**功能范围**：
+- [ ] 埋点管理（EventTracking）
+  - Story 管理（CRUD + 审批流）
+  - 事件管理（列表/详情/值列表）
+  - 数据核查
+- [ ] 用户模块（User）
+  - 用户搜索/列表/详情
+  - 行为序列
+- [ ] 标签管理（TagManagement）
+  - 多类型标签（SQL/条件/指标/首末次/ID）
+  - 标签组
+  - 标签订阅
+- [ ] 指标管理（IndicatorManagement）
+- [ ] 预警管理（EarlyWarning）
+- [ ] 管理中心（Management）
+  - 看板管理/报表管理/订阅管理
+  - 推送管理/任务管理/下载管理
+  - 枚举管理/配置管理
+  - 版本日历
+- [ ] 财务模块（Finance）
+- [ ] KoCRM（Delivery + Marketing）
+- [ ] 外链嵌入模式
+- [ ] 移动端适配
+- [ ] 站内信（InStation）
+- [ ] 看板截图（DashboardShot）
+- [ ] Joy 私有报表（JoyPrivateReport）
+- [ ] ThinkingData 行为上报
+
+---
+
+### Version 4：架构优化 - 核心重构
+
+**目标**：在功能完整的基础上进行核心架构优化，提升可维护性和性能
+
+#### 4.1 状态管理统一化
+
+**问题**：Redux 和 Zustand 并行存在，约20个 Redux reducer + 8个 Zustand stores，增加心智负担
+
+**方案**：
+```
+迁移策略：
+1. 所有新功能使用 Zustand
+2. 按模块逐步迁移旧 Redux（以 eventAnalysis 等分析模块为优先）
+3. Redux 仅保留必须兼容的历史模块
+4. 统一 store 结构规范：
+   - store/index.ts（导出）
+   - store/[module].ts（模块 store）
+   - store/types.ts（类型定义）
+```
+
+#### 4.2 React 版本升级（React 16 → React 18）
+
+**方案**：
+```
+1. ReactDOM.render → createRoot
+2. 解决 act() 警告
+3. 启用 Concurrent Features（Suspense 优化）
+4. 更新 React 相关类型（@types/react 17→18）
+```
+
+> ⚠️ 注意：@joyu/auth 内部库是否支持 React 18 需确认
+
+#### 4.3 API 层重构
+
+**问题**：
+- services/ 和 services-new/ 并行，命名混乱
+- api.ts 400+ 行 enum，单文件过大
+- 每次 request 实例化 `new Request()`，性能浪费
+
+**方案**：
+```typescript
+// 新 API 层结构
+src/api/
+├── client.ts          # axios 单例（非 new Request() 每次创建）
+├── interceptors.ts    # 拦截器单独管理
+├── types.ts           # 通用响应类型
+├── dashboard/
+│   ├── index.ts       # 接口函数
+│   └── types.ts       # 模块类型
+├── analysis/
+│   ├── index.ts
+│   └── types.ts
+└── ...按模块分包
+
+// 废弃 services/ 目录
+// 将 services-new/ → src/api/
+```
+
+#### 4.4 路由系统升级
+
+**问题**：
+- react-router-config 5.x 已停止维护
+- renderRouters.jsx 是 JSX 文件（不规范）
+- 路由权限判断分散（Layout/renderRouters 两处）
+
+**方案**：
+```typescript
+// 升级到 react-router-dom v6
+// 使用 createBrowserRouter + RouterProvider
+// 统一权限判断到 ProtectedRoute 组件
+// 路由文件全部改为 .tsx
+
+const ProtectedRoute: FC<{ path: string; auth: boolean }> = ({ path, auth }) => {
+  if (auth && !routeIsAccess(path)) return <NoAuthPage />;
+  return <Outlet />;
+};
+```
+
+#### 4.5 useConst Hook 拆分
+
+**问题**：`useConst.ts` 38KB，单文件过大，每次使用都构建全量常量对象
+
+**方案**：
+```typescript
+// 拆分为多个专项 Hook
+hooks/constants/
+├── useAnalysisConst.ts    # 分析相关常量
+├── useChartConst.ts       # 图表相关常量
+├── useOperatorConst.ts    # 操作符常量
+├── useWarningConst.ts     # 预警相关常量
+└── index.ts               # 按需导出
+
+// 使用 React.useMemo 优化，语言不变时不重建
+```
+
+#### 4.6 Bundle 优化
+
+**方案**：
+```typescript
+// vite.config.mts 优化
+build: {
+  rollupOptions: {
+    output: {
+      manualChunks: {
+        // 按模块拆分 chunk
+        'react-core': ['react', 'react-dom', 'react-router-dom'],
+        'antd': ['antd', '@ant-design/icons'],
+        'charts': ['echarts', '@antv/g2', '@antv/s2'],
+        'editor': ['codemirror', '@wangeditor/editor'],
+        'utils': ['lodash', 'dayjs', 'axios'],
+      }
+    }
+  }
+}
+```
+
+---
+
+### Version 5：架构优化 - 工程体系升级
+
+**目标**：提升开发体验、可测试性、监控能力，建立工程规范
+
+#### 5.1 TypeScript 严格化
+
+**问题**：大量 `any` 类型，类型安全性低
+
+**方案**：
+```typescript
+// tsconfig.json 开启严格模式
+{
+  "compilerOptions": {
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+  }
+}
+
+// 建立类型库
+src/typings/
+├── api.ts         # 所有接口请求/响应类型
+├── store.ts       # Store 类型
+├── components.ts  # 组件 Props 类型
+└── global.d.ts    # 全局类型声明
+```
+
+#### 5.2 测试体系建立
+
+```
+测试框架：Vitest（Vite 生态，速度快）+ React Testing Library
+
+测试层级：
+├── 单元测试（utils/hooks）       覆盖率目标 80%
+├── 组件测试（公共组件）           覆盖率目标 60%
+└── E2E 测试（核心流程）          Playwright
+
+关键测试用例：
+- utils/request.ts 拦截器逻辑
+- useConst 常量正确性
+- 路由权限校验（routeIsAccess）
+- 分析参数校验（checkAnalysisObject）
+```
+
+#### 5.3 性能监控体系
+
+```typescript
+// 在 Sentry 基础上增加：
+
+// 1. 核心 Web Vitals 监控
+import { getCLS, getFID, getLCP } from 'web-vitals';
+
+// 2. 接口耗时监控（axios 拦截器中记录）
+const startTime = Date.now();
+// ... 请求完成后
+Sentry.addBreadcrumb({
+  category: 'api',
+  message: `${url} ${Date.now() - startTime}ms`,
+});
+
+// 3. 页面加载性能（Vite 代码分割后的 chunk 加载）
+```
+
+#### 5.4 微前端架构准备
+
+**背景**：项目持续扩大，多团队协作，考虑微前端拆分
+
+**方案**：
+```
+基座应用（big-data-platform）
+├── 主框架：Layout/Router/Auth/Global State
+└── 子应用：
+    ├── analysis-app（行为分析）
+    ├── dashboard-app（数据看板）
+    ├── management-app（管理中心）
+    ├── kocrm-app（KoCRM）
+    └── finance-app（财务）
+
+技术选型：qiankun（已有 useMicroAppLocation 基础）
+通信方式：Zustand global store（通过 initGlobalState 共享）
+```
+
+#### 5.5 代码质量提升规范
+
+```typescript
+// 文件命名规范
+// 页面文件：PascalCase（UserDetail.tsx）
+// Hook 文件：camelCase（useUserDetail.ts）
+// 工具文件：camelCase（formatDate.ts）
+// 类型文件：typing.ts（固定名称）
+// 常量文件：const.ts（固定名称）
+
+// 组件文件结构规范
+// 页面级组件目录：
+pages/ModuleName/
+├── index.tsx          # 主组件
+├── typing.ts          # 类型定义
+├── const.ts           # 常量
+├── hooks/             # 页面级 hooks
+│   └── useXxx.ts
+├── components/        # 子组件
+│   └── XxxCard.tsx
+├── store/             # 模块 Zustand store（新）
+│   └── index.ts
+└── style.module.scss  # 样式
+
+// 禁止项：
+// ❌ 禁止在 tsx 中写 100 行以上的内联函数逻辑
+// ❌ 禁止跨模块直接引用 pages/ 下的组件
+// ❌ 禁止在 const 目录外使用 any 类型
+// ❌ 禁止 useEffect 中直接 await（使用 useRequest）
+```
+
+#### 5.6 CI/CD 优化
+
+```yaml
+# .gitlab-ci.yml 优化
+stages:
+  - lint      # ESLint + Stylelint + TS 类型检查
+  - test      # Vitest 单元测试
+  - build     # 并行多环境构建
+  - deploy    # 环境部署
+
+# 优化点：
+# - 缓存 node_modules（pnpm store）
+# - 增量构建（只构建变更模块）
+# - 构建产物分析（bundle-size 对比）
+# - 部署后自动化 Smoke Test
+```
+
+---
+
+## 附录 A：关键数据流示意
+
+```
+用户操作（如事件分析查询）
+  ↓
+配置指标/分组/筛选/时间
+  ↓
+checkAnalysisObject() 校验参数
+  ↓
+useRequestQueue.addRequest()
+  ↓
+services-new/analysis.ts 调用接口
+  ↓
+utils/request.ts（axios 实例）
+  ↓  注入：token/PROJECT-ID/language/trace-id
+HTTP POST /api/xxx
+  ↓
+响应拦截器：code 判断 → loading 清除 → toast 处理
+  ↓
+res?.data?.data?.xxx 取业务数据
+  ↓
+setState → 图表重渲染（ChartSet）
+```
+
+---
+
+## 附录 B：常见问题与陷阱
+
+| 问题 | 说明 | 解决方案 |
+|------|------|---------|
+| 响应数据路径 | 两层 data | `res?.data?.data?.list`（第一层 axios，第二层业务） |
+| React 版本 | 16.x，非 18 | `ReactDOM.render()` 而非 `createRoot` |
+| 日期格式 | RangePicker | `format="YYYY-MM-DD"` 保证 dateStrs 格式正确 |
+| Select 过滤 | 禁止内联 | 必须用 `commonSelectFilterFunc` |
+| 非GET toast | 默认弹出 | 自定义时加 `headers: { config: { forbiddenToast: true } }` |
+| i18n key 新增 | 8个文件同步 | 不能只加 zh-cn.json |
+| 大数值JSON | 精度丢失 | 已通过 `parseJsonWithBigNumberSupport` 处理 |
+| token 格式 | JSON序列化 | 存储为 `"\"token_value\""` 带引号 |
+| 外链嵌入 | 容器不同 | `#dashboard-embed` 容器，getPopupContainer 需处理 |
+| 项目权限 | 初始化时序 | `currentProject.code === undefined` 为初始化中 |
+| ahooks 版本 | 两个版本并存 | 新代码用 `ahooks3`（`import { useRequest } from 'ahooks3'`） |
+| 路径别名 | 无 @services-new | 只有 `@services` 指向旧 services/，services-new 用 `@/services-new/` |
+
+
+=== 234 ===
+# JoyData 大数据平台 — 后端完整实现规划书
+
+> **面向**：基于现有前端代码，从零设计并实现后端服务  
+> **策略**：Docker Compose 快速启动所有依赖，生产环境可平滑迁移托管服务  
+> **目标**：完整承接前端 400+ 个 API 接口，支持高并发分析查询
+
+---
+
+## 目录
+
+1. [技术选型决策](#1-技术选型决策)
+2. [整体系统架构](#2-整体系统架构)
+3. [Docker 部署方案（All-in-One）](#3-docker-部署方案)
+4. [数据库设计](#4-数据库设计)
+5. [项目目录结构](#5-项目目录结构)
+6. [统一响应格式与中间件](#6-统一响应格式与中间件)
+7. [模块 API 详细设计](#7-模块-api-详细设计)
+8. [数据分析引擎设计](#8-数据分析引擎设计)
+9. [鉴权与权限体系](#9-鉴权与权限体系)
+10. [文件存储与上传](#10-文件存储与上传)
+11. [消息通知体系](#11-消息通知体系)
+12. [任务调度系统](#12-任务调度系统)
+13. [五大版本开发计划](#13-五大版本开发计划)
+14. [生产环境迁移方案](#14-生产环境迁移方案)
+
+---
+
+## 1. 技术选型决策
+
+### 1.1 主框架：Go + Gin
+
+**选型理由**：
+
+| 方案 | 优势 | 劣势 | 结论 |
+|------|------|------|------|
+| **Go + Gin** | 极高性能（原生并发/协程），编译型二进制，内存占用极低，天然适合 OLAP 分析服务 | 语法相对简洁但需要规范约束 | ✅ **首选** |
+| NestJS (TS) | 前端同生态 | 性能低 5-10 倍，GC 抖动 | 前端熟悉但不适合高并发分析 |
+| Python + FastAPI | 数据科学生态好 | GIL 限制并发 | AI/ML 子模块备选 |
+| Java + Spring Boot | 成熟企业级 | 启动慢，内存重 | ❌ 不选 |
+
+**Go 核心优势（针对本项目）**：
+- **分析查询天然并发**：goroutine 轻量，单机可同时处理数千个 ClickHouse 查询
+- **编译为单一二进制**：Docker 镜像仅 ~15MB（Alpine），启动 < 100ms
+- **内存占用低**：同等负载下仅 Node.js 的 1/5，降低运维成本
+- **静态类型**：编译期捕获错误，代码可靠性高
+- **标准库强大**：内置 HTTP/JSON/加密/并发原语，减少外部依赖
+
+### 1.2 技术栈汇总
+
+```
+语言：          Go 1.22+
+HTTP 框架：     Gin ^1.10（高性能，中间件生态完善）
+ORM：           GORM ^2.0（Go 最主流 ORM，支持迁移）
+数据库迁移：    golang-migrate（独立迁移工具）
+主数据库：      PostgreSQL 16（元数据/业务数据）
+分析数据库：    ClickHouse 24.x（OLAP 查询，支持 database/sql 驱动）
+缓存：          Redis 7.x + go-redis v9（Session/查询缓存/队列）
+对象存储：      MinIO（本地替代 COS/S3，minio-go SDK）
+任务队列：      asynq（基于 Redis，Go 原生，类 Sidekiq）
+搜索：          Elasticsearch 8.x + go-elasticsearch
+API 文档：      Swaggo（swag 自动从注释生成 Swagger）
+身份认证：      JWT（golang-jwt/jwt）+ Redis Session
+配置管理：      viper（多格式配置文件）
+日志：          zap（Uber 出品，高性能结构化日志）
+监控：          Prometheus（prometheus/client_golang）+ Grafana
+热重载（开发）： air（类似 nodemon）
+```
+
+### 1.3 核心 Go 依赖包
+
+```go
+// go.mod 关键依赖
+require (
+    github.com/gin-gonic/gin              v1.10.0
+    github.com/gin-contrib/cors           v1.7.2
+    github.com/gin-contrib/requestid      v1.0.3
+    gorm.io/gorm                          v1.25.10
+    gorm.io/driver/postgres               v1.5.7
+    github.com/ClickHouse/clickhouse-go/v2 v2.26.0
+    github.com/redis/go-redis/v9          v9.5.3
+    github.com/minio/minio-go/v7          v7.0.72
+    github.com/hibiken/asynq              v0.24.1
+    github.com/golang-jwt/jwt/v5          v5.2.1
+    github.com/spf13/viper               v1.18.2
+    go.uber.org/zap                       v1.27.0
+    github.com/swaggo/swag               v1.16.3
+    github.com/swaggo/gin-swagger        v1.6.0
+    github.com/prometheus/client_golang  v1.19.1
+    golang.org/x/crypto                  v0.24.0  // bcrypt
+    github.com/google/uuid               v1.6.0
+    github.com/elastic/go-elasticsearch/v8 v8.13.1
+    github.com/golang-migrate/migrate/v4  v4.17.1
+    github.com/xuri/excelize/v2          v2.8.1   // Excel 生成
+)
+
+---
+
+## 2. 整体系统架构
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        客户端（前端）                              │
+│              React App (big-data-platform)                        │
+└────────────────────────┬────────────────────────────────────────┘
+                         │ HTTP/WebSocket
+                         ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    Nginx（反向代理 + 静态资源）                    │
+│              /api/* → backend:3006                                │
+│              /* → dist/index.html                                 │
+└────────────────────────┬────────────────────────────────────────┘
+                         │
+                         ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    Go + Gin API Server (:3006)                    │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌─────────────────┐    │
+│  │ Auth     │ │Middleware│ │ Handler  │ │ Swagger UI      │    │
+│  │ (JWT)    │ │(CORS/Log)│ │ (Gin)    │ │ /swagger/index  │    │
+│  └──────────┘ └──────────┘ └──────────┘ └─────────────────┘    │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │              业务 Handler + Service + Repository          │    │
+│  │  dashboard │ analysis │ event_track │ user │ tag         │    │
+│  │  indicator │ data_asset│ finance   │ kocrm│ warning      │    │
+│  │  report    │ push     │ subscription│ task │ download     │    │
+│  └─────────────────────────────────────────────────────────┘    │
+└────────┬─────────────┬──────────────────┬───────────────────────┘
+         │             │                  │
+         ▼             ▼                  ▼
+┌────────────┐  ┌─────────────┐  ┌─────────────────────┐
+│ PostgreSQL │  │  ClickHouse │  │       Redis          │
+│  (元数据)  │  │  (分析查询) │  │  Cache/Queue/Session │
+└────────────┘  └─────────────┘  └─────────────────────┘
+         │
+         ▼
+┌────────────────────────────────┐
+│     MinIO（文件存储）           │
+│  /uploads /exports /avatars    │
+└────────────────────────────────┘
+```
+
+### 2.1 服务拆分策略（单体 → 微服务渐进式）
+
+**阶段一（当前）**：Go 单体应用，所有模块在同一进程，goroutine 并发
+```
+cmd/
+└── server/           # 单体 Go HTTP Server（所有模块）
+```
+
+**阶段二（后期可拆分）**：
+```
+cmd/
+├── server/           # 主 API 服务
+├── analysis/         # 分析引擎（独立扩容，CPU 密集型）
+├── worker/           # 异步任务 Worker（标签计算/导出）
+└── notifier/         # 通知服务（推送/订阅/预警）
+```
+
+> **Go 的天然优势**：goroutine 极轻量（初始栈仅 2KB），无需微服务也能轻松处理数千并发分析请求
+
+---
+
+## 3. Docker 部署方案
+
+### 3.1 目录结构
+
+```
+joydata-backend/
+├── docker/
+│   ├── nginx/
+│   │   ├── nginx.conf
+│   │   └── conf.d/
+│   │       └── default.conf
+│   ├── postgres/
+│   │   └── init/
+│   │       ├── 01-create-dbs.sql
+│   │       └── 02-create-user.sql
+│   ├── clickhouse/
+│   │   ├── config.xml
+│   │   └── users.xml
+│   └── redis/
+│       └── redis.conf
+├── docker-compose.yml           # 完整环境
+├── docker-compose.dev.yml       # 仅启动依赖（本地开发用）
+├── docker-compose.prod.yml      # 生产配置
+├── Dockerfile                   # 后端镜像
+└── .env.docker                  # Docker 环境变量
+```
+
+### 3.2 docker-compose.yml（完整版）
+
+```yaml
+version: '3.9'
+
+services:
+  # ============================================================
+  # Nginx 反向代理 + 静态资源服务
+  # ============================================================
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: joydata-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./frontend-dist:/usr/share/nginx/html:ro   # 前端构建产物
+      - nginx-logs:/var/log/nginx
+    depends_on:
+      - api
+    restart: unless-stopped
+    networks:
+      - joydata-net
+
+  # ============================================================
+  # Go API 服务
+  # ============================================================
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: joydata-api
+    ports:
+      - "3006:3006"
+    environment:
+      - APP_ENV=production
+      - DB_DSN=host=postgres user=joydata password=${DB_PASSWORD} dbname=joydata port=5432 sslmode=disable
+      - CH_HOST=clickhouse
+      - CH_PORT=9000
+      - CH_DB=joydata_analytics
+      - CH_USER=joydata
+      - CH_PASSWORD=${CH_PASSWORD}
+      - REDIS_ADDR=redis:6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}
+      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRE=168h    # 7天
+      - PORT=3006
+      - LOG_LEVEL=info
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
+    volumes:
+      - api-logs:/app/logs
+    restart: unless-stopped
+    networks:
+      - joydata-net
+
+  # ============================================================
+  # PostgreSQL 16（主数据库 - 元数据/业务数据）
+  # ============================================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: joydata-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: joydata
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: joydata
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U joydata -d joydata"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - joydata-net
+    command: >
+      postgres
+      -c max_connections=200
+      -c shared_buffers=256MB
+      -c effective_cache_size=1GB
+      -c work_mem=16MB
+      -c maintenance_work_mem=128MB
+      -c wal_buffers=16MB
+      -c checkpoint_completion_target=0.9
+      -c random_page_cost=1.1
+
+  # ============================================================
+  # ClickHouse（OLAP 分析数据库）
+  # ============================================================
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.3-alpine
+    container_name: joydata-clickhouse
+    ports:
+      - "8123:8123"   # HTTP 接口
+      - "9000:9000"   # TCP 接口（Native）
+    environment:
+      CLICKHOUSE_DB: joydata_analytics
+      CLICKHOUSE_USER: joydata
+      CLICKHOUSE_PASSWORD: ${CH_PASSWORD}
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
+    volumes:
+      - clickhouse-data:/var/lib/clickhouse
+      - clickhouse-logs:/var/log/clickhouse-server
+      - ./docker/clickhouse/config.xml:/etc/clickhouse-server/config.d/custom.xml:ro
+      - ./docker/clickhouse/users.xml:/etc/clickhouse-server/users.d/custom.xml:ro
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8123/ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    restart: unless-stopped
+    networks:
+      - joydata-net
+
+  # ============================================================
+  # Redis 7（缓存 + 任务队列 + Session）
+  # ============================================================
+  redis:
+    image: redis:7-alpine
+    container_name: joydata-redis
+    ports:
+      - "6379:6379"
+    command: >
+      redis-server
+      --requirepass ${REDIS_PASSWORD}
+      --maxmemory 512mb
+      --maxmemory-policy allkeys-lru
+      --appendonly yes
+      --save 900 1
+      --save 300 10
+    volumes:
+      - redis-data:/data
+      - ./docker/redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - joydata-net
+
+  # ============================================================
+  # MinIO（对象存储，替代腾讯云 COS）
+  # ============================================================
+  minio:
+    image: minio/minio:latest
+    container_name: joydata-minio
+    ports:
+      - "9001:9000"   # API
+      - "9090:9090"   # Console
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
+    command: server /data --console-address ":9090"
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - joydata-net
+
+  # ============================================================
+  # Elasticsearch（日志搜索 + 用户行为索引）
+  # ============================================================
+  elasticsearch:
+    image: elasticsearch:8.13.0
+    container_name: joydata-es
+    ports:
+      - "9200:9200"
+    environment:
+      - discovery.type=single-node
+      - ELASTIC_PASSWORD=${ES_PASSWORD}
+      - xpack.security.enabled=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    volumes:
+      - es-data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200 | grep -q 'You Know'"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - joydata-net
+
+  # ============================================================
+  # Kibana（ES 可视化，运维用）
+  # ============================================================
+  kibana:
+    image: kibana:8.13.0
+    container_name: joydata-kibana
+    ports:
+      - "5601:5601"
+    environment:
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+      ELASTICSEARCH_USERNAME: kibana_system
+      ELASTICSEARCH_PASSWORD: ${ES_PASSWORD}
+    depends_on:
+      - elasticsearch
+    restart: unless-stopped
+    networks:
+      - joydata-net
+
+  # ============================================================
+  # Prometheus + Grafana（监控）
+  # ============================================================
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: joydata-prometheus
+    ports:
+      - "9091:9090"
+    volumes:
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    networks:
+      - joydata-net
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: joydata-grafana
+    ports:
+      - "3001:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD}
+    volumes:
+      - grafana-data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    networks:
+      - joydata-net
+
+volumes:
+  postgres-data:
+  clickhouse-data:
+  clickhouse-logs:
+  redis-data:
+  minio-data:
+  es-data:
+  nginx-logs:
+  api-logs:
+  prometheus-data:
+  grafana-data:
+
+networks:
+  joydata-net:
+    driver: bridge
+```
+
+### 3.3 Dockerfile（多阶段构建）
+
+```dockerfile
+# ==== 构建阶段 ====
+FROM golang:1.22-alpine AS builder
+
+# 安装需要工具
+RUN apk add --no-cache git ca-certificates tzdata
+
+WORKDIR /build
+
+# 先拷贝 go.mod/sum，利用 Docker 缓层
+COPY go.mod go.sum ./
+RUN go mod download
+
+# 拷贝源码并构建
+COPY . .
+
+# 生成 Swagger 文档
+RUN go install github.com/swaggo/swag/cmd/swag@latest && swag init -g cmd/server/main.go
+
+# 静态编译，关闭调试信息，减小二进制体积
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+    -ldflags="-s -w -X main.Version=$(git describe --tags --always)" \
+    -o joydata-server \
+    ./cmd/server
+
+# ==== 运行阶段 ====
+# 使用 distroless 镜像，最小化攻击面
+FROM gcr.io/distroless/static-debian12:nonroot
+
+# 拷贝必要文件
+COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+COPY --from=builder /build/joydata-server /app/joydata-server
+COPY --from=builder /build/config /app/config  # 默认配置文件
+
+WORKDIR /app
+USER nonroot:nonroot
+EXPOSE 3006
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s \
+  CMD ["/app/joydata-server", "health"]
+
+ENTRYPOINT ["/app/joydata-server"]
+
+# 鈥環预期：
+# 最终镜像大小：~12MB（对比 NestJS ~300MB）
+# 启动耗时：< 100ms（对比 NestJS ~3-5s）
+```
+
+### 3.4 .env.docker 环境变量
+
+```bash
+# 数据库
+DB_PASSWORD=joydata_secure_2024
+CH_PASSWORD=clickhouse_secure_2024
+REDIS_PASSWORD=redis_secure_2024
+
+# 存储
+MINIO_ACCESS_KEY=minioadmin
+MINIO_SECRET_KEY=minioadmin123
+
+# 安全
+JWT_SECRET=your-super-secret-jwt-key-256-bits
+ES_PASSWORD=elastic_secure_2024
+
+# 监控
+GRAFANA_PASSWORD=grafana_admin
+
+# 后端配置
+PORT=3006
+LOG_LEVEL=info
+
+# 第三方（可选）
+FEISHU_APP_ID=
+FEISHU_APP_SECRET=
+SENTRY_DSN=
+```
+
+### 3.5 快速启动命令
+
+```bash
+# 1. 克隆并进入项目
+git clone <repo> joydata-backend && cd joydata-backend
+
+# 2. 安装 Go 1.22+
+# https://go.dev/dl/  或者 brew install go
+
+# 3. 安装开发工具
+go install github.com/air-verse/air@latest          # 热重载
+go install github.com/swaggo/swag/cmd/swag@latest   # Swagger 生成
+go install github.com/golang-migrate/migrate/v4/cmd/migrate@latest  # DB 迁移
+
+# 4. 复制环境变量
+cp .env.docker .env
+
+# 5. 仅启动依赖（本地开发）
+docker compose -f docker-compose.dev.yml up -d
+# 包含：PostgreSQL + ClickHouse + Redis + MinIO
+
+# 6. 执行数据库迁移
+migrate -path migrations/ -database "postgres://joydata:xxx@localhost:5432/joydata?sslmode=disable" up
+
+# 7. 启动开发服务（热重载）
+air
+# 或直接运行
+# go run ./cmd/server/main.go
+
+# ====== 生产 Docker 全量启动 ======
+docker compose up -d --build
+
+# 查看日志
+docker compose logs -f api
+
+# 停止并清理
+docker compose down -v
+
+# 运行单元测试
+go test ./... -v -race -cover
+
+# 生成 Swagger 文档
+swag init -g cmd/server/main.go -o docs/
+```
+
+---
+
+## 4. 数据库设计
+
+### 4.1 PostgreSQL — 核心表设计
+
+#### 用户与权限域
+
+```sql
+-- 用户表
+CREATE TABLE users (
+  id          BIGSERIAL PRIMARY KEY,
+  username    VARCHAR(100) UNIQUE NOT NULL,
+  email       VARCHAR(200) UNIQUE,
+  password    VARCHAR(255),           -- bcrypt hash，SSO 登录可为空
+  avatar      VARCHAR(500),
+  status      SMALLINT DEFAULT 1,     -- 1:启用 2:禁用
+  lang        VARCHAR(20) DEFAULT 'zh_CN',
+  login_method VARCHAR(20) DEFAULT 'uc', -- 'uc' | 'lark'
+  lark_open_id VARCHAR(100),          -- 飞书 OpenID
+  created_at  TIMESTAMPTZ DEFAULT NOW(),
+  updated_at  TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 项目表
+CREATE TABLE projects (
+  id          BIGSERIAL PRIMARY KEY,
+  code        VARCHAR(100) UNIQUE NOT NULL, -- 项目标识符
+  name        VARCHAR(200) NOT NULL,
+  description TEXT,
+  status      SMALLINT DEFAULT 1,
+  config      JSONB DEFAULT '{}',     -- 项目配置（时区/货币等）
+  created_by  BIGINT REFERENCES users(id),
+  created_at  TIMESTAMPTZ DEFAULT NOW(),
+  updated_at  TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 角色表
+CREATE TABLE roles (
+  id          BIGSERIAL PRIMARY KEY,
+  project_id  BIGINT REFERENCES projects(id),
+  name        VARCHAR(100) NOT NULL,
+  description TEXT,
+  permissions JSONB DEFAULT '[]',    -- 权限 key 数组
+  is_system   BOOLEAN DEFAULT FALSE, -- 系统内置角色
+  created_at  TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 用户项目角色关联
+CREATE TABLE user_project_roles (
+  id          BIGSERIAL PRIMARY KEY,
+  user_id     BIGINT REFERENCES users(id) ON DELETE CASCADE,
+  project_id  BIGINT REFERENCES projects(id) ON DELETE CASCADE,
+  role_id     BIGINT REFERENCES roles(id) ON DELETE CASCADE,
+  created_at  TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE (user_id, project_id, role_id)
+);
+
+-- 权限申请记录
+CREATE TABLE auth_approvals (
+  id          BIGSERIAL PRIMARY KEY,
+  applicant_id BIGINT REFERENCES users(id),
+  project_id  BIGINT REFERENCES projects(id),
+  resource_key VARCHAR(200) NOT NULL,  -- 权限 key
+  resource_type VARCHAR(50) NOT NULL,  -- 'app' | 'data'
+  status      SMALLINT DEFAULT 1,      -- 1:待审 2:通过 3:拒绝
+  reason      TEXT,
+  approver_id BIGINT REFERENCES users(id),
+  approved_at TIMESTAMPTZ,
+  created_at  TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+#### 看板域
+
+```sql
+-- 文件夹（树形结构）
+CREATE TABLE dashboard_folders (
+  id          BIGSERIAL PRIMARY KEY,
+  project_id  BIGINT REFERENCES projects(id) NOT NULL,
+  parent_id   BIGINT REFERENCES dashboard_folders(id),
+  name        VARCHAR(200) NOT NULL,
+  type        SMALLINT DEFAULT 1,     -- 1:普通 2:个人
+  sort_order  INT DEFAULT 0,
+  created_by  BIGINT REFERENCES users(id),
+  created_at  TIMESTAMPTZ DEFAULT NOW(),
+  updated_at  TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 看板
+CREATE TABLE dashboards (
+  id          BIGSERIAL PRIMARY KEY,
+  project_id  BIGINT REFERENCES projects(id) NOT NULL,
+  folder_id   BIGINT REFERENCES dashboard_folders(id),
+  name        VARCHAR(300) NOT NULL,
+  description TEXT,
+  type        SMALLINT DEFAULT 1,     -- 1:普通 2:共享
+  status      SMALLINT DEFAULT 1,     -- 1:正常 2:归档
+  layout      JSONB DEFAULT '[]',     -- react-grid-layout 配置
+  config      JSONB DEFAULT '{}',     -- 全局筛选/主题等配置
+  common_filters JSONB DEFAULT '[]',  -- 公共筛选器
+  cache_cron  VARCHAR(50),            -- 缓存刷新 cron
+  created_by  BIGINT REFERENCES users(id),
+  updated_by  BIGINT REFERENCES users(id),
+  created_at  TIMESTAMPTZ DEFAULT NOW(),
+  updated_at  TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 报表（看板内的图表单元）
+CREATE TABLE reports (
+  id          BIGSERIAL PRIMARY KEY,
+  project_id  BIGINT REFERENCES projects(id) NOT NULL,
+  dashboard_id BIGINT REFERENCES dashboards(id),
+  name        VARCHAR(300) NOT NULL,
+  type        VARCHAR(50) NOT NULL,   -- 'chart'|'table'|'metric'|'sql'|'ai'|'text'
+  chart_type  VARCHAR(50),            -- 'line'|'bar'|'pie'|'scatter'|...
+  query_config JSONB DEFAULT '{}',    -- 查询配置（指标/分组/筛选）
+  chart_config JSONB DEFAULT '{}',    -- 图表样式配置
+  sql_content TEXT,                   -- SQL 报表内容
+  position    JSONB DEFAULT '{}',     -- 在看板中的位置 {x,y,w,h}
+  created_by  BIGINT REFERENCES users(id),
+  created_at  TIMESTAMPTZ DEFAULT NOW(),
+  updated_at  TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 外链（软链接，看板嵌入）
+CREATE TABLE dashboard_soft_links (
+  id          BIGSERIAL PRIMARY KEY,
+  dashboard_id BIGINT REFERENCES dashboards(id) NOT NULL,
+  token       VARCHAR(100) UNIQUE NOT NULL, -- 访问 token
+  name        VARCHAR(200),
+  expire_at   TIMESTAMPTZ,
+  status      SMALLINT DEFAULT 1,
+  config      JSONB DEFAULT '{}',     -- 嵌入配置（隐藏 header 等）
+  created_by  BIGINT REFERENCES users(id),
+  created_at  TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 看板分享
+CREATE TABLE dashboard_shares (
+  id          BIGSERIAL PRIMARY KEY,
+  entity_id   BIGINT NOT NULL,        -- dashboard_id 或 report_id
+  entity_type VARCHAR(20) NOT NULL,   -- 'dashboard' | 'report'
+  user_id     BIGINT REFERENCES users(id),
+  permission  SMALLINT DEFAULT 1,     -- 1:查看 2:编辑
+  created_at  TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 看板结论
+CREATE TABLE dashboard_conclusions (
+  id          BIGSERIAL PRIMARY KEY,
+  dashboard_id BIGINT REFERENCES dashboards(id) NOT NULL,
+  content     TEXT,
+  config      JSONB DEFAULT '{}',
+  created_by  BIGINT REFERENCES users(id),
+  created_at  TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+#### 数据资产域
+
+```sql
+-- 分类（category，支持树形）
+CREATE TABLE categories (
+  id          BIGSERIAL PRIMARY KEY,
+  project_id  BIGINT REFERENCES projects(id) NOT NULL,
+  parent_id   BIGINT REFERENCES categories(id),
+  name        VARCHAR(200) NOT NULL,
+  type        VARCHAR(50),            -- 'user_tag'|'metric'|'datatable'|'dataset'
+  level       SMALLINT DEFAULT 1,
+  sort_order  INT DEFAULT 0,
+  created_at  TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 实体类型
+CREATE TABLE entity_types (
+  id          BIGSERIAL PRIMARY KEY,
+  project_id  BIGINT REFERENCES projects(id) NOT NULL,
+  label       VARCHAR(100) NOT NULL,
+  value       VARCHAR(100) NOT NULL,
+  sort_order  INT DEFAULT 0,
+  UNIQUE (project_id, value)
+);
+
+-- 数据表（datatable）
+CREATE TABLE datatables (
+  id          BIGSERIAL PRIMARY KEY,
+  project_id  BIGINT REFERENCES projects(id) NOT NULL,
+  name        VARCHAR(200) NOT NULL,   -- 物理表名
+  display_name VARCHAR(300),          -- 展示名
+  description TEXT,
+  schema_name VARCHAR(100) DEFAULT 'public', -- ClickHouse database
+  type        VARCHAR(50) DEFAULT 'event',   -- 'event'|'user'|'upload'
+  status      SMALLINT DEFAULT 1,
+  tz_mode     VARCHAR(50) DEFAULT 'UTC',     -- 时区模式
+  tags        TEXT[] DEFAULT '{}',
+  meta        JSONB DEFAULT '{}',
+  row_count   BIGINT,                 -- 缓存行数
+  created_by  BIGINT REFERENCES users(id),
+  created_at  TIMESTAMPTZ DEFAULT NOW(),
+  updated_at  TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 数据表字段（columns）
+CREATE TABLE datatable_columns (
+  id          BIGSERIAL PRIMARY KEY,
+  datatable_id BIGINT REFERENCES datatables(id) ON DELETE CASCADE,
+  name        VARCHAR(200) NOT NULL,   -- 字段名
+  display_name VARCHAR(300),          -- 展示名
+  data_type   VARCHAR(50) NOT NULL,   -- 'string'|'number'|'date'|'boolean'
+  is_dimension BOOLEAN DEFAULT FALSE,
+  is_nullable BOOLEAN DEFAULT TRUE,
+  dict_type   VARCHAR(100),           -- 枚举类型（关联 enum_definitions）
+  description TEXT,
+  i18n        JSONB DEFAULT '{}',     -- {zh_CN:'',en_US:''}
+  sort_order  INT DEFAULT 0,
+  created_at  TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 数据集（dataset）
+CREATE TABLE datasets (
+  id          BIGSERIAL PRIMARY KEY,
+  project_id  BIGINT REFERENCES projects(id) NOT NULL,
+  name        VARCHAR(200) NOT NULL,
+  display_name VARCHAR(300),
+  description TEXT,
+  type        VARCHAR(50) NOT NULL,   -- 'sql'|'relation'|'option'
+  sql_content TEXT,                   -- SQL 类数据集
+  config      JSONB DEFAULT '{}',     -- 关联/条件类配置
+  status      SMALLINT DEFAULT 1,
+  tz_mode     VARCHAR(50) DEFAULT 'UTC',
+  tags        TEXT[] DEFAULT '{}',
+  created_by  BIGINT REFERENCES users(id),
+  created_at  TIMESTAMPTZ DEFAULT NOW(),
+  updated_at  TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 属性（attribute）
+CREATE TABLE attributes (
+  id          BIGSERIAL PRIMARY KEY,
+  project_id  BIGINT REFERENCES projects(id) NOT NULL,
+  name        VARCHAR(200) NOT NULL,
+  display_name VARCHAR(300),
+  data_type   VARCHAR(50) NOT NULL,
+  entity_type VARCHAR(100),           -- 关联实体类型
+  is_dimension BOOLEAN DEFAULT FALSE,
+  category_id BIGINT REFERENCES categories(id),
+  status      SMALLINT DEFAULT 1,
+  description TEXT,
+  i18n        JSONB DEFAULT '{}',
+  meta        JSONB DEFAULT '{}',
+  created_by  BIGINT REFERENCES users(id),
+  created_at  TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+#### 埋点域（EventTracking）
+
+```sql
+-- Story（埋点需求文档）
+CREATE TABLE stories (
+  id          BIGSERIAL PRIMARY KEY,
+  project_id  BIGINT REFERENCES projects(id) NOT NULL,
+  name        VARCHAR(300) NOT NULL,
+  docs_url    VARCHAR(500),           -- 需求文档链接（飞书/Confluence）
+  status      SMALLINT DEFAULT 1,     -- 1:草稿 2:待审 3:审批中 4:通过 5:验收
+  is_skip_event_check SMALLINT DEFAULT 2, -- 1:跳过 2:不跳过
+  created_by  BIGINT REFERENCES users(id),
+  created_at  TIMESTAMPTZ DEFAULT NOW(),
+  updated_at  TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 事件定义
+CREATE TABLE events (
+  id          BIGSERIAL PRIMARY KEY,
+  project_id  BIGINT REFERENCES projects(id) NOT NULL,
+  story_id    BIGINT REFERENCES stories(id),
+  name        VARCHAR(200) NOT NULL,  -- 事件名（英文 key）
+  display_name VARCHAR(300),
+  description TEXT,
+  status      SMALLINT DEFAULT 1,
+  created_at  TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 事件属性
+CREATE TABLE event_properties (
+  id          BIGSERIAL PRIMARY KEY,
+  event_id    BIGINT REFERENCES events(id) ON DELETE CASCADE,
+  name        VARCHAR(200) NOT NULL,
+  data_type   VARCHAR(50),
+  is_required BOOLEAN DEFAULT FALSE,
+  description TEXT,
+  sort_order  INT DEFAULT 0
+);
+```
+
+#### 标签域
+
+```sql
+-- 标签定义
+CREATE TABLE user_tags (
+  id          BIGSERIAL PRIMARY KEY,
+  project_id  BIGINT REFERENCES projects(id) NOT NULL,
+  name        VARCHAR(200) NOT NULL,
+  display_name VARCHAR(300),
+  tag_type    VARCHAR(50) NOT NULL,   -- 'sql'|'condition'|'metric'|'id'|'times'|'group'
+  entity_type VARCHAR(100),
+  category_id BIGINT REFERENCES categories(id),
+  status      SMALLINT DEFAULT 1,     -- 1:正常 2:禁用 3:计算中
+  config      JSONB DEFAULT '{}',     -- 创建配置
+  sql_content TEXT,                   -- SQL 类型内容
+  description TEXT,
+  refresh_cron VARCHAR(50),           -- 刷新 cron
+  last_refresh_at TIMESTAMPTZ,
+  entity_count BIGINT DEFAULT 0,      -- 覆盖人数缓存
+  created_by  BIGINT REFERENCES users(id),
+  created_at  TIMESTAMPTZ DEFAULT NOW(),
+  updated_at  TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 标签刷新历史
+CREATE TABLE user_tag_histories (
+  id          BIGSERIAL PRIMARY KEY,
+  tag_id      BIGINT REFERENCES user_tags(id) ON DELETE CASCADE,
+  status      SMALLINT DEFAULT 1,     -- 1:进行中 2:成功 3:失败
+  entity_count BIGINT,
+  duration_ms INT,
+  error_msg   TEXT,
+  created_at  TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+#### 指标域
+
+```sql
+-- 指标定义
+CREATE TABLE metrics (
+  id          BIGSERIAL PRIMARY KEY,
+  project_id  BIGINT REFERENCES projects(id) NOT NULL,
+  name        VARCHAR(200) NOT NULL,
+  display_name VARCHAR(300),
+  category_id BIGINT REFERENCES categories(id),
+  status      SMALLINT DEFAULT 1,
+  formula     JSONB NOT NULL,         -- 指标计算公式配置
+  description TEXT,
+  i18n        JSONB DEFAULT '{}',
+  created_by  BIGINT REFERENCES users(id),
+  created_at  TIMESTAMPTZ DEFAULT NOW(),
+  updated_at  TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+#### 预警域
+
+```sql
+-- 预警规则
+CREATE TABLE warnings (
+  id          BIGSERIAL PRIMARY KEY,
+  project_id  BIGINT REFERENCES projects(id) NOT NULL,
+  name        VARCHAR(300) NOT NULL,
+  status      SMALLINT DEFAULT 1,     -- 1:启用 2:禁用
+  monitor_rules JSONB NOT NULL,       -- 监控规则配置
+  notify_config JSONB DEFAULT '{}',   -- 通知配置（飞书群/邮件）
+  check_cron  VARCHAR(50),            -- 检查周期
+  created_by  BIGINT REFERENCES users(id),
+  created_at  TIMESTAMPTZ DEFAULT NOW(),
+  updated_at  TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 预警日志
+CREATE TABLE warning_logs (
+  id          BIGSERIAL PRIMARY KEY,
+  warning_id  BIGINT REFERENCES warnings(id) ON DELETE CASCADE,
+  trigger_time TIMESTAMPTZ NOT NULL,
+  status      SMALLINT,               -- 1:触发 2:恢复
+  detail      JSONB DEFAULT '{}',
+  created_at  TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+#### 管理功能域
+
+```sql
+-- 订阅配置
+CREATE TABLE subscriptions (
+  id          BIGSERIAL PRIMARY KEY,
+  project_id  BIGINT REFERENCES projects(id) NOT NULL,
+  entity_id   BIGINT NOT NULL,        -- report_id / dashboard_id
+  entity_type VARCHAR(20) NOT NULL,
+  name        VARCHAR(300) NOT NULL,
+  status      SMALLINT DEFAULT 1,
+  schedule_cron VARCHAR(50) NOT NULL, -- 发送周期
+  notify_type VARCHAR(50) NOT NULL,   -- 'email'|'feishu'
+  notify_config JSONB DEFAULT '{}',   -- 收件人/群组配置
+  created_by  BIGINT REFERENCES users(id),
+  created_at  TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 推送配置
+CREATE TABLE push_configs (
+  id          BIGSERIAL PRIMARY KEY,
+  project_id  BIGINT REFERENCES projects(id) NOT NULL,
+  entity_id   BIGINT,
+  entity_type VARCHAR(20),
+  name        VARCHAR(300) NOT NULL,
+  status      SMALLINT DEFAULT 1,
+  push_type   VARCHAR(50) NOT NULL,   -- 'feishu_group'|'webhook'
+  config      JSONB DEFAULT '{}',
+  created_by  BIGINT REFERENCES users(id),
+  created_at  TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 枚举定义
+CREATE TABLE enum_definitions (
+  id          BIGSERIAL PRIMARY KEY,
+  project_id  BIGINT REFERENCES projects(id) NOT NULL,
+  type_key    VARCHAR(200) NOT NULL,  -- 枚举类型 key
+  name        VARCHAR(300) NOT NULL,
+  items       JSONB DEFAULT '[]',     -- [{value, label, i18n: {...}}]
+  description TEXT,
+  created_by  BIGINT REFERENCES users(id),
+  created_at  TIMESTAMPTZ DEFAULT NOW(),
+  updated_at  TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 版本日历
+CREATE TABLE version_calendars (
+  id          BIGSERIAL PRIMARY KEY,
+  project_id  BIGINT REFERENCES projects(id) NOT NULL,
+  title       VARCHAR(300) NOT NULL,
+  description TEXT,
+  start_date  DATE NOT NULL,
+  end_date    DATE,
+  type        VARCHAR(50) DEFAULT 'version',
+  status      SMALLINT DEFAULT 1,
+  created_by  BIGINT REFERENCES users(id),
+  created_at  TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 下载任务
+CREATE TABLE download_tasks (
+  id          BIGSERIAL PRIMARY KEY,
+  project_id  BIGINT REFERENCES projects(id) NOT NULL,
+  task_name   VARCHAR(300) NOT NULL,
+  task_type   VARCHAR(50) NOT NULL,   -- 'report'|'datatable'|'analysis'
+  status      SMALLINT DEFAULT 1,     -- 1:排队 2:进行中 3:完成 4:失败
+  progress    SMALLINT DEFAULT 0,     -- 0-100
+  file_url    VARCHAR(500),           -- 下载链接
+  file_size   BIGINT,
+  error_msg   TEXT,
+  expire_at   TIMESTAMPTZ,
+  params      JSONB DEFAULT '{}',
+  created_by  BIGINT REFERENCES users(id),
+  created_at  TIMESTAMPTZ DEFAULT NOW(),
+  finished_at TIMESTAMPTZ
+);
+
+-- 站内信
+CREATE TABLE notices (
+  id          BIGSERIAL PRIMARY KEY,
+  project_id  BIGINT,
+  title       VARCHAR(300) NOT NULL,
+  content     TEXT NOT NULL,
+  type        VARCHAR(50) DEFAULT 'system',
+  target_users BIGINT[] DEFAULT '{}', -- 目标用户 ID 列表（空=全员）
+  status      SMALLINT DEFAULT 1,     -- 1:草稿 2:已发布 3:已撤回
+  publish_at  TIMESTAMPTZ,
+  created_by  BIGINT REFERENCES users(id),
+  created_at  TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 站内信已读记录
+CREATE TABLE notice_reads (
+  id          BIGSERIAL PRIMARY KEY,
+  notice_id   BIGINT REFERENCES notices(id) ON DELETE CASCADE,
+  user_id     BIGINT REFERENCES users(id) ON DELETE CASCADE,
+  read_at     TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE (notice_id, user_id)
+);
+
+-- 前端实体存储（feItem）
+CREATE TABLE fe_items (
+  id          BIGSERIAL PRIMARY KEY,
+  project_id  BIGINT REFERENCES projects(id) NOT NULL,
+  user_id     BIGINT REFERENCES users(id) NOT NULL,
+  type        VARCHAR(100) NOT NULL,  -- 业务类型标识
+  entity_id   VARCHAR(200) NOT NULL,
+  is_fav      BOOLEAN DEFAULT FALSE,
+  meta        JSONB DEFAULT '{}',
+  created_at  TIMESTAMPTZ DEFAULT NOW(),
+  updated_at  TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE (project_id, user_id, type, entity_id)
+);
+
+-- 筛选配置（公共/私有）
+CREATE TABLE filter_configs (
+  id          BIGSERIAL PRIMARY KEY,
+  project_id  BIGINT REFERENCES projects(id) NOT NULL,
+  dashboard_id BIGINT REFERENCES dashboards(id),
+  user_id     BIGINT REFERENCES users(id),
+  scope       VARCHAR(20) NOT NULL,  -- 'common' | 'private'
+  name        VARCHAR(200),
+  config      JSONB NOT NULL,        -- 筛选条件配置
+  is_default  BOOLEAN DEFAULT FALSE,
+  is_enabled  BOOLEAN DEFAULT TRUE,
+  created_at  TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+#### 财务域
+
+```sql
+-- 供应商（客户）
+CREATE TABLE finance_suppliers (
+  id            BIGSERIAL PRIMARY KEY,
+  supplier_name VARCHAR(300) NOT NULL,
+  subject       VARCHAR(200),        -- 主体公司
+  invoice_type  VARCHAR(100),
+  address       TEXT,
+  contact       VARCHAR(200),
+  phone         VARCHAR(50),
+  status        SMALLINT DEFAULT 1,
+  created_at    TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 分成比例
+CREATE TABLE finance_share_ratios (
+  id            BIGSERIAL PRIMARY KEY,
+  supplier_id   BIGINT REFERENCES finance_suppliers(id),
+  game          VARCHAR(100) NOT NULL,
+  platform      VARCHAR(100) NOT NULL,
+  ratio_type    SMALLINT NOT NULL,   -- 1:平均 2:阶梯
+  ratio         DECIMAL(10,4),       -- 平均分成比例
+  rates         DECIMAL[] DEFAULT '{}',
+  thresholds    BIGINT[] DEFAULT '{}',
+  start_date    DATE NOT NULL,
+  end_date      DATE NOT NULL,
+  status        SMALLINT DEFAULT 1,  -- 1:生效 2:过期
+  created_at    TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 对账信息
+CREATE TABLE finance_reconciliations (
+  id            BIGSERIAL PRIMARY KEY,
+  supplier_id   BIGINT REFERENCES finance_suppliers(id),
+  platform      VARCHAR(100),
+  game          VARCHAR(100),
+  period        VARCHAR(50),
+  currency      VARCHAR(20),
+  tax_rate      DECIMAL(6,4),
+  status        SMALLINT DEFAULT 1,
+  meta          JSONB DEFAULT '{}',  -- 所有财务字段
+  created_at    TIMESTAMPTZ DEFAULT NOW(),
+  updated_at    TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+### 4.2 ClickHouse — 分析表设计
+
+```sql
+-- 事件数据主表（核心分析表）
+CREATE TABLE joydata_analytics.events (
+  project_id      String,
+  event_name      String,
+  event_time      DateTime64(3, 'UTC'),   -- 毫秒精度
+  user_id         String,
+  device_id       String,
+  session_id      String,
+  -- 通用维度
+  country         LowCardinality(String),
+  region          LowCardinality(String),
+  language        LowCardinality(String),
+  os              LowCardinality(String),
+  app_version     LowCardinality(String),
+  -- 事件属性（动态）
+  properties      Map(String, String),    -- 字符串属性
+  properties_num  Map(String, Float64),   -- 数值属性
+  -- 分区键
+  date_key        Date MATERIALIZED toDate(event_time)
+)
+ENGINE = MergeTree()
+PARTITION BY (project_id, toYYYYMM(date_key))
+ORDER BY (project_id, event_name, event_time, user_id)
+SETTINGS index_granularity = 8192;
+
+-- 用户属性快照表
+CREATE TABLE joydata_analytics.user_profiles (
+  project_id      String,
+  user_id         String,
+  entity_type     LowCardinality(String),
+  first_seen      DateTime64(3, 'UTC'),
+  last_seen       DateTime64(3, 'UTC'),
+  -- 属性（动态）
+  attrs           Map(String, String),
+  attrs_num       Map(String, Float64),
+  -- 更新时间
+  updated_at      DateTime64(3, 'UTC'),
+  date_key        Date MATERIALIZED toDate(updated_at)
+)
+ENGINE = ReplacingMergeTree(updated_at)
+PARTITION BY (project_id, toYYYYMM(date_key))
+ORDER BY (project_id, entity_type, user_id);
+
+-- 物化视图：日活/月活统计
+CREATE MATERIALIZED VIEW joydata_analytics.mv_dau
+ENGINE = SummingMergeTree()
+PARTITION BY (project_id, toYYYYMM(date_key))
+ORDER BY (project_id, date_key, event_name)
+AS SELECT
+  project_id,
+  toDate(event_time) AS date_key,
+  event_name,
+  uniqState(user_id) AS uv_state,
+  count() AS pv,
+  sum(properties_num['duration'] ) AS total_duration
+FROM joydata_analytics.events
+GROUP BY project_id, date_key, event_name;
+
+-- SQL 分析历史
+CREATE TABLE joydata_analytics.sql_query_history (
+  id              UUID DEFAULT generateUUIDv4(),
+  project_id      String,
+  user_id         String,
+  sql_content     String,
+  status          UInt8,              -- 1:运行中 2:成功 3:失败
+  duration_ms     UInt32,
+  row_count       UInt64,
+  error_msg       String,
+  created_at      DateTime64(3, 'UTC')
+)
+ENGINE = MergeTree()
+ORDER BY (project_id, created_at)
+TTL created_at + INTERVAL 90 DAY;
+```
+
+### 4.3 Redis Key 设计
+
+```
+# Session
+session:{user_id}:{project_id}          → JWT + 用户信息（TTL: 7d）
+auth_tree:{project_id}:{user_id}        → 权限树 JSON（TTL: 1h）
+
+# 查询缓存
+analysis_cache:{project_id}:{hash}      → 查询结果（TTL: 5min）
+dashboard_cache:{dashboard_id}          → 看板快照（TTL: cron时间）
+
+# 任务取消
+query_cancel:{trace_id}                 → 1（TTL: 1h）
+
+# 并发控制
+analysis_lock:{project_id}:{user_id}    → 1（TTL: 30s，防止重复请求）
+
+# 站内信未读计数
+notice_unread:{user_id}                 → count（TTL: 无）
+
+# 限流
+rate_limit:{user_id}:{api}              → count（TTL: 1min）
+
+# 任务队列（asynq - 基于 Redis）
+asynq:{queue_name}                   → sorted set
+asynq:{queue_name}:active            → set
+asynq:{queue_name}:scheduled         → sorted set
+```
+
+---
+
+## 5. 项目目录结构
+
+> 遵循Go 标准项目布局（[Standard Go Project Layout](https://github.com/golang-standards/project-layout))
+
+```
+joydata-backend/
+├── cmd/
+│   ├── server/                    # 主 HTTP 服务入口
+│   │   └── main.go                # 程序入口：初始化依赖/路由注册/启动
+│   └── worker/                    # 异步任务 Worker 入口
+│       └── main.go
+│
+├── internal/                      # 业务代码（Go 内部包，不对外暴露）
+│   ├── app/                       # 应用组装（依赖注入和路由注册）
+│   │   ├── app.go                 # Wire / 手动依赖注入
+│   │   └── routes.go              # Gin 路由注册总入口
+│   │
+│   ├── middleware/                # Gin 中间件
+│   │   ├── auth.go                # JWT 鉴权
+│   │   ├── project.go             # 项目权限校验
+│   │   ├── logger.go              # zap 请求日志
+│   │   ├── cors.go                # CORS 配置
+│   │   ├── ratelimit.go           # Redis 限流
+│   │   └── recovery.go            # panic 捕获 + 统一错误响应
+│   │
+│   ├── handler/                   # HTTP Handler（路由处理函数）
+│   │   ├── auth/
+│   │   │   └── handler.go         # POST /api/v1/login
+│   │   ├── project/
+│   │   │   └── handler.go
+│   │   ├── dashboard/
+│   │   │   ├── handler.go         # 看板 CRUD
+│   │   │   ├── folder_handler.go  # 文件夹 CRUD
+│   │   │   ├── report_handler.go  # 报表 CRUD
+│   │   │   └── softlink_handler.go
+│   │   ├── analysis/
+│   │   │   └── handler.go         # POST /api/query
+│   │   ├── sql_analysis/
+│   │   ├── event_tracking/
+│   │   ├── user/
+│   │   ├── tag/
+│   │   ├── metric/
+│   │   ├── data_asset/
+│   │   ├── warning/
+│   │   ├── management/
+│   │   │   ├── push_handler.go
+│   │   │   ├── subscription_handler.go
+│   │   │   ├── download_handler.go
+│   │   │   ├── enum_handler.go
+│   │   │   └── calendar_handler.go
+│   │   ├── notice/
+│   │   ├── filter/
+│   │   ├── finance/
+│   │   ├── kocrm/
+│   │   ├── upload/
+│   │   ├── tracking/              # 行为数据上报
+│   │   └── health/                # 健康检查
+│   │
+│   ├── service/                   # 业务逻辑层
+│   │   ├── auth/
+│   │   │   └── service.go         # 登录/Token 生成/验证
+│   │   ├── dashboard/
+│   │   │   └── service.go
+│   │   ├── analysis/
+│   │   │   ├── service.go         # 查询编译 + 执行
+│   │   │   ├── builder.go         # QueryBuilder 接口
+│   │   │   ├── event_builder.go   # 事件分析 SQL 编译
+│   │   │   ├── funnel_builder.go  # 漏斗分析
+│   │   │   ├── retention_builder.go
+│   │   │   ├── distribution_builder.go
+│   │   │   └── interval_builder.go
+│   │   ├── tag/
+│   │   │   └── service.go         # 标签计算
+│   │   ├── warning/
+│   │   ├── notification/
+│   │   │   └── feishu.go          # 飞书推送
+│   │   ├── export/
+│   │   │   └── excel.go           # Excel 导出（excelize）
+│   │   └── ... （其他模块）
+│   │
+│   ├── repository/                # 数据库访问层（仅负责 GORM 操作）
+│   │   ├── user.go
+│   │   ├── dashboard.go
+│   │   ├── report.go
+│   │   ├── tag.go
+│   │   ├── metric.go
+│   │   └── ... （每个表对应一个 repo）
+│   │
+│   ├── model/                     # GORM 模型定义（对应 PG 表）
+│   │   ├── user.go
+│   │   ├── project.go
+│   │   ├── dashboard.go
+│   │   ├── report.go
+│   │   ├── tag.go
+│   │   └── ... （每张表对应一个文件）
+│   │
+│   ├── dto/                       # 请求/响应 结构体（参数绑定）
+│   │   ├── common.go              # 通用分页 DTO
+│   │   ├── auth.go
+│   │   ├── dashboard.go
+│   │   ├── analysis.go
+│   │   └── ...
+│   │
+│   ├── worker/                    # 异步任务 Handler（asynq）
+│   │   ├── tag_compute.go         # 标签计算任务
+│   │   ├── report_export.go       # 报表导出任务
+│   │   ├── subscription_send.go   # 订阅发送任务
+│   │   ├── warning_check.go       # 预警检查任务
+│   │   └── cache_refresh.go       # 看板缓存刷新
+│   │
+│   ├── scheduler/                 # 定时任务 (cron)
+│   │   └── scheduler.go           # 注册所有 cron 任务
+│   │
+│   └── types/                     # 错误类型/通用类型
+│       ├── errors.go
+│       └── response.go
+│
+├── pkg/                           # 可复用工具包（对外可导入）
+│   ├── clickhouse/                # ClickHouse 客户端封装
+│   ├── redis/                     # Redis 操作封装
+│   ├── minio/                     # MinIO 操作封装
+│   ├── jwt/                       # JWT 生成/解析
+│   ├── logger/                    # zap 初始化封装
+│   ├── feishu/                    # 飞书 SDK 封装
+│   ├── excel/                     # Excel 封装
+│   └── sqlparser/                 # SQL 安全解析
+│
+├── config/                        # 配置文件
+│   ├── config.go                  # viper 配置结构体
+│   ├── config.yaml                # 默认配置
+│   ├── config.dev.yaml            # 开发环境
+│   └── config.prod.yaml           # 生产环境
+│
+├── migrations/                    # SQL 迁移文件（golang-migrate）
+│   ├── 000001_init.up.sql
+│   ├── 000001_init.down.sql
+│   ├── 000002_dashboard.up.sql
+│   └── ...
+│
+├── docs/                          # Swagger 自动生成目录
+│   ├── docs.go
+│   ├── swagger.json
+│   └── swagger.yaml
+│
+├── scripts/                       # 运维脚本
+│   ├── seed.go                    # 种子数据
+│   └── migrate.sh
+│
+├── test/                          # 集成测试
+│   ├── integration/
+│   └── testutils/
+│
+├── docker/                        # Docker 配置
+├── go.mod
+├── go.sum
+├── .air.toml                      # air 热重载配置
+├── Makefile                       # 常用命令封装
+└── Dockerfile
+```
+
+### 5.1 典型 Go 文件示例
+
+```go
+// cmd/server/main.go
+package main
+
+import (
+    "context"
+    "net/http"
+    "os"
+    "os/signal"
+    "syscall"
+    "time"
+
+    "github.com/gin-gonic/gin"
+    "go.uber.org/zap"
+    "joydata-backend/config"
+    "joydata-backend/internal/app"
+    "joydata-backend/pkg/logger"
+)
+
+func main() {
+    // 加载配置
+    cfg := config.Load()
+
+    // 初始化日志
+    log := logger.New(cfg.LogLevel)
+    defer log.Sync()
+
+    // 初始化应用（依赖注入）
+    application, cleanup, err := app.New(cfg, log)
+    if err != nil {
+        log.Fatal("应用初始化失败", zap.Error(err))
+    }
+    defer cleanup()
+
+    // 启动 HTTP 服务器
+    srv := &http.Server{
+        Addr:         ":" + cfg.Port,
+        Handler:      application.Router,
+        ReadTimeout:  30 * time.Second,
+        WriteTimeout: 60 * time.Second,
+    }
+
+    // 优雅退出
+    go func() {
+        if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+            log.Fatal("服务器启动失败", zap.Error(err))
+        }
+    }()
+
+    log.Info("服务器已启动", zap.String("addr", srv.Addr))
+
+    quit := make(chan os.Signal, 1)
+    signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+    <-quit
+
+    ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+    defer cancel()
+    srv.Shutdown(ctx)
+}
+```
+
+---
+
+## 6. 统一响应格式与中间件
+
+### 6.1 响应格式（与前端约定完全一致）
+
+```typescript
+// src/common/types/response.type.ts
+
+// 成功响应
+{
+  "code": 200,
+  "message": "success",
+  "data": { ... }
+}
+
+// 分页响应
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "list": [...],
+    "page_info": {
+      "current_page": 1,
+      "page_size": 20,
+      "total_page": 5,
+      "total": 100
+    }
+  }
+}
+
+// 错误响应
+{
+  "code": 400,      // 参数错误
+  "code": 401,      // 未认证
+  "code": 403,      // 无权限
+  "code": 10001,    // token 过期
+  "code": 20201,    // 数据权限不足（触发前端权限申请弹窗）
+  "code": 500,      // 服务器错误
+  "message": "错误描述",
+  "data": null
+}
+```
+
+### 6.2 Go 响应封装（response.go）
+
+```go
+// internal/types/response.go
+package types
+
+import "github.com/gin-gonic/gin"
+
+type Response struct {
+    Code    int         `json:"code"`
+    Message string      `json:"message"`
+    Data    interface{} `json:"data"`
+}
+
+// 统一成功响应
+func OK(c *gin.Context, data interface{}) {
+    c.JSON(200, Response{Code: 200, Message: "success", Data: data})
+}
+
+// 分页响应
+func Page(c *gin.Context, list interface{}, pageInfo PageInfo) {
+    c.JSON(200, Response{
+        Code:    200,
+        Message: "success",
+        Data: map[string]interface{}{
+            "list":      list,
+            "page_info": pageInfo,
+        },
+    })
+}
+
+// 错误响应
+func Error(c *gin.Context, code int, msg string) {
+    c.JSON(200, Response{Code: code, Message: msg, Data: nil})
+    // 注意：HTTP 状态码统一 200，前端判断业务 code
+}
+
+// 常用错误码
+const (
+    CodeSuccess          = 200
+    CodeBadRequest       = 400
+    CodeUnauthorized     = 401
+    CodeForbidden        = 403
+    CodeTokenExpired     = 10001
+    CodeDataPermission   = 20201  // 数据权限不足，触发前端权限申请弹窗
+    CodeInternalError    = 500
+)
+```
+
+### 6.3 全局错误捕获（Recovery 中间件）
+
+```go
+// internal/middleware/recovery.go
+package middleware
+
+import (
+    "net/http"
+    "github.com/gin-gonic/gin"
+    "go.uber.org/zap"
+    "joydata-backend/internal/types"
+)
+
+func Recovery(log *zap.Logger) gin.HandlerFunc {
+    return func(c *gin.Context) {
+        defer func() {
+            if err := recover(); err != nil {
+                log.Error("内部错误", zap.Any("error", err),
+                    zap.String("path", c.Request.URL.Path))
+                types.Error(c, types.CodeInternalError, "服务器内部错误")
+                c.Abort()
+            }
+        }()
+        c.Next()
+    }
+}
+
+// 标准错误处理示例（在 Handler 中使用）
+func HandleErr(c *gin.Context, err error) bool {
+    if err == nil {
+        return false
+    }
+    switch e := err.(type) {
+    case *types.AppError:
+        types.Error(c, e.Code, e.Message)
+    default:
+        types.Error(c, types.CodeInternalError, err.Error())
+    }
+    return true
+}
+```
+
+### 6.4 请求上下文中间件（日志 + 追踪）
+
+```go
+// internal/middleware/logger.go
+package middleware
+
+import (
+    "time"
+    "github.com/gin-gonic/gin"
+    "github.com/google/uuid"
+    "go.uber.org/zap"
+)
+
+func Logger(log *zap.Logger) gin.HandlerFunc {
+    return func(c *gin.Context) {
+        start := time.Now()
+
+        // 提取请求头
+        traceID := c.GetHeader("trace-id")
+        if traceID == "" {
+            traceID = uuid.New().String()
+        }
+        projectID := c.GetHeader("project-id")
+        language  := c.GetHeader("language")
+        if language == "" {
+            language = "zh"
+        }
+
+        // 将上下文注入 Gin Context，后续通过 c.Get("") 读取
+        c.Set("trace_id",   traceID)
+        c.Set("project_id", projectID)
+        c.Set("language",   language)
+
+        c.Next()
+
+        // 请求完成后记录日志
+        log.Info("请求日志",
+            zap.String("trace_id",   traceID),
+            zap.String("method",     c.Request.Method),
+            zap.String("path",       c.Request.URL.Path),
+            zap.String("project_id", projectID),
+            zap.Int("status",        c.Writer.Status()),
+            zap.Duration("latency",  time.Since(start)),
+            zap.String("client_ip",  c.ClientIP()),
+        )
+    }
+}
+```
+
+### 6.5 请求限流（基于 Redis + 滑动窗口）
+
+```go
+// internal/middleware/ratelimit.go
+package middleware
+
+import (
+    "fmt"
+    "time"
+    "github.com/gin-gonic/gin"
+    "github.com/redis/go-redis/v9"
+    "joydata-backend/internal/types"
+)
+
+// 分析查询限流：每用户每分钟最多 20 次
+func AnalysisRateLimit(rdb *redis.Client) gin.HandlerFunc {
+    return func(c *gin.Context) {
+        userID, _ := c.Get("user_id")
+        key := fmt.Sprintf("rate_limit:%v:query", userID)
+
+        count, _ := rdb.Incr(c.Request.Context(), key).Result()
+        if count == 1 {
+            rdb.Expire(c.Request.Context(), key, time.Minute)
+        }
+        if count > 20 {
+            types.Error(c, 429, "请求过于频繁，请稍后再试")
+            c.Abort()
+            return
+        }
+        c.Next()
+    }
+}
+```
+
+---
+
+## 7. 模块 API 详细设计
+
+### 7.1 认证模块（/api/v1/login）
+
+```
+POST /api/v1/login
+Body: { username, password, login_method: 'uc' | 'lark', code? }
+Response: { token: string, user_info: {...}, expire_at: number }
+
+逻辑：
+1. login_method='uc'  → 用户名密码验证 → 生成 JWT
+2. login_method='lark' → 飞书授权码换 token → 获取用户信息 → 生成 JWT
+3. JWT 写入 Redis（支持主动失效）
+4. 返回 token（前端存入 localStorage）
+```
+
+### 7.2 项目管理（/api/project*）
+
+```
+GET    /api/project/v1/list         # 当前用户有权限的项目列表
+GET    /api/project/:id             # 项目详情
+POST   /api/project                 # 创建项目（管理员）
+PUT    /api/project                 # 更新项目
+DELETE /api/project/:id             # 删除项目
+PUT    /api/project/status          # 更新项目状态
+GET    /api/projects                # 所有项目（管理员视图）
+GET    /api/users                   # 所有用户列表（管理员）
+```
+
+### 7.3 看板模块
+
+```
+# 文件夹
+POST   /api/dashboard/folder              # 创建文件夹
+DELETE /api/dashboard/folder             # 删除文件夹
+PUT    /api/dashboard/folder             # 重命名文件夹
+GET    /api/dashboard/folder/tree        # 获取文件夹树（含看板）
+POST   /api/dashboard/folder/trans-type  # 转移文件夹类型
+POST   /api/dashboard/move              # 移动看板/文件夹
+
+# 看板 CRUD
+POST   /api/dashboard                   # 创建看板
+GET    /api/dashboard?id=xxx            # 获取看板详情（含报表）
+PUT    /api/dashboard                   # 更新看板（含布局/筛选器）
+DELETE /api/dashboard                   # 删除看板
+GET    /api/dashboards                  # 看板列表
+POST   /api/dashboard/copy             # 复制看板
+POST   /api/dashboard/trans-type       # 转类型（普通→共享）
+GET    /api/dashboard/common-filters   # 获取公共筛选器
+POST   /api/dashboard/v1/list          # 看板管理列表（分页）
+POST   /api/dashboard/v1/listFilter    # 看板管理筛选项
+
+# 软链（外链嵌入）
+POST   /api/dashboard/soft-link/v1/add     # 创建软链
+POST   /api/dashboard/soft-link/v1/list    # 软链列表
+POST   /api/dashboard/soft-link/v1/cancel  # 取消软链
+POST   /api/dashboard/soft-link/v1/check   # 校验软链有效性
+
+# 看板缓存
+POST   /api/dashboard/v1/updateCron        # 设置缓存刷新周期
+
+# AI 功能
+GET    /api/v1/ai-model-list               # AI 模型列表
+GET    /api/dashboard/v1/ai-prompt         # 获取 AI 提示词
+PUT    /api/dashboard/v1/ai-prompt         # 更新 AI 提示词
+POST   /api/dashboard/v1/ai-summary        # 获取 AI 摘要（调用 LLM）
+
+# 看板结论
+POST   /api/dashboard/v1/save-conclusion   # 保存结论
+POST   /api/dashboard/v1/conclusion-history-list # 历史结论列表
+
+# 分享/转移
+POST   /api/v1/share                       # 添加分享
+GET    /api/v1/share/users?entity_id=&entity_type= # 已分享用户列表
+POST   /api/v1/trans-owner                 # 转移创建人
+
+# 未授权看板
+GET    /api/dashboard/v1/unauthed/by-folder # 未授权的看板列表（申请权限用）
+```
+
+### 7.4 分析引擎（核心）
+
+```
+POST   /api/query           # 主分析查询接口
+POST   /api/query/cancel    # 取消查询
+```
+
+**分析查询请求结构**：
+```typescript
+interface AnalysisQueryRequest {
+  project_id: string;
+  report_id?: string;          // 来自哪个报表（缓存 key 组成部分）
+  request_id: string;          // 前端生成的唯一 ID（用于取消）
+  analysis_type: 'event' | 'retention' | 'funnel' | 'scatter' | 'interval' | 'user';
+  date_range: {
+    start: string;             // YYYY-MM-DD
+    end: string;
+    granularity?: 'day' | 'week' | 'month' | 'hour';
+  };
+  metrics: Array<{
+    event_name: string;
+    agg_type: 'count' | 'uv' | 'sum' | 'avg' | 'max' | 'min';
+    property?: string;         // sum/avg/max/min 时指定属性
+    filters?: FilterCondition[];
+    alias?: string;
+  }>;
+  group_by?: Array<{
+    property: string;
+    datatable?: string;
+  }>;
+  global_filters?: FilterCondition[];
+  user_group?: {
+    tag_id?: number;
+    conditions?: FilterCondition[];
+  };
+  // 漏斗分析专用
+  funnel_steps?: Array<{ event_name: string; filters?: FilterCondition[] }>;
+  funnel_window?: number;      // 转化窗口（天）
+  // 留存分析专用
+  retention_event?: string;    // 回访事件
+  retention_window?: number;   // 留存窗口（天）
+}
+```
+
+**后端查询编译流程**：
+```
+1. 参数验证（DTO + 自定义 Validator）
+2. 权限检查（数据权限 20201）
+3. 查询缓存命中检查（Redis hash(params) → 缓存结果）
+4. QueryBuilder 根据 analysis_type 编译 ClickHouse SQL
+5. 执行 ClickHouse 查询（带超时 30s）
+6. 结果格式化（转为前端图表数据格式）
+7. 写入 Redis 缓存（TTL 5min）
+8. 返回结果
+```
+
+### 7.5 SQL 分析
+
+```
+POST   /api/sqlAnalysis/v1/run           # 执行 SQL
+POST   /api/sqlanalysis/v1/history       # 查询历史
+POST   /api/sqlAnalysis/v1/sqlDel        # 删除历史记录
+GET    /api/reports?type=sql             # SQL 报表列表
+POST   /api/report                       # 保存 SQL 报表
+PUT    /api/report                       # 更新 SQL 报表
+GET    /api/report?id=xxx                # 报表详情
+```
+
+**SQL 安全执行**：
+```typescript
+async runSql(sql: string, projectId: string, userId: string) {
+  // 1. SQL 解析（sql-parser 库）
+  // 2. 安全校验（禁止 DROP/CREATE/ALTER/INSERT/UPDATE/DELETE）
+  // 3. 强制注入 project_id WHERE 条件（数据隔离）
+  // 4. 添加 LIMIT 限制（最多 10000 行）
+  // 5. 执行 ClickHouse 查询
+  // 6. 记录历史
+}
+```
+
+### 7.6 埋点管理（Story/Event）
+
+```
+# Story
+POST   /api/story/v1/new          # 创建 Story
+PUT    /api/story/v1/modify       # 编辑 Story
+POST   /api/story/v1/remove       # 删除 Story
+GET    /api/story/v1/list         # Story 列表（分页）
+GET    /api/story/v1/info?id=     # Story 详情
+POST   /api/story/v1/check        # 审批操作
+POST   /api/story/v1/upload       # 上传附件
+POST   /api/story/v1/complete     # 完成验收
+
+# 事件
+GET    /api/event/v1/list         # 事件列表
+GET    /api/event/v1/event-logs   # 事件日志（ClickHouse）
+GET    /api/event/v1/event-values # 事件值列表
+GET    /api/event/v1/problem/list # 问题事件列表
+GET    /api/event/v1/event-log    # 单条事件日志详情
+```
+
+### 7.7 用户查询
+
+```
+POST   /api/user-query/simple     # 用户列表（简要）
+POST   /api/user-query/full       # 用户列表（详细）
+POST   /api/user-query/single     # 单个用户详情
+GET    /api/user-query/event-list # 用户事件列表
+GET    /api/user-query/event-info # 用户事件详情
+GET    /api/user-query/time-line  # 用户行为时间线
+GET    /api/user-query/event-detail # 事件详情
+```
+
+### 7.8 标签管理
+
+```
+GET    /api/user-tags             # 标签列表（完整）
+GET    /api/user-tags/simple      # 标签列表（简要）
+GET    /api/user-tag?id=          # 标签详情
+POST   /api/user-tag              # 创建标签
+PUT    /api/user-tag              # 更新标签
+DELETE /api/user-tag              # 删除标签
+POST   /api/user-tag/refresh      # 手动刷新标签
+PUT    /api/user-tag/status       # 更新标签状态
+GET    /api/user-tag/entity-stat  # 标签覆盖人数统计
+GET    /api/user-tag/entity-details # 标签用户明细
+GET    /api/user-tag/history-list # 刷新历史
+POST   /api/user-tag/flush-history # 清理历史
+POST   /api/user-tag/sub          # 订阅标签更新
+POST   /api/user-tag/unsub        # 取消订阅
+GET    /api/user-tag/relation-list # 标签关联关系
+GET    /api/category/tree/user-tag # 标签分类树
+```
+
+**标签计算队列**：
+```typescript
+// 标签创建/手动刷新 → 加入 BullMQ 队列
+// TagProcessor 消费：
+async process(job: Job<TagComputePayload>) {
+  const { tag_id, project_id } = job.data;
+  const tag = await this.tagService.findOne(tag_id);
+
+  // 根据 tag_type 选择计算策略
+  const calculator = this.calculatorFactory.create(tag.tag_type);
+  const result = await calculator.compute(tag, project_id);
+
+  // 更新标签状态和人数
+  await this.tagService.updateResult(tag_id, result);
+}
+```
+
+### 7.9 预警管理
+
+```
+POST   /api/warning               # 创建预警
+PUT    /api/warning               # 更新预警
+DELETE /api/warning/:id           # 删除预警
+PUT    /api/warning/status        # 启用/禁用
+GET    /api/warning/list          # 预警列表
+GET    /api/warning/:id           # 预警详情
+GET    /api/warning/group-value   # 维度值列表
+GET    /api/warning/detail-data   # 预警触发数据
+GET    /api/warning/log-list      # 预警日志
+GET    /api/warning/dashboard     # 预警看板概览
+GET    /api/warning/dashboard-detail # 预警看板详情
+```
+
+### 7.10 管理中心 API
+
+#### 推送管理
+```
+POST   /api/dashboard/push/v1/list    # 看板推送列表
+POST   /api/dashboard/push/v1/add     # 添加推送
+POST   /api/dashboard/push/v1/del     # 删除推送
+POST   /api/dashboard/push/v1/edit    # 编辑推送
+POST   /api/dashboard/push/v1/status  # 启用/禁用
+POST   /api/dashboard/push/v1/test    # 测试推送
+
+POST   /api/push-template/v1/list     # 报表推送列表
+POST   /api/push-template/v1/add      # 创建报表推送
+... （同上结构）
+```
+
+#### 订阅管理
+```
+POST   /api/report/sub/v1/add         # 创建订阅
+PUT    /api/report/sub/v1/edit        # 编辑订阅
+POST   /api/report/sub/v1/del         # 删除订阅
+POST   /api/report/sub/v1/list        # 订阅列表
+POST   /api/report/sub/v1/status      # 启用/禁用
+POST   /api/report/sub/v1/test        # 测试发送
+POST   /api/report/sub/task/v1/count-list  # 任务统计
+POST   /api/report/sub/task/v1/list        # 任务明细
+POST   /api/report/sub/task/v1/operate-log # 操作日志
+POST   /api/report/sub/task/v1/push-log    # 推送日志
+POST   /api/report/sub/task/v1/action      # 任务操作（重试/停止）
+```
+
+#### 下载管理
+```
+POST   /api/report/v1/download           # 创建下载任务
+GET    /api/report/v1/big-download/list  # 大文件下载列表
+POST   /api/report/v1/big-download/notify # 完成通知
+POST   /api/report/v1/big-download/retry  # 重试
+POST   /api/report/v1/big-download/cancel # 取消
+DELETE /api/report/v1/big-download/delete # 删除
+```
+
+### 7.11 筛选器
+
+```
+POST   /api/filter/dashboard/common          # 保存公共筛选器（PUT）
+DELETE /api/filter/dashboard/common          # 删除公共筛选器
+POST   /api/filter/dashboard/common/switch   # 切换筛选器状态
+GET    /api/filter/dashboard/common/list     # 公共筛选器列表
+GET    /api/filter/dashboard/private/list    # 私有筛选器列表
+POST   /api/filter/dashboard/private         # 保存私有筛选器
+POST   /api/filter/dashboard/private/rename  # 重命名
+POST   /api/filter/dashboard/private/default # 设为默认
+DELETE /api/filter/dashboard/private        # 删除私有筛选器
+GET    /api/filter/option/list              # 筛选选项（语言列表等，filter_id）
+POST   /api/attribute/v1/loadAttr-by-dashboard # 获取看板关联的属性（交集/并集）
+```
+
+### 7.12 行为数据上报
+
+```
+POST   /api/analytics-tracking/v1/report
+Body: {
+  event_name: string,
+  distinct_id: string,     # 用户唯一标识
+  properties: {
+    #account_id: string,   # 前端特殊属性
+    page: string,
+    action: string,
+    ...自定义属性
+  },
+  time: number             # 时间戳（ms）
+}
+
+处理逻辑：
+1. 接收埋点数据
+2. 异步写入 ClickHouse（不阻塞响应）
+3. 立即返回 { code: 200 }
+```
+
+---
+
+## 8. 数据分析引擎设计
+
+### 8.1 QueryBuilder 架构
+
+```typescript
+// 基础 QueryBuilder 接口
+abstract class BaseQueryBuilder {
+  abstract build(params: AnalysisQueryRequest): string;
+
+  protected buildDateFilter(dateRange: DateRange): string {
+    return `toDate(event_time) BETWEEN '${dateRange.start}' AND '${dateRange.end}'`;
+  }
+
+  protected buildPropertyFilter(filters: FilterCondition[]): string {
+    return filters.map(f => this.buildCondition(f)).join(' AND ');
+  }
+
+  protected buildCondition(condition: FilterCondition): string {
+    const { property, operator, value } = condition;
+    switch (operator) {
+      case 'eq':   return `${property} = '${value}'`;
+      case 'ne':   return `${property} != '${value}'`;
+      case 'gt':   return `${property} > ${value}`;
+      case 'gte':  return `${property} >= ${value}`;
+      case 'lt':   return `${property} < ${value}`;
+      case 'lte':  return `${property} <= ${value}`;
+      case 'in':   return `${property} IN (${value.map(v=>`'${v}'`).join(',')})`;
+      case 'like': return `${property} LIKE '%${value}%'`;
+      case 'null': return `isNull(${property})`;
+      // ...更多操作符
+    }
+  }
+}
+```
+
+### 8.2 各分析类型 SQL 生成
+
+#### 事件分析
+```sql
+-- 事件分析：每日 UV/PV
+SELECT
+  toDate(event_time) AS date,
+  {group_by_columns},
+  uniq(user_id) AS uv,
+  count() AS pv,
+  {metric_calculations}
+FROM joydata_analytics.events
+WHERE
+  project_id = '{project_id}'
+  AND event_name = '{event_name}'
+  AND toDate(event_time) BETWEEN '{start}' AND '{end}'
+  AND {global_filters}
+  AND {user_group_filter}
+GROUP BY date, {group_by_columns}
+ORDER BY date ASC
+```
+
+#### 留存分析
+```sql
+-- 留存分析（使用 windowFunnel 或 自关联）
+WITH
+  first_event AS (
+    SELECT user_id, min(toDate(event_time)) AS first_date
+    FROM joydata_analytics.events
+    WHERE project_id = '{project_id}'
+      AND event_name = '{initial_event}'
+      AND toDate(event_time) BETWEEN '{start}' AND '{end}'
+    GROUP BY user_id
+  ),
+  retention_data AS (
+    SELECT
+      fe.first_date,
+      dateDiff('day', fe.first_date, toDate(e.event_time)) AS day_offset,
+      count(DISTINCT e.user_id) AS retained_users
+    FROM first_event fe
+    JOIN joydata_analytics.events e ON fe.user_id = e.user_id
+    WHERE e.project_id = '{project_id}'
+      AND e.event_name = '{return_event}'
+      AND dateDiff('day', fe.first_date, toDate(e.event_time)) BETWEEN 0 AND {window}
+    GROUP BY fe.first_date, day_offset
+  )
+SELECT
+  first_date,
+  groupArray(day_offset) AS days,
+  groupArray(retained_users) AS users
+FROM retention_data
+GROUP BY first_date
+ORDER BY first_date
+```
+
+#### 漏斗分析
+```sql
+-- 漏斗分析（ClickHouse windowFunnel）
+SELECT
+  {group_by_columns},
+  windowFunnel({window})(
+    event_time,
+    event_name = '{step1}' AND {step1_filters},
+    event_name = '{step2}' AND {step2_filters},
+    ...
+  ) AS funnel_level,
+  count() AS user_count
+FROM joydata_analytics.events
+WHERE project_id = '{project_id}'
+  AND toDate(event_time) BETWEEN '{start}' AND '{end}'
+GROUP BY {group_by_columns}, funnel_level
+```
+
+#### 分布分析（scatter）
+```sql
+-- 用户属性分布
+SELECT
+  CASE
+    WHEN attr_value < 10 THEN '0-10'
+    WHEN attr_value < 100 THEN '10-100'
+    ELSE '100+'
+  END AS range_label,
+  count(DISTINCT user_id) AS user_count
+FROM joydata_analytics.user_profiles
+ARRAY JOIN attrs_num['{property}'] AS attr_value
+WHERE project_id = '{project_id}'
+GROUP BY range_label
+ORDER BY range_label
+```
+
+### 8.3 查询取消机制
+
+```typescript
+// Redis 存储取消信号
+async cancelQuery(traceId: string) {
+  await this.redis.setEx(`query_cancel:${traceId}`, 3600, '1');
+}
+
+// ClickHouse 客户端带检查点
+async executeWithCancellation(sql: string, traceId: string) {
+  const queryId = `joydata_${traceId}`;
+  try {
+    // ClickHouse 原生支持 query_id，可通过 KILL QUERY 取消
+    const result = await this.clickhouse.query({
+      query: sql,
+      query_id: queryId,
+    });
+    return result;
+  } catch (err) {
+    if (await this.redis.get(`query_cancel:${traceId}`)) {
+      // 主动取消
+      await this.clickhouse.query({ query: `KILL QUERY WHERE query_id='${queryId}'` });
+      throw new CancelledException();
+    }
+    throw err;
+  }
+}
+```
+
+---
+
+## 9. 鉴权与权限体系
+
+### 9.1 JWT + Redis Session
+
+```typescript
+// 登录颁发 JWT
+const token = this.jwt.sign({
+  sub: user.id,
+  username: user.username,
+  iat: Date.now(),
+}, { expiresIn: '7d' });
+
+// 同时存 Redis（支持主动失效）
+await this.redis.setEx(`session:${user.id}`, 7 * 24 * 3600, JSON.stringify({
+  token,
+  user_id: user.id,
+  username: user.username,
+}));
+```
+
+### 9.2 权限树设计
+
+```typescript
+// 权限树结构（与前端 @joyu/auth 兼容）
+interface AuthTree {
+  [key: string]: {
+    allowed: boolean;
+    children?: AuthTree;
+  };
+}
+
+// 权限 Key 示例
+const permissions = {
+  'dashboard.view': true,
+  'dashboard.edit': false,
+  'analysis.event': true,
+  'analysis.sql': false,
+  'data.finance': false,    // 数据权限
+  'data.user_pii': false,   // 敏感数据权限
+};
+```
+
+### 9.3 项目数据隔离
+
+```typescript
+// ProjectGuard：强制注入 project_id
+@Injectable()
+export class ProjectGuard implements CanActivate {
+  canActivate(context: ExecutionContext): boolean {
+    const request = context.switchToHttp().getRequest();
+    const projectId = request.headers['project-id'];
+    const user = request.user;
+
+    // 验证用户是否有该项目权限
+    if (!this.projectService.hasAccess(user.id, projectId)) {
+      throw new ForbiddenException({ code: 403, message: '无项目权限' });
+    }
+
+    request.projectId = projectId;
+    return true;
+  }
+}
+
+// 在 Service 层，所有查询强制加 project_id 条件
+async getDashboards(projectId: string, userId: string) {
+  return this.prisma.dashboard.findMany({
+    where: { project_id: BigInt(projectId) }  // 强制过滤
+  });
+}
+```
+
+### 9.4 数据权限（code=20201）
+
+```typescript
+// 数据权限校验（查询涉及敏感字段时触发）
+async checkDataPermission(projectId: string, userId: string, dataKeys: string[]) {
+  const userPermissions = await this.getUserDataPermissions(userId, projectId);
+  const missingKeys = dataKeys.filter(key => !userPermissions.includes(key));
+
+  if (missingKeys.length > 0) {
+    throw new DataPermissionException({
+      code: 20201,
+      message: '数据权限不足',
+      data: { list: missingKeys }
+    });
+  }
+}
+```
+
+---
+
+## 10. 文件存储与上传
+
+### 10.1 MinIO 存储桶规划
+
+```
+Bucket: joydata-public     # 公开访问（图片/头像）
+Bucket: joydata-private    # 私有访问（数据文件/Excel导出）
+Bucket: joydata-upload     # 用户上传（临时，48h自动清理）
+
+目录结构：
+joydata-private/
+├── exports/{project_id}/{year}/{month}/{filename}.xlsx  # 导出文件
+├── uploads/{project_id}/{datatable_id}/{filename}       # 数据导入
+├── reports/{project_id}/{report_id}/                    # 报表资源
+└── finance/{year}/                                      # 财务文件
+```
+
+### 10.2 上传 API
+
+```
+POST /api/upload/v1/upload
+Headers: Content-Type: multipart/form-data
+Body: FormData { file, type, extra? }
+Response: { url: string, filename: string, size: number }
+
+逻辑：
+1. 文件类型校验（白名单：xlsx/csv/jpg/png/pdf/sql）
+2. 文件大小校验（最大 100MB）
+3. MD5 计算（spark-md5 风格，分块）
+4. 上传 MinIO
+5. 生成临时访问 URL（私有文件，有效期 24h）
+6. 返回 URL
+```
+
+---
+
+## 11. 消息通知体系
+
+### 11.1 站内信（/api/notice/v1/*）
+
+```
+GET    /api/notice/v1/list      # 站内信列表（分页）
+POST   /api/notice/v1/add       # 创建站内信（管理员）
+PUT    /api/notice/v1/edit      # 编辑
+GET    /api/notice/v1/board     # 公告板（未读置顶）
+POST   /api/notice/v1/cancel    # 撤回
+DELETE /api/notice/v1/del       # 删除
+POST   /api/notice/v1/read      # 标记已读
+POST   /api/notice/v1/read-all  # 全部已读
+POST   /api/notice/v1/send      # 发送
+GET    /api/notice/v1/stat      # 未读计数（红点）
+```
+
+**实时推送（WebSocket）**：
+```typescript
+// 新站内信到达时，通过 WebSocket 推送红点更新
+@WebSocketGateway({ namespace: '/ws' })
+export class NoticeGateway {
+  async sendUnreadUpdate(userId: string, count: number) {
+    this.server.to(`user:${userId}`).emit('notice_update', { unread: count });
+  }
+}
+```
+
+### 11.2 飞书推送（订阅/预警）
+
+```typescript
+// 通过飞书机器人 Webhook 发送消息
+async sendFeishuMessage(webhook: string, content: any) {
+  await axios.post(webhook, {
+    msg_type: 'interactive',
+    card: {
+      header: { title: { content: content.title, tag: 'plain_text' } },
+      elements: [
+        {
+          tag: 'div',
+          text: { content: content.body, tag: 'plain_text' }
+        },
+        {
+          tag: 'action',
+          actions: [{ tag: 'button', text: { content: '查看详情', tag: 'plain_text' }, url: content.link }]
+        }
+      ]
+    }
+  });
+}
+```
+
+---
+
+## 12. 任务调度系统
+
+### 12.1 BullMQ 队列设计
+
+```typescript
+// 队列定义
+const QUEUES = {
+  TAG_COMPUTE: 'tag-compute',       // 标签计算
+  REPORT_EXPORT: 'report-export',   // 报表导出
+  SUBSCRIPTION: 'subscription',     // 定时订阅发送
+  WARNING_CHECK: 'warning-check',   // 预警检查
+  DATA_IMPORT: 'data-import',       // 数据导入
+  CACHE_REFRESH: 'cache-refresh',   // 看板缓存刷新
+};
+
+// 任务优先级
+const PRIORITIES = {
+  USER_TRIGGERED: 1,   // 用户主动触发（最高）
+  SCHEDULED: 5,        // 定时任务（中）
+  BACKGROUND: 10,      // 后台维护（最低）
+};
+```
+
+### 12.2 定时任务（Cron）
+
+```typescript
+@Injectable()
+export class SchedulerService {
+  // 每分钟检查预警规则
+  @Cron('* * * * *')
+  async checkWarnings() {
+    const activeWarnings = await this.warningService.getActiveWarnings();
+    for (const warning of activeWarnings) {
+      await this.warningQueue.add('check', warning, { priority: PRIORITIES.SCHEDULED });
+    }
+  }
+
+  // 每天凌晨2点刷新标签
+  @Cron('0 2 * * *')
+  async refreshTags() {
+    const activeTags = await this.tagService.getActiveAutoRefreshTags();
+    for (const tag of activeTags) {
+      await this.tagQueue.add('compute', tag, { priority: PRIORITIES.BACKGROUND });
+    }
+  }
+
+  // 每5分钟清理过期下载文件
+  @Cron('*/5 * * * *')
+  async cleanExpiredDownloads() {
+    await this.downloadService.cleanExpired();
+  }
+}
+```
+
+---
+
+## 13. 五大版本开发计划
+
+### Version 1：基础服务骨架（第1-2周）
+
+**交付目标**：前端可以连接并正常登录
+
+**开发内容**：
+- [ ] NestJS 项目初始化（Fastify 适配器）
+- [ ] Docker Compose 一键启动（PG + Redis + ClickHouse + MinIO）
+- [ ] Prisma 集成 + 基础表迁移（users/projects/roles）
+- [ ] 统一响应格式（ResponseInterceptor + ExceptionFilter）
+- [ ] JWT 认证（uc 用户名密码 + 飞书 OAuth2）
+- [ ] 项目管理 API（CRUD + 项目列表）
+- [ ] 全局中间件（trace-id / project-id / language 注入）
+- [ ] 请求限流（Redis + @nestjs/throttler）
+- [ ] 健康检查（/health，含各依赖状态）
+- [ ] Swagger 文档（/api-docs）
+- [ ] 基础日志（Winston，分级输出）
+- [ ] 单元测试框架搭建（Jest）
+
+**验收标准**：
+```
+✅ pnpm start 后，前端能成功登录
+✅ /api-docs 展示所有已实现接口
+✅ docker compose up -d 30秒内全部 healthy
+✅ 并发 100 请求延迟 < 100ms
+```
+
+---
+
+### Version 2：数据看板 + 基础分析（第3-4周）
+
+**交付目标**：核心看板功能可用，事件分析可出图
+
+**开发内容**：
+
+**看板模块**：
+- [ ] 文件夹 CRUD（树形结构，闭包表优化）
+- [ ] 看板 CRUD（含布局/筛选器保存）
+- [ ] 报表 CRUD（类型：图表/数据表/指标卡）
+- [ ] 看板列表/管理接口
+- [ ] 分享接口（用户级别）
+- [ ] 软链（外链嵌入）接口
+
+**分析引擎 V1**：
+- [ ] ClickHouse 客户端封装
+- [ ] 基础事件分析（count/uv，按时间粒度聚合）
+- [ ] 分组维度支持（字符串维度，最多5个）
+- [ ] 全局筛选器（AND/OR 组合）
+- [ ] 查询缓存（Redis，5分钟 TTL）
+- [ ] 查询取消（KILL QUERY）
+- [ ] 分析数据写入 ClickHouse（事件表结构）
+
+**站内信基础**：
+- [ ] 创建/列表/已读接口
+- [ ] 未读计数 Redis 维护
+
+**文件上传**：
+- [ ] MinIO 初始化（bucket 创建）
+- [ ] 单文件上传接口（/api/upload/v1/upload）
+
+**验收标准**：
+```
+✅ 前端看板可以创建/编辑/展示
+✅ 事件分析查询有结果（接入测试数据）
+✅ 10万行数据查询 < 2秒
+```
+
+---
+
+### Version 3：数据资产 + 全量分析（第5-7周）
+
+**交付目标**：所有分析类型可用，数据资产管理完整
+
+**分析引擎 V2**：
+- [ ] 留存分析（ClickHouse windowFunnel/用户关联）
+- [ ] 漏斗分析（windowFunnel 函数）
+- [ ] 分布分析（buckets 分组）
+- [ ] 间隔分析（事件时间差分布）
+- [ ] 自助分析（SQL 化查询，前端图表化展示）
+- [ ] SQL 分析（CodeMirror → ClickHouse，安全校验）
+- [ ] 用户查询（行为序列/时间线）
+- [ ] 查询超时控制（30s，超时返回 partial）
+
+**数据资产**：
+- [ ] 数据表 CRUD（同步 ClickHouse 表 schema）
+- [ ] 数据集 CRUD（SQL/关联/条件三种类型）
+- [ ] 属性管理（字段 i18n / 枚举映射）
+- [ ] 数据预览（ClickHouse 采样 1000 行）
+- [ ] 文件上传建表（CSV/Excel → ClickHouse）
+- [ ] 分类管理（category 树）
+
+**埋点管理**：
+- [ ] Story CRUD + 审批流
+- [ ] 事件定义管理
+- [ ] 数据核查接口（事件日志查询）
+- [ ] 问题事件列表
+
+**标签管理**：
+- [ ] 标签 CRUD
+- [ ] 标签计算引擎（SQL/条件/ID 类型）
+- [ ] 刷新队列（BullMQ）
+- [ ] 标签覆盖人数统计
+
+**用户模块**：
+- [ ] 用户搜索/列表接口
+- [ ] 用户详情（属性）
+- [ ] 行为时间线（ClickHouse 查询）
+
+**指标管理**：
+- [ ] 指标 CRUD
+- [ ] 指标预览（编译为分析查询）
+
+**验收标准**：
+```
+✅ 6种分析类型全部可用
+✅ 留存分析百万级数据 < 5秒
+✅ 标签计算成功率 > 99%
+```
+
+---
+
+### Version 4：管理功能 + 通知系统（第8-10周）
+
+**交付目标**：运营管理功能全部可用
+
+**预警管理**：
+- [ ] 预警规则 CRUD
+- [ ] 预警检查调度（每分钟 Cron）
+- [ ] 预警触发历史
+- [ ] 飞书通知发送
+- [ ] 预警看板统计
+
+**推送/订阅**：
+- [ ] 看板推送配置（飞书群 Webhook）
+- [ ] 报表推送配置
+- [ ] 订阅管理（定时发送报表/看板截图）
+- [ ] 订阅任务队列（BullMQ Cron Job）
+- [ ] 邮件发送（nodemailer）
+
+**下载管理**：
+- [ ] 大文件异步导出（加入队列）
+- [ ] 导出进度查询
+- [ ] MinIO 文件管理（过期清理）
+- [ ] Excel 生成（ExcelJS）
+
+**枚举/配置管理**：
+- [ ] 枚举 CRUD
+- [ ] 系统配置 CRUD
+- [ ] 版本日历 CRUD
+
+**筛选器**：
+- [ ] 公共筛选器（看板级别）
+- [ ] 私有筛选器（用户级别）
+- [ ] 看板属性交集/并集计算
+
+**WebSocket**：
+- [ ] 实时通知（站内信红点/下载完成）
+- [ ] 查询进度推送（长时间查询）
+
+**验收标准**：
+```
+✅ 定时订阅正常发送（飞书/邮件）
+✅ 预警5分钟内触发通知
+✅ 10万行Excel导出 < 30秒
+```
+
+---
+
+### Version 5：财务 + KoCRM + 性能优化（第11-14周）
+
+**交付目标**：全量业务功能完整，生产级性能
+
+**财务模块**：
+- [ ] 供应商（客户）管理 CRUD
+- [ ] 分成比例管理（平均/阶梯）
+- [ ] 对账信息管理
+- [ ] 流水对账（文件解析 + 数据处理）
+- [ ] 应收账款列表/下载
+- [ ] 半月报生成（应收/流水）
+- [ ] Excel 导出（所有财务报表）
+- [ ] 成本数据上传处理
+- [ ] 年度目标管理
+
+**KoCRM（投放/营销）**：
+- [ ] 账户管理（广告账户 CRUD）
+- [ ] 媒体管理（媒体平台 CRUD）
+- [ ] 供应商广告列表
+- [ ] KOC 管理（达人信息/建联状态）
+- [ ] 合作信息管理（品牌/媒体详情）
+- [ ] One Link 管理
+- [ ] 关键词管理
+- [ ] 批量邮件（bulk email）
+
+**性能优化**：
+- [ ] ClickHouse 查询优化（物化视图 + 索引调整）
+- [ ] Redis 查询缓存分层（热点数据 + 预热）
+- [ ] PostgreSQL 读写分离（只读副本）
+- [ ] 分析查询结果流式返回（SSE）
+- [ ] 图片/文件 CDN 加速（配置 Nginx 缓存策略）
+- [ ] 慢查询监控（> 3s 告警）
+
+**安全加固**：
+- [ ] SQL 注入防护（参数化查询强制）
+- [ ] 敏感数据脱敏（手机号/身份证）
+- [ ] 操作审计日志
+- [ ] CORS 精确配置
+- [ ] 文件上传安全扫描
+
+**验收标准**：
+```
+✅ 全部前端 API 接口通过测试
+✅ 压力测试：500 并发，P99 < 500ms
+✅ ClickHouse 亿级数据查询 < 10s
+✅ 安全扫描无高危漏洞
+```
+
+---
+
+## 14. 生产环境迁移方案
+
+### 14.1 从 Docker → 云服务迁移路径
+
+| 组件 | Docker（临时） | 云服务（生产） | 迁移工作量 |
+|------|--------------|--------------|-----------|
+| PostgreSQL | Docker PG 16 | 腾讯云 TDSQL / AWS RDS | 低（连接字符串替换） |
+| ClickHouse | Docker CH 24 | 腾讯云 CKafka+TCH / 自建 | 中（数据迁移工具） |
+| Redis | Docker Redis 7 | 腾讯云 Redis / AWS ElastiCache | 低（连接字符串替换） |
+| MinIO | Docker MinIO | 腾讯云 COS / AWS S3 | 低（S3 协议兼容） |
+| ES | Docker ES 8 | 腾讯云 ES / AWS OpenSearch | 中（索引迁移） |
+| NestJS | Docker 单体 | K8s Deployment（多副本） | 中（Helm Chart） |
+
+### 14.2 环境变量驱动配置
+
+```typescript
+// config/database.config.ts
+export default registerAs('database', () => ({
+  url: process.env.DATABASE_URL,           // Docker/生产同一变量名
+  pool: {
+    min: parseInt(process.env.DB_POOL_MIN || '2'),
+    max: parseInt(process.env.DB_POOL_MAX || '20'),
+  },
+}));
+// 只需修改 .env，无需改代码
+```
+
+### 14.3 数据迁移脚本
+
+```bash
+# 从 ClickHouse Docker 导出数据
+clickhouse-client \
+  --host localhost \
+  --database joydata_analytics \
+  --query "SELECT * FROM events FORMAT CSVWithNames" \
+  > events_backup.csv
+
+# 导入到生产 ClickHouse
+clickhouse-client \
+  --host production-ch-host \
+  --database joydata_analytics \
+  --query "INSERT INTO events FORMAT CSVWithNames" \
+  < events_backup.csv
+```
+
+---
+
+## 附录 A：API 完整对照表（前端 → 后端）
+
+| 前端 API.ts Key | HTTP 方法 | 路径 | 后端模块 | 优先级 |
+|---------------|---------|------|---------|-------|
+| loginApi | POST | /api/v1/login | auth | V1 |
+| pjtListApi | GET | /api/project/v1/list | project | V1 |
+| dashboardApi | GET/POST/PUT/DELETE | /api/dashboard | dashboard | V2 |
+| getFolderTreeApi | GET | /api/dashboard/folder/tree | dashboard | V2 |
+| analysisDataApi | POST | /api/query | analysis | V2 |
+| cancelQuery | POST | /api/query/cancel | analysis | V2 |
+| sqlAnaRunApi | POST | /api/sqlAnalysis/v1/run | sql-analysis | V3 |
+| storyListApi | GET | /api/story/v1/list | event-tracking | V3 |
+| eventListApi | GET | /api/event/v1/list | event-tracking | V3 |
+| userTagListApi | GET | /api/user-tags | tag | V3 |
+| indicatorListApi | GET | /api/metric/list | metric | V3 |
+| datatableListApi | GET | /api/datatable/v1/list | data-asset | V3 |
+| addWarningApi | POST | /api/warning | warning | V4 |
+| getPushList | POST | /api/dashboard/push/v1/list | push | V4 |
+| subscriptionListApi | POST | /api/report/sub/v1/list | subscription | V4 |
+| downloadReportApi | POST | /api/report/v1/download | download | V4 |
+| noticeListApi | GET | /api/notice/v1/list | notice | V4 |
+| getCustomerListApi | POST | /api/finance/supplier/v1/list | finance | V5 |
+| kocrmMediaListApi | GET | /api/ads/media/list | kocrm | V5 |
+| uploadFileApi | POST | /api/upload/v1/upload | upload | V2 |
+| eventTrackApi | POST | /api/analytics-tracking/v1/report | tracking | V2 |
+
+---
+
+## 附录 B：关键中间件设计
+
+```
+请求生命周期：
+浏览器请求
+  ↓
+Nginx（SSL/限流/静态资源）
+  ↓
+RequestContextMiddleware（注入 traceId/projectId/language）
+  ↓
+ThrottlerGuard（限流检查）
+  ↓
+JwtAuthGuard（token 验证）
+  ↓
+ProjectGuard（项目权限验证）
+  ↓
+Controller（路由 + 参数绑定）
+  ↓
+ValidationPipe（DTO 校验）
+  ↓
+Service（业务逻辑）
+  ↓
+Repository/QueryBuilder（数据访问）
+  ↓
+ResponseInterceptor（格式化响应）
+  ↓
+LoggingInterceptor（记录耗时）
+  ↓
+浏览器响应
+```

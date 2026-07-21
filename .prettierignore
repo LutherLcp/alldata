@@ -1,0 +1,16 @@
+dist
+build
+.turbo
+node_modules
+coverage
+*.log
+*.local
+.env
+.env.*
+!.env.example
+.pnpm-store
+.DS_Store
+*.tsbuildinfo
+.next
+out
+*.d.ts

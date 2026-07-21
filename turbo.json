@@ -1,0 +1,21 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "pipeline": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**", "build/**", ".next/**"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "lint": {},
+    "test": {
+      "outputs": ["coverage/**"]
+    },
+    "db:generate": {},
+    "db:push": {},
+    "db:studio": {}
+  },
+  "globalEnv": ["DATABASE_URL", "REDIS_URL", "MINIO_ENDPOINT", "JWT_SECRET"]
+}

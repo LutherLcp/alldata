@@ -1,0 +1,145 @@
+version: '3.8'
+
+services:
+  # Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: alldata-postgres
+    environment:
+      POSTGRES_DB: alldata
+      POSTGRES_USER: alldata
+      POSTGRES_PASSWORD: alldata123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U alldata -d alldata"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - alldata-network
+
+  # Cache
+  redis:
+    image: redis:7-alpine
+    container_name: alldata-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - alldata-network
+
+  # Object Storage
+  minio:
+    image: minio/minio:latest
+    container_name: alldata-minio
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin123
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    networks:
+      - alldata-network
+
+  # API Backend
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: alldata-api
+    ports:
+      - "4000:4000"
+    environment:
+      NODE_ENV: development
+      PORT: 4000
+      HOST: 0.0.0.0
+      DATABASE_URL: postgresql://alldata:alldata123@postgres:5432/alldata?schema=public
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: your-super-secret-jwt-key-change-in-production-at-least-32-chars
+      JWT_EXPIRES_IN: 7d
+      REFRESH_TOKEN_SECRET: your-refresh-token-secret-change-in-production-at-least-32-chars
+      REFRESH_TOKEN_EXPIRES_IN: 30d
+      COOKIE_SECRET: your-cookie-secret-change-in-production-at-least-32-chars
+      CORS_ORIGIN: http://localhost:3000
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: 9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin123
+      MINIO_BUCKET: alldata
+      MINIO_USE_SSL: "false"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    volumes:
+      - ./apps/api:/app
+      - /app/node_modules
+    networks:
+      - alldata-network
+
+  # Web Frontend
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    container_name: alldata-web
+    ports:
+      - "3000:3000"
+    environment:
+      VITE_API_URL: http://localhost:4000/api
+      VITE_WS_URL: ws://localhost:4000
+    depends_on:
+      - api
+    volumes:
+      - ./apps/web:/app
+      - /app/node_modules
+    networks:
+      - alldata-network
+
+  # Database migration (run once)
+  migrate:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: alldata-migrate
+    environment:
+      DATABASE_URL: postgresql://alldata:alldata123@postgres:5432/alldata?schema=public
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: sh -c "sleep 5 && pnpm db:migrate"
+    networks:
+      - alldata-network
+    profiles:
+      - migrate
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:
+
+networks:
+  alldata-network:
+    driver: bridge

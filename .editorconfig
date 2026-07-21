@@ -1,0 +1,30 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+[*.{ts,tsx,js,jsx,json,jsonc,yaml,yml,md,mdx}]
+indent_size = 2
+
+[*.{html,vue,svelte,astro}]
+indent_size = 2
+
+[*.{py,rb,go,rs,java,cs}]
+indent_size = 4
+
+[Makefile]
+indent_style = tab
+indent_size = 4
+
+[{Dockerfile,*.dockerfile}]
+indent_style = space
+indent_size = 2
+
+[*.{sh,bash,zsh,fish}]
+indent_style = space
+indent_size = 2

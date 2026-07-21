@@ -1,0 +1,38 @@
+import { FastifyInstance } from 'fastify';
+import { healthRoutes } from './health';
+import { authRoutes } from './auth';
+import { tenantRoutes } from './tenant';
+import { userRoutes } from './user';
+import { eventRoutes } from './event';
+import { dashboardRoutes } from './dashboard';
+import { analysisRoutes } from './analysis';
+import { tagRoutes } from './tag';
+import { metricRoutes } from './metric';
+import { assetRoutes } from './asset';
+import { alertRoutes } from './alert';
+import { trackingRoutes } from './tracking';
+import { kocrmRoutes } from './kocrm';
+import { financeRoutes } from './finance';
+import { calendarRoutes } from './calendar';
+import { settingsRoutes } from './settings';
+import { fileRoutes } from './file';
+
+export async function registerRoutes(app: FastifyInstance) {
+  await app.register(healthRoutes, { prefix: '/api' });
+  await app.register(authRoutes, { prefix: '/api/auth' });
+  await app.register(tenantRoutes, { prefix: '/api/tenants' });
+  await app.register(userRoutes, { prefix: '/api/users' });
+  await app.register(eventRoutes, { prefix: '/api/events' });
+  await app.register(dashboardRoutes, { prefix: '/api/dashboards' });
+  await app.register(analysisRoutes, { prefix: '/api/analysis' });
+  await app.register(tagRoutes, { prefix: '/api/tags' });
+  await app.register(metricRoutes, { prefix: '/api/metrics' });
+  await app.register(assetRoutes, { prefix: '/api/assets' });
+  await app.register(alertRoutes, { prefix: '/api/alerts' });
+  await app.register(trackingRoutes, { prefix: '/api/tracking' });
+  await app.register(kocrmRoutes, { prefix: '/api/kocrm' });
+  await app.register(financeRoutes, { prefix: '/api/finance' });
+  await app.register(calendarRoutes, { prefix: '/api/calendar' });
+  await app.register(settingsRoutes, { prefix: '/api/settings' });
+  await app.register(fileRoutes, { prefix: '/api/files' });
+}
