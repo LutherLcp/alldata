@@ -60,6 +60,29 @@ services:
     networks:
       - alldata-network
 
+  # OLAP Analytics Database
+  clickhouse:
+    image: clickhouse/clickhouse-server:24-alpine
+    container_name: alldata-clickhouse
+    ports:
+      - "8123:8123"
+      - "9001:9000"
+    environment:
+      CLICKHOUSE_DB: alldata
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_PASSWORD: ""
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+      - ./docker/clickhouse/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8123/ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - alldata-network
+
   # API Backend
   api:
     build:
@@ -86,6 +109,8 @@ services:
       MINIO_SECRET_KEY: minioadmin123
       MINIO_BUCKET: alldata
       MINIO_USE_SSL: "false"
+      CLICKHOUSE_URL: http://clickhouse:8123
+      CLICKHOUSE_DATABASE: alldata
     depends_on:
       postgres:
         condition: service_healthy
@@ -139,6 +164,7 @@ volumes:
   postgres_data:
   redis_data:
   minio_data:
+  clickhouse_data:
 
 networks:
   alldata-network:

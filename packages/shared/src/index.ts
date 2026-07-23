@@ -1,6 +1,8 @@
-export * from './schemas';
-export * from './utils';
-export * from './validators';
-export * from './constants';
+/**
+ * @alldata/shared — 统一导出入口
+ */
 
-export { z } from 'zod';
+export * from './types/index.js';
+export * from './constants/index.js';
+export * from './schemas/index.js';
+export * from './utils/index.js';

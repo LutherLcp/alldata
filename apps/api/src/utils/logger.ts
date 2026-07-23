@@ -1,10 +1,18 @@
 import pino from 'pino';
 import { config } from '@/config';
 
+const isDevelopment = config.NODE_ENV === 'development';
+
 export const logger = pino({
-  level: config.nodeEnv === 'production' ? 'info' : 'debug',
-  transport: config.nodeEnv !== 'production' ? {
-    target: 'pino-pretty',
-    options: { colorize: true, translateTime: 'HH:MM:ss Z', ignore: 'pid,hostname' },
-  } : undefined,
+  level: isDevelopment ? 'debug' : 'info',
+  transport: isDevelopment
+    ? {
+        target: 'pino-pretty',
+        options: { colorize: true, translateTime: 'HH:MM:ss Z', ignore: 'pid,hostname' },
+      }
+    : undefined,
+  redact: {
+    paths: ['*.password', '*.secret', '*.token', '*.authorization', 'req.headers.authorization'],
+    censor: '[REDACTED]',
+  },
 });

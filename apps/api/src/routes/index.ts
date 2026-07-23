@@ -1,38 +1,32 @@
 import { FastifyInstance } from 'fastify';
 import { healthRoutes } from './health';
-import { authRoutes } from './auth';
-import { tenantRoutes } from './tenant';
-import { userRoutes } from './user';
-import { eventRoutes } from './event';
-import { dashboardRoutes } from './dashboard';
-import { analysisRoutes } from './analysis';
-import { tagRoutes } from './tag';
-import { metricRoutes } from './metric';
-import { assetRoutes } from './asset';
-import { alertRoutes } from './alert';
-import { trackingRoutes } from './tracking';
-import { kocrmRoutes } from './kocrm';
-import { financeRoutes } from './finance';
-import { calendarRoutes } from './calendar';
-import { settingsRoutes } from './settings';
-import { fileRoutes } from './file';
+import { authRoutes } from '@/modules/auth';
+import { projectRoutes } from '@/modules/project';
+import { dashboardRoutes } from '@/modules/dashboard';
+import { analysisRoutes } from '@/modules/analysis';
+import { uploadRoutes } from '@/modules/upload';
+import { noticeRoutes } from '@/modules/notice';
 
 export async function registerRoutes(app: FastifyInstance) {
+  // 健康检查
   await app.register(healthRoutes, { prefix: '/api' });
+
+  // 认证模块
   await app.register(authRoutes, { prefix: '/api/auth' });
-  await app.register(tenantRoutes, { prefix: '/api/tenants' });
-  await app.register(userRoutes, { prefix: '/api/users' });
-  await app.register(eventRoutes, { prefix: '/api/events' });
+
+  // 项目管理
+  await app.register(projectRoutes, { prefix: '/api/projects' });
+
+  // ─── V2 模块 ─────────────────────────────
+  // 看板管理
   await app.register(dashboardRoutes, { prefix: '/api/dashboards' });
+
+  // 分析引擎
   await app.register(analysisRoutes, { prefix: '/api/analysis' });
-  await app.register(tagRoutes, { prefix: '/api/tags' });
-  await app.register(metricRoutes, { prefix: '/api/metrics' });
-  await app.register(assetRoutes, { prefix: '/api/assets' });
-  await app.register(alertRoutes, { prefix: '/api/alerts' });
-  await app.register(trackingRoutes, { prefix: '/api/tracking' });
-  await app.register(kocrmRoutes, { prefix: '/api/kocrm' });
-  await app.register(financeRoutes, { prefix: '/api/finance' });
-  await app.register(calendarRoutes, { prefix: '/api/calendar' });
-  await app.register(settingsRoutes, { prefix: '/api/settings' });
-  await app.register(fileRoutes, { prefix: '/api/files' });
+
+  // 文件上传
+  await app.register(uploadRoutes, { prefix: '/api/upload' });
+
+  // 站内信
+  await app.register(noticeRoutes, { prefix: '/api/notices' });
 }

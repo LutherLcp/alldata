@@ -1,23 +1,21 @@
-import { z } from 'zod';
+import 'dotenv/config';
 
-const envSchema = z.object({
-  NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
-  PORT: z.coerce.number().default(4000),
-  HOST: z.string().default('0.0.0.0'),
-  DATABASE_URL: z.string().url(),
-  REDIS_URL: z.string().url().default('redis://localhost:6379'),
-  JWT_SECRET: z.string().min(32),
-  JWT_EXPIRES_IN: z.string().default('7d'),
-  REFRESH_TOKEN_SECRET: z.string().min(32),
-  REFRESH_TOKEN_EXPIRES_IN: z.string().default('30d'),
-  COOKIE_SECRET: z.string().min(32),
-  CORS_ORIGIN: z.string().default('http://localhost:3000'),
-  MINIO_ENDPOINT: z.string().default('localhost'),
-  MINIO_PORT: z.coerce.number().default(9000),
-  MINIO_ACCESS_KEY: z.string(),
-  MINIO_SECRET_KEY: z.string(),
-  MINIO_BUCKET: z.string().default('alldata'),
-  MINIO_USE_SSL: z.coerce.boolean().default(false),
-});
+export const config = {
+  NODE_ENV: process.env.NODE_ENV ?? 'development',
+  PORT: parseInt(process.env.PORT ?? '4000', 10),
+  HOST: process.env.HOST ?? '0.0.0.0',
+  CORS_ORIGIN: process.env.CORS_ORIGIN ?? 'http://localhost:3000',
+  JWT_SECRET: process.env.JWT_SECRET ?? 'dev-secret-change-in-production',
+  COOKIE_SECRET: process.env.COOKIE_SECRET ?? 'dev-cookie-secret-change-in-production',
+  DATABASE_URL: process.env.DATABASE_URL ?? 'postgresql://alldata:alldata123@localhost:5432/alldata?schema=public',
+  REDIS_URL: process.env.REDIS_URL ?? 'redis://localhost:6379',
+  MINIO_ENDPOINT: process.env.MINIO_ENDPOINT ?? 'localhost',
+  MINIO_PORT: parseInt(process.env.MINIO_PORT ?? '9000', 10),
+  MINIO_ACCESS_KEY: process.env.MINIO_ACCESS_KEY ?? 'minioadmin',
+  MINIO_SECRET_KEY: process.env.MINIO_SECRET_KEY ?? 'minioadmin123',
+  MINIO_BUCKET: process.env.MINIO_BUCKET ?? 'alldata',
+  CLICKHOUSE_URL: process.env.CLICKHOUSE_URL ?? 'http://localhost:8123',
+  CLICKHOUSE_DATABASE: process.env.CLICKHOUSE_DATABASE ?? 'alldata',
+} as const;
 
-export const config = envSchema.parse(process.env);
+export type Config = typeof config;

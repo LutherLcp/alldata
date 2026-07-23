@@ -25,30 +25,6 @@ export const uuidSchema = z.string().uuid('无效的UUID格式');
 
 export const dateStringSchema = z.string().datetime({ offset: true });
 
-export const paginationSchema = z.object({
-  page: z.coerce.number().int().positive().default(1),
-  pageSize: z.coerce.number().int().positive().max(100).default(20),
-});
-
-export const sortSchema = z.object({
-  field: z.string().min(1),
-  order: z.enum(['asc', 'desc']).default('asc'),
-});
-
-export const filterSchema = z.object({
-  field: z.string().min(1),
-  operator: z.enum(['eq', 'neq', 'gt', 'gte', 'lt', 'lte', 'in', 'nin', 'like', 'nlike', 'between', 'is_null', 'is_not_null']),
-  value: z.unknown(),
-  logic: z.enum(['AND', 'OR']).optional(),
-});
-
-export const queryOptionsSchema = z.object({
-  filters: z.array(filterSchema).optional(),
-  sorts: z.array(sortSchema).optional(),
-  pagination: paginationSchema.optional(),
-  fields: z.array(z.string()).optional(),
-});
-
 export const idParamSchema = z.object({
   id: uuidSchema,
 });
@@ -60,28 +36,6 @@ export const projectCodeParamSchema = z.object({
 export const createIdSchema = (fieldName = 'id') => z.object({
   [fieldName]: uuidSchema,
 });
-
-export const createPaginationSchema = () => paginationSchema;
-
-export const createFilterSchema = <T extends z.ZodRawShape>(fields: T) =>
-  z.object({
-    filters: z.array(
-      z.object({
-        field: z.enum(Object.keys(fields) as [string, ...string[]]),
-        operator: filterSchema.shape.operator,
-        value: z.unknown(),
-        logic: filterSchema.shape.logic,
-      })
-    ).optional(),
-    sorts: z.array(
-      z.object({
-        field: z.enum(Object.keys(fields) as [string, ...string[]]),
-        order: sortSchema.shape.order,
-      })
-    ).optional(),
-    pagination: paginationSchema.optional(),
-    fields: z.array(z.enum(Object.keys(fields) as [string, ...string[]])).optional(),
-  });
 
 export const fileUploadSchema = z.object({
   filename: z.string().min(1).max(255),
@@ -188,9 +142,5 @@ export const apiErrorSchema = z.object({
   requestId: z.string().uuid(),
 });
 
-export type PaginationParams = z.infer<typeof paginationSchema>;
-export type SortOption = z.infer<typeof sortSchema>;
-export type FilterCondition = z.infer<typeof filterSchema>;
-export type QueryOptions = z.infer<typeof queryOptionsSchema>;
 export type ValidationError = z.infer<typeof validationErrorSchema>;
 export type ApiError = z.infer<typeof apiErrorSchema>;

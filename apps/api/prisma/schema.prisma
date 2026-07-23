@@ -1,0 +1,644 @@
+// Prisma Schema — AllData 全域数据运营平台
+// 覆盖 V1 所需的核心表结构
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// 用户与权限域
+// ============================================================
+
+model User {
+  id            Int       @id @default(autoincrement())
+  username      String    @unique @db.VarChar(100)
+  email         String?   @unique @db.VarChar(200)
+  password_hash String    @db.VarChar(255)
+  avatar        String?   @db.VarChar(500)
+  status        Int       @default(1) // 1=启用 2=禁用
+  lang          String    @default("zh_CN") @db.VarChar(10)
+  login_method  String    @default("password") @db.VarChar(20)
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+
+  project_roles UserProjectRole[]
+  created_projects Project[]    @relation("project_creator")
+  notices       Notice[]       @relation("notice_creator")
+  notices_read  NoticeRead[]
+
+  @@map("users")
+}
+
+model Project {
+  id          Int       @id @default(autoincrement())
+  code        String    @unique @db.VarChar(100)
+  name        String    @db.VarChar(200)
+  description String?   @db.Text
+  status      Int       @default(1) // 1=正常 2=归档
+  config      Json      @default("{}")
+  created_by  Int
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+
+  creator     User              @relation("project_creator", fields: [created_by], references: [id])
+  roles       Role[]
+  user_roles  UserProjectRole[]
+
+  // V2+ 模块关联
+  dashboard_folders DashboardFolder[]
+  stories           Story[]
+  event_definitions EventDefinition[]
+  user_tags         UserTag[]
+  metrics           Metric[]
+  categories        Category[]
+  entity_types      EntityType[]
+  datatables        DataTable[]
+  datasets          Dataset[]
+  attributes        Attribute[]
+  warnings          Warning[]
+  subscriptions     Subscription[]
+  push_configs      PushConfig[]
+  enum_definitions  EnumDefinition[]
+  version_calendars VersionCalendar[]
+  download_tasks    DownloadTask[]
+  notices           Notice[]
+
+  @@map("projects")
+}
+
+model Role {
+  id          Int       @id @default(autoincrement())
+  project_id  Int
+  name        String    @db.VarChar(100)
+  description String?   @db.VarChar(500)
+  permissions Json      @default("[]")
+  is_system   Boolean   @default(false)
+  created_at  DateTime  @default(now())
+
+  project     Project           @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  user_roles  UserProjectRole[]
+
+  @@unique([project_id, name])
+  @@map("roles")
+}
+
+model UserProjectRole {
+  id         Int      @id @default(autoincrement())
+  user_id    Int
+  project_id Int
+  role_id    Int
+
+  user       User    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  project    Project @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  role       Role    @relation(fields: [role_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, project_id])
+  @@map("user_project_roles")
+}
+
+// ============================================================
+// 看板域 (V2 预备，V1 建表)
+// ============================================================
+
+model DashboardFolder {
+  id         Int       @id @default(autoincrement())
+  project_id Int
+  parent_id  Int?
+  name       String    @db.VarChar(200)
+  type       Int       @default(1) // 1=普通 2=个人
+  sort_order Int       @default(0)
+  created_by Int
+  created_at DateTime  @default(now())
+
+  project    Project          @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  parent     DashboardFolder? @relation("folder_tree", fields: [parent_id], references: [id])
+  children   DashboardFolder[] @relation("folder_tree")
+  dashboards Dashboard[]
+
+  @@map("dashboard_folders")
+}
+
+model Dashboard {
+  id              Int       @id @default(autoincrement())
+  project_id      Int
+  folder_id       Int?
+  name            String    @db.VarChar(300)
+  description     String?   @db.Text
+  type            Int       @default(1) // 1=普通 2=共享
+  status          Int       @default(1) // 1=正常 2=归档
+  layout          Json      @default("[]")
+  config          Json      @default("{}")
+  common_filters  Json      @default("[]")
+  created_by      Int
+  updated_by      Int?
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+
+  folder          DashboardFolder? @relation(fields: [folder_id], references: [id])
+  reports         Report[]
+  soft_links      SoftLink[]
+
+  @@map("dashboards")
+}
+
+model Report {
+  id           Int       @id @default(autoincrement())
+  project_id   Int
+  dashboard_id Int?
+  name         String    @db.VarChar(300)
+  type         String    @db.VarChar(20) // chart/table/metric/sql/ai/text
+  chart_type   String?   @db.VarChar(30)
+  query_config Json      @default("{}")
+  chart_config Json      @default("{}")
+  sql_content  String?   @db.Text
+  position     Json      @default("{}")
+  created_by   Int
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
+
+  dashboard    Dashboard? @relation(fields: [dashboard_id], references: [id], onDelete: Cascade)
+
+  @@map("reports")
+}
+
+model SoftLink {
+  id           Int       @id @default(autoincrement())
+  dashboard_id Int
+  token        String    @unique @db.VarChar(64)
+  name         String?   @db.VarChar(200)
+  expire_at    DateTime?
+  status       Int       @default(1) // 1=正常 2=已取消
+  config       Json      @default("{}")
+  created_by   Int
+  created_at   DateTime  @default(now())
+
+  dashboard    Dashboard @relation(fields: [dashboard_id], references: [id], onDelete: Cascade)
+
+  @@map("dashboard_soft_links")
+}
+
+// ============================================================
+// 埋点域 (V3 预备，V1 建表)
+// ============================================================
+
+model Story {
+  id          Int       @id @default(autoincrement())
+  project_id  Int
+  name        String    @db.VarChar(300)
+  docs_url    String?   @db.VarChar(500)
+  status      Int       @default(1) // 1=草稿 2=待审 3=审批中 4=通过 5=验收完成
+  created_by  Int
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+
+  project     Project           @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  events      EventDefinition[]
+
+  @@map("stories")
+}
+
+model EventDefinition {
+  id           Int       @id @default(autoincrement())
+  project_id   Int
+  story_id     Int?
+  name         String    @db.VarChar(200)
+  display_name String?   @db.VarChar(200)
+  description  String?   @db.Text
+  status       Int       @default(1) // 1=启用 2=禁用
+  created_at   DateTime  @default(now())
+
+  project      Project        @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  story        Story?         @relation(fields: [story_id], references: [id])
+  properties   EventProperty[]
+
+  @@unique([project_id, name])
+  @@map("event_definitions")
+}
+
+model EventProperty {
+  id          Int       @id @default(autoincrement())
+  event_id    Int
+  name        String    @db.VarChar(200)
+  data_type   String    @db.VarChar(20)
+  is_required Boolean   @default(false)
+  description String?   @db.VarChar(500)
+  sort_order  Int       @default(0)
+
+  event       EventDefinition @relation(fields: [event_id], references: [id], onDelete: Cascade)
+
+  @@map("event_properties")
+}
+
+// ============================================================
+// 标签域 (V3 预备，V1 建表)
+// ============================================================
+
+model UserTag {
+  id             Int       @id @default(autoincrement())
+  project_id     Int
+  name           String    @db.VarChar(200)
+  display_name   String?   @db.VarChar(200)
+  tag_type       String    @db.VarChar(20) // sql/condition/metric/id/times/group
+  entity_type    String?   @db.VarChar(100)
+  category_id    Int?
+  status         Int       @default(1) // 1=正常 2=禁用 3=计算中
+  config         Json      @default("{}")
+  sql_content    String?   @db.Text
+  description    String?   @db.Text
+  refresh_cron   String?   @db.VarChar(50)
+  last_refresh_at DateTime?
+  entity_count   Int       @default(0)
+  created_by     Int
+  created_at     DateTime  @default(now())
+  updated_at     DateTime  @updatedAt
+
+  project        Project          @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  histories      TagHistory[]
+
+  @@map("user_tags")
+}
+
+model TagHistory {
+  id           Int       @id @default(autoincrement())
+  tag_id       Int
+  status       Int       // 1=进行中 2=成功 3=失败
+  entity_count Int?
+  duration_ms  Int?
+  error_msg    String?   @db.Text
+  created_at   DateTime  @default(now())
+
+  tag          UserTag   @relation(fields: [tag_id], references: [id], onDelete: Cascade)
+
+  @@map("user_tag_histories")
+}
+
+// ============================================================
+// 指标域 (V3 预备，V1 建表)
+// ============================================================
+
+model Metric {
+  id           Int       @id @default(autoincrement())
+  project_id   Int
+  name         String    @db.VarChar(200)
+  display_name String?   @db.VarChar(200)
+  category_id  Int?
+  status       Int       @default(1)
+  formula      Json
+  description  String?   @db.Text
+  i18n         Json?
+  created_by   Int
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
+
+  project      Project   @relation(fields: [project_id], references: [id], onDelete: Cascade)
+
+  @@map("metrics")
+}
+
+// ============================================================
+// 数据资产域 (V3 预备，V1 建表)
+// ============================================================
+
+model Category {
+  id         Int       @id @default(autoincrement())
+  project_id Int
+  parent_id  Int?
+  name       String    @db.VarChar(200)
+  type       String    @db.VarChar(50)
+  level      Int       @default(0)
+  sort_order Int       @default(0)
+  created_at DateTime  @default(now())
+
+  project    Project    @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  parent     Category?  @relation("category_tree", fields: [parent_id], references: [id])
+  children   Category[] @relation("category_tree")
+
+  @@map("categories")
+}
+
+model EntityType {
+  id         Int     @id @default(autoincrement())
+  project_id Int
+  label      String  @db.VarChar(100)
+  value      String  @db.VarChar(100)
+  sort_order Int     @default(0)
+
+  project    Project @relation(fields: [project_id], references: [id], onDelete: Cascade)
+
+  @@unique([project_id, value])
+  @@map("entity_types")
+}
+
+model DataTable {
+  id           Int       @id @default(autoincrement())
+  project_id   Int
+  name         String    @db.VarChar(200)
+  display_name String?   @db.VarChar(200)
+  description  String?   @db.Text
+  type         String    @db.VarChar(20) // event/user/upload
+  status       Int       @default(1)
+  row_count    Int       @default(0)
+  created_by   Int
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
+
+  project      Project          @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  columns      DataTableColumn[]
+
+  @@map("datatables")
+}
+
+model DataTableColumn {
+  id           Int       @id @default(autoincrement())
+  datatable_id Int
+  name         String    @db.VarChar(200)
+  display_name String?   @db.VarChar(200)
+  data_type    String    @db.VarChar(20)
+  is_dimension Boolean   @default(false)
+  description  String?   @db.VarChar(500)
+  i18n         Json?
+  sort_order   Int       @default(0)
+
+  datatable    DataTable @relation(fields: [datatable_id], references: [id], onDelete: Cascade)
+
+  @@map("datatable_columns")
+}
+
+model Dataset {
+  id          Int       @id @default(autoincrement())
+  project_id  Int
+  name        String    @db.VarChar(200)
+  display_name String?  @db.VarChar(200)
+  description String?   @db.Text
+  type        String    @db.VarChar(20) // sql/relation/option
+  sql_content String?   @db.Text
+  config      Json      @default("{}")
+  status      Int       @default(1)
+  created_by  Int
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+
+  project     Project   @relation(fields: [project_id], references: [id], onDelete: Cascade)
+
+  @@map("datasets")
+}
+
+model Attribute {
+  id           Int       @id @default(autoincrement())
+  project_id   Int
+  name         String    @db.VarChar(200)
+  display_name String?   @db.VarChar(200)
+  data_type    String    @db.VarChar(20)
+  entity_type  String?   @db.VarChar(100)
+  is_dimension Boolean   @default(false)
+  category_id  Int?
+  status       Int       @default(1)
+  description  String?   @db.VarChar(500)
+  i18n         Json?
+  created_by   Int
+
+  project      Project   @relation(fields: [project_id], references: [id], onDelete: Cascade)
+
+  @@map("attributes")
+}
+
+// ============================================================
+// 预警域 (V4 预备，V1 建表)
+// ============================================================
+
+model Warning {
+  id            Int       @id @default(autoincrement())
+  project_id    Int
+  name          String    @db.VarChar(300)
+  status        Int       @default(1) // 1=启用 2=禁用
+  monitor_rules Json
+  notify_config Json
+  check_cron    String?   @db.VarChar(50)
+  created_by    Int
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+
+  project       Project       @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  logs          WarningLog[]
+
+  @@map("warnings")
+}
+
+model WarningLog {
+  id            Int       @id @default(autoincrement())
+  warning_id    Int
+  trigger_time  DateTime
+  status        Int       // 1=触发 2=恢复
+  detail        Json      @default("{}")
+  created_at    DateTime  @default(now())
+
+  warning       Warning   @relation(fields: [warning_id], references: [id], onDelete: Cascade)
+
+  @@map("warning_logs")
+}
+
+// ============================================================
+// 管理功能域 (V4 预备，V1 建表)
+// ============================================================
+
+model Subscription {
+  id           Int       @id @default(autoincrement())
+  project_id   Int
+  entity_id    Int
+  entity_type  String    @db.VarChar(20) // report/dashboard
+  name         String    @db.VarChar(300)
+  status       Int       @default(1)
+  schedule_cron String   @db.VarChar(50)
+  notify_type  String    @db.VarChar(20) // email/feishu
+  notify_config Json     @default("{}")
+  created_by   Int
+  created_at   DateTime  @default(now())
+
+  project      Project   @relation(fields: [project_id], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
+}
+
+model PushConfig {
+  id          Int       @id @default(autoincrement())
+  project_id  Int
+  entity_id   Int?
+  entity_type String?   @db.VarChar(50)
+  name        String    @db.VarChar(300)
+  status      Int       @default(1)
+  push_type   String    @db.VarChar(30) // feishu_group/webhook
+  config      Json      @default("{}")
+  created_by  Int
+  created_at  DateTime  @default(now())
+
+  project     Project   @relation(fields: [project_id], references: [id], onDelete: Cascade)
+
+  @@map("push_configs")
+}
+
+model EnumDefinition {
+  id          Int       @id @default(autoincrement())
+  project_id  Int
+  type_key    String    @db.VarChar(100)
+  name        String    @db.VarChar(200)
+  items       Json      @default("[]")
+  description String?   @db.VarChar(500)
+  created_by  Int
+  created_at  DateTime  @default(now())
+
+  project     Project   @relation(fields: [project_id], references: [id], onDelete: Cascade)
+
+  @@map("enum_definitions")
+}
+
+model VersionCalendar {
+  id          Int       @id @default(autoincrement())
+  project_id  Int
+  title       String    @db.VarChar(300)
+  description String?   @db.Text
+  start_date  DateTime  @db.Date
+  end_date    DateTime? @db.Date
+  type        String    @db.VarChar(50)
+  status      Int       @default(1)
+  created_by  Int
+  created_at  DateTime  @default(now())
+
+  project     Project   @relation(fields: [project_id], references: [id], onDelete: Cascade)
+
+  @@map("version_calendars")
+}
+
+model DownloadTask {
+  id          Int       @id @default(autoincrement())
+  project_id  Int
+  task_name   String    @db.VarChar(300)
+  task_type   String    @db.VarChar(20) // report/datatable/analysis
+  status      Int       @default(1) // 1=排队 2=进行中 3=完成 4=失败
+  progress    Int       @default(0)
+  file_url    String?   @db.VarChar(500)
+  file_size   BigInt?
+  error_msg   String?   @db.Text
+  expire_at   DateTime?
+  created_by  Int
+  created_at  DateTime  @default(now())
+  finished_at DateTime?
+
+  project     Project   @relation(fields: [project_id], references: [id], onDelete: Cascade)
+
+  @@map("download_tasks")
+}
+
+// ============================================================
+// 通知域
+// ============================================================
+
+model Notice {
+  id          Int       @id @default(autoincrement())
+  project_id  Int?
+  title       String    @db.VarChar(300)
+  content     String    @db.Text
+  type        String    @db.VarChar(50)
+  status      Int       @default(1) // 1=草稿 2=已发布 3=已撤回
+  publish_at  DateTime?
+  created_by  Int
+  created_at  DateTime  @default(now())
+
+  project     Project?      @relation(fields: [project_id], references: [id])
+  creator     User          @relation("notice_creator", fields: [created_by], references: [id])
+  reads       NoticeRead[]
+
+  @@map("notices")
+}
+
+model NoticeRead {
+  id         Int      @id @default(autoincrement())
+  notice_id  Int
+  user_id    Int
+  is_read    Boolean  @default(false)
+  read_at    DateTime?
+
+  notice     Notice   @relation(fields: [notice_id], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([notice_id, user_id])
+  @@map("notice_reads")
+}
+
+// ============================================================
+// 财务域 (V5 预备，V1 建表)
+// ============================================================
+
+model FinanceSupplier {
+  id            Int       @id @default(autoincrement())
+  supplier_name String    @db.VarChar(200)
+  subject       String?   @db.VarChar(200)
+  contact       String?   @db.VarChar(100)
+  phone         String?   @db.VarChar(50)
+  status        Int       @default(1)
+  created_at    DateTime  @default(now())
+
+  @@map("finance_suppliers")
+}
+
+model FinanceShareRatio {
+  id          Int       @id @default(autoincrement())
+  supplier_id Int
+  platform    String    @db.VarChar(100)
+  ratio       Decimal   @db.Decimal(5, 2)
+  effective_date DateTime @db.Date
+  status      Int       @default(1)
+  created_at  DateTime  @default(now())
+
+  @@map("finance_share_ratios")
+}
+
+model FinanceReconciliation {
+  id          Int       @id @default(autoincrement())
+  supplier_id Int
+  platform    String    @db.VarChar(100)
+  game        String    @db.VarChar(200)
+  period      String    @db.VarChar(20)
+  currency    String    @db.VarChar(10)
+  status      Int       @default(1)
+  meta        Json      @default("{}")
+  created_at  DateTime  @default(now())
+
+  @@map("finance_reconciliations")
+}
+
+// ============================================================
+// KoCRM 域 (V5 预备，V1 建表)
+// ============================================================
+
+model KocrmAccount {
+  id           Int       @id @default(autoincrement())
+  project_id   Int
+  platform     String    @db.VarChar(100)
+  account_name String    @db.VarChar(200)
+  account_id   String    @db.VarChar(200)
+  status       Int       @default(1)
+  meta         Json      @default("{}")
+  created_at   DateTime  @default(now())
+
+  @@map("kocrm_accounts")
+}
+
+model KocrmCreator {
+  id         Int       @id @default(autoincrement())
+  project_id Int
+  platform   String    @db.VarChar(100)
+  name       String    @db.VarChar(200)
+  uid        String    @db.VarChar(200)
+  followers  Int       @default(0)
+  status     Int       @default(1)
+  tags       String[]
+  meta       Json      @default("{}")
+  created_at DateTime  @default(now())
+
+  @@map("kocrm_creators")
+}

@@ -1,25 +1,21 @@
 FROM node:20-alpine AS base
+RUN corepack enable pnpm
 
-FROM base AS builder
+FROM base AS dependencies
 WORKDIR /app
-RUN apk add --no-cache python3 make g++
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
 COPY apps/web/package.json ./apps/web/
 COPY packages/shared/package.json ./packages/shared/
-RUN corepack enable pnpm && pnpm install --frozen-lockfile
-COPY . .
-RUN pnpm --filter @alldata/web... build
+RUN pnpm install --frozen-lockfile
 
-FROM base AS runner
+FROM dependencies AS builder
 WORKDIR /app
-ENV NODE_ENV=production
-RUN apk add --no-cache dumb-init
-COPY --from=builder /app/apps/web/dist ./dist
-COPY --from=builder /app/apps/web/node_modules ./node_modules
-COPY --from=builder /app/packages/shared/dist ./node_modules/@alldata/shared
-COPY --from=builder /app/apps/web/package.json ./package.json
-COPY --from=builder /app/apps/web/index.html ./index.html
+COPY . .
+RUN pnpm --filter @alldata/shared build
+RUN pnpm --filter @alldata/web build
+
+FROM nginx:alpine AS runner
+COPY --from=builder /app/apps/web/dist /usr/share/nginx/html
+COPY docker/nginx/nginx.conf /etc/nginx/conf.d/default.conf
 EXPOSE 3000
-USER node
-ENTRYPOINT ["dumb-init", "--"]
-CMD ["node", "dist/main.js"]
+CMD ["nginx", "-g", "daemon off;"]

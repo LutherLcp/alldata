@@ -50,6 +50,7 @@
     "csv-parse": "^5.5.0",
     "exceljs": "^4.4.0",
     "minio": "^8.0.0",
+    "@clickhouse/client": "^1.0.0",
     "@alldata/shared": "workspace:*"
   },
   "devDependencies": {

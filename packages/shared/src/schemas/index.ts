@@ -1,262 +1,259 @@
+/**
+ * @alldata/shared — Zod 验证 Schema
+ *
+ * 前后端共享的参数验证，确保接口数据一致性。
+ */
 import { z } from 'zod';
 
-export const UserSchema = z.object({
-  id: z.string().uuid(),
-  email: z.string().email(),
-  username: z.string().min(2).max(50),
-  displayName: z.string().min(1).max(100),
-  avatarUrl: z.string().url().optional(),
-  role: z.enum(['admin', 'manager', 'analyst', 'viewer', 'operator']),
-  status: z.enum(['active', 'inactive', 'locked']),
-  lastLoginAt: z.date().optional(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
+// ============================================================
+// 通用 Schema
+// ============================================================
+
+export const pageParamsSchema = z.object({
+  page: z.number().int().min(1).default(1),
+  page_size: z.number().int().min(1).max(200).default(20),
+  keyword: z.string().optional(),
+  sort_field: z.string().optional(),
+  sort_order: z.enum(['asc', 'desc']).optional(),
 });
 
-export const ProjectSchema = z.object({
-  id: z.string().uuid(),
-  code: z.string().min(2).max(50).regex(/^[a-zA-Z0-9_-]+$/),
-  name: z.string().min(1).max(100),
-  description: z.string().max(500).optional(),
-  status: z.enum(['active', 'inactive', 'archived', 'draft']),
-  ownerId: z.string().uuid(),
-  timezone: z.string().default('Asia/Shanghai'),
-  locale: z.string().default('zh-CN'),
-  settings: z.record(z.unknown()).default({}),
-  createdAt: z.date(),
-  updatedAt: z.date(),
+export const dateRangeSchema = z.object({
+  start: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  end: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  granularity: z.enum(['hour', 'day', 'week', 'month']).optional(),
 });
 
-export const EventSchema = z.object({
-  id: z.string().uuid(),
-  projectId: z.string().uuid(),
-  code: z.string().min(2).max(100).regex(/^[a-zA-Z][a-zA-Z0-9_]*$/),
-  name: z.string().min(1).max(200),
-  description: z.string().max(1000).optional(),
-  categoryId: z.string().uuid().optional(),
-  status: z.enum(['draft', 'pending_review', 'approved', 'rejected', 'published', 'archived']),
-  version: z.number().int().positive(),
-  properties: z.record(z.unknown()).default({}),
-  createdBy: z.string().uuid(),
-  approvedBy: z.string().uuid().optional(),
-  approvedAt: z.date().optional(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
-});
-
-export const TagSchema = z.object({
-  id: z.string().uuid(),
-  projectId: z.string().uuid(),
-  name: z.string().min(1).max(100),
-  description: z.string().max(500).optional(),
-  type: z.enum(['sql', 'condition', 'indicator', 'first_last', 'id']),
-  definition: z.record(z.unknown()),
-  groupId: z.string().uuid().optional(),
-  isActive: z.boolean().default(true),
-  createdBy: z.string().uuid(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
-});
-
-export const DashboardSchema = z.object({
-  id: z.string().uuid(),
-  projectId: z.string().uuid(),
-  name: z.string().min(1).max(200),
-  description: z.string().max(1000).optional(),
-  layout: z.enum(['grid', 'free', 'responsive']),
-  layoutConfig: z.record(z.unknown()).default({}),
-  isPublic: z.boolean().default(false),
-  tags: z.array(z.string()).default([]),
-  createdBy: z.string().uuid(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
-});
-
-export const IndicatorSchema = z.object({
-  id: z.string().uuid(),
-  projectId: z.string().uuid(),
-  code: z.string().min(2).max(100).regex(/^[a-zA-Z][a-zA-Z0-9_]*$/),
-  name: z.string().min(1).max(200),
-  description: z.string().max(1000).optional(),
-  formula: z.string().min(1),
-  unit: z.string().max(50).optional(),
-  precision: z.number().int().min(0).max(10).default(2),
-  categoryId: z.string().uuid().optional(),
-  ownerId: z.string().uuid(),
-  isActive: z.boolean().default(true),
-  createdAt: z.date(),
-  updatedAt: z.date(),
-});
-
-export const AlertRuleSchema = z.object({
-  id: z.string().uuid(),
-  projectId: z.string().uuid(),
-  name: z.string().min(1).max(200),
-  description: z.string().max(1000).optional(),
-  indicatorId: z.string().uuid(),
-  condition: z.record(z.unknown()),
-  severity: z.enum(['info', 'warning', 'critical', 'emergency']),
-  channels: z.array(z.enum(['email', 'webhook', 'dingtalk', 'feishu', 'sms'])),
-  recipients: z.array(z.string()),
-  schedule: z.record(z.unknown()),
-  isActive: z.boolean().default(true),
-  createdBy: z.string().uuid(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
-});
-
-export const FinanceRecordSchema = z.object({
-  id: z.string().uuid(),
-  projectId: z.string().uuid(),
-  type: z.enum(['receivable', 'payable', 'revenue', 'cost', 'asset', 'liability']),
-  amount: z.number().positive(),
-  currency: z.string().length(3).default('CNY'),
-  exchangeRate: z.number().positive().default(1),
-  accountId: z.string().uuid(),
-  counterparty: z.string().max(200),
-  description: z.string().max(500).optional(),
-  invoiceNumber: z.string().max(100).optional(),
-  invoiceDate: z.date().optional(),
-  dueDate: z.date().optional(),
-  status: z.enum(['pending', 'partial', 'paid', 'overdue', 'cancelled']),
-  createdBy: z.string().uuid(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
-});
-
-export const KOCRMRecordSchema = z.object({
-  id: z.string().uuid(),
-  projectId: z.string().uuid(),
-  channel: z.enum(['douyin', 'kuaishou', 'xiaohongshu', 'wechat', 'bilibili', 'weibo']),
-  accountId: z.string().max(100),
-  accountName: z.string().max(200),
-  campaignId: z.string().max(100).optional(),
-  materialId: z.string().max(100).optional(),
-  metrics: z.record(z.number()),
-  cost: z.number().nonnegative().optional(),
-  revenue: z.number().nonnegative().optional(),
-  date: z.date(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
-});
-
-export const ApiKeySchema = z.object({
-  id: z.string().uuid(),
-  projectId: z.string().uuid(),
-  name: z.string().min(1).max(100),
-  keyHash: z.string(),
-  keyPrefix: z.string().length(8),
-  permissions: z.array(z.string()),
-  expiresAt: z.date().optional(),
-  lastUsedAt: z.date().optional(),
-  isActive: z.boolean().default(true),
-  createdBy: z.string().uuid(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
-});
-
-export const AuditLogSchema = z.object({
-  id: z.string().uuid(),
-  projectId: z.string().uuid().optional(),
-  userId: z.string().uuid().optional(),
-  action: z.string().max(100),
-  resource: z.string().max(100),
-  resourceId: z.string().optional(),
-  oldData: z.record(z.unknown()).optional(),
-  newData: z.record(z.unknown()).optional(),
-  ip: z.string().optional(),
-  userAgent: z.string().optional(),
-  createdAt: z.date(),
-});
-
-export const UserCreateSchema = UserSchema.omit({ id: true, createdAt: true, updatedAt: true, lastLoginAt: true });
-export const UserUpdateSchema = UserCreateSchema.partial();
-
-export const ProjectCreateSchema = ProjectSchema.omit({ id: true, createdAt: true, updatedAt: true });
-export const ProjectUpdateSchema = ProjectCreateSchema.partial();
-
-export const EventCreateSchema = EventSchema.omit({ id: true, createdAt: true, updatedAt: true, version: true, approvedBy: true, approvedAt: true });
-export const EventUpdateSchema = EventCreateSchema.partial();
-
-export const TagCreateSchema = TagSchema.omit({ id: true, createdAt: true, updatedAt: true });
-export const TagUpdateSchema = TagCreateSchema.partial();
-
-export const DashboardCreateSchema = DashboardSchema.omit({ id: true, createdAt: true, updatedAt: true });
-export const DashboardUpdateSchema = DashboardCreateSchema.partial();
-
-export const IndicatorCreateSchema = IndicatorSchema.omit({ id: true, createdAt: true, updatedAt: true });
-export const IndicatorUpdateSchema = IndicatorCreateSchema.partial();
-
-export const AlertRuleCreateSchema = AlertRuleSchema.omit({ id: true, createdAt: true, updatedAt: true });
-export const AlertRuleUpdateSchema = AlertRuleCreateSchema.partial();
-
-export const FinanceRecordCreateSchema = FinanceRecordSchema.omit({ id: true, createdAt: true, updatedAt: true });
-export const FinanceRecordUpdateSchema = FinanceRecordCreateSchema.partial();
-
-export const KOCRMRecordCreateSchema = KOCRMRecordSchema.omit({ id: true, createdAt: true, updatedAt: true });
-export const KOCRMRecordUpdateSchema = KOCRMRecordCreateSchema.partial();
-
-export const ApiKeyCreateSchema = ApiKeySchema.omit({ id: true, keyHash: true, keyPrefix: true, createdAt: true, updatedAt: true, lastUsedAt: true });
-export const ApiKeyUpdateSchema = ApiKeyCreateSchema.partial();
-
-export type User = z.infer<typeof UserSchema>;
-export type Project = z.infer<typeof ProjectSchema>;
-export type Event = z.infer<typeof EventSchema>;
-export type Tag = z.infer<typeof TagSchema>;
-export type Dashboard = z.infer<typeof DashboardSchema>;
-export type Indicator = z.infer<typeof IndicatorSchema>;
-export type AlertRule = z.infer<typeof AlertRuleSchema>;
-export type FinanceRecord = z.infer<typeof FinanceRecordSchema>;
-export type KOCRMRecord = z.infer<typeof KOCRMRecordSchema>;
-export type ApiKey = z.infer<typeof ApiKeySchema>;
-export type AuditLog = z.infer<typeof AuditLogSchema>;
-
-export type UserCreate = z.infer<typeof UserCreateSchema>;
-export type UserUpdate = z.infer<typeof UserUpdateSchema>;
-export type ProjectCreate = z.infer<typeof ProjectCreateSchema>;
-export type ProjectUpdate = z.infer<typeof ProjectUpdateSchema>;
-export type EventCreate = z.infer<typeof EventCreateSchema>;
-export type EventUpdate = z.infer<typeof EventUpdateSchema>;
-export type TagCreate = z.infer<typeof TagCreateSchema>;
-export type TagUpdate = z.infer<typeof TagUpdateSchema>;
-export type DashboardCreate = z.infer<typeof DashboardCreateSchema>;
-export type DashboardUpdate = z.infer<typeof DashboardUpdateSchema>;
-export type IndicatorCreate = z.infer<typeof IndicatorCreateSchema>;
-export type IndicatorUpdate = z.infer<typeof IndicatorUpdateSchema>;
-export type AlertRuleCreate = z.infer<typeof AlertRuleCreateSchema>;
-export type AlertRuleUpdate = z.infer<typeof AlertRuleUpdateSchema>;
-export type FinanceRecordCreate = z.infer<typeof FinanceRecordCreateSchema>;
-export type FinanceRecordUpdate = z.infer<typeof FinanceRecordUpdateSchema>;
-export type KOCRMRecordCreate = z.infer<typeof KOCRMRecordCreateSchema>;
-export type KOCRMRecordUpdate = z.infer<typeof KOCRMRecordUpdateSchema>;
-export type ApiKeyCreate = z.infer<typeof ApiKeyCreateSchema>;
-export type ApiKeyUpdate = z.infer<typeof ApiKeyUpdateSchema>;
-
-export const paginationSchema = z.object({
-  page: z.coerce.number().int().positive().default(1),
-  pageSize: z.coerce.number().int().positive().max(100).default(20),
-});
-
-export const filterSchema = z.object({
-  field: z.string(),
-  operator: z.enum(['eq', 'neq', 'gt', 'gte', 'lt', 'lte', 'in', 'nin', 'like', 'nlike', 'between', 'is_null', 'is_not_null']),
+export const filterConditionSchema = z.object({
+  property: z.string().min(1),
+  operator: z.enum([
+    'eq', 'ne', 'gt', 'gte', 'lt', 'lte',
+    'in', 'not_in', 'like', 'not_like',
+    'is_null', 'is_not_null', 'between', 'not_between',
+  ]),
   value: z.unknown(),
-  logic: z.enum(['AND', 'OR']).optional(),
+  data_type: z.enum(['string', 'number', 'date', 'boolean', 'array', 'object']).optional(),
 });
 
-export const sortSchema = z.object({
-  field: z.string(),
-  order: z.enum(['asc', 'desc']),
+export const idParamSchema = z.object({
+  id: z.coerce.number().int().positive(),
 });
 
-export const queryOptionsSchema = z.object({
-  filters: z.array(filterSchema).optional(),
-  sorts: z.array(sortSchema).optional(),
-  pagination: paginationSchema.optional(),
-  fields: z.array(z.string()).optional(),
+// ============================================================
+// 认证 Schema
+// ============================================================
+
+export const loginSchema = z.object({
+  username: z.string().min(2).max(100),
+  password: z.string().min(6).max(128),
+  login_method: z.enum(['password', 'oauth', 'sso']).default('password'),
 });
 
-export type PaginationParams = z.infer<typeof paginationSchema>;
-export type FilterCondition = z.infer<typeof filterSchema>;
-export type SortOption = z.infer<typeof sortSchema>;
-export type QueryOptions = z.infer<typeof queryOptionsSchema>;
+export const registerSchema = z.object({
+  username: z.string().min(2).max(100),
+  email: z.string().email(),
+  password: z.string().min(6).max(128),
+});
+
+export const refreshTokenSchema = z.object({
+  refresh_token: z.string().min(1),
+});
+
+// ============================================================
+// 项目 Schema
+// ============================================================
+
+export const projectCreateSchema = z.object({
+  code: z.string().min(2).max(100).regex(/^[a-z0-9_-]+$/),
+  name: z.string().min(1).max(200),
+  description: z.string().optional(),
+  config: z.record(z.unknown()).optional(),
+});
+
+export const projectUpdateSchema = z.object({
+  id: z.number().int().positive(),
+  name: z.string().min(1).max(200).optional(),
+  description: z.string().optional(),
+  config: z.record(z.unknown()).optional(),
+});
+
+// ============================================================
+// 看板 Schema
+// ============================================================
+
+export const dashboardCreateSchema = z.object({
+  name: z.string().min(1).max(300),
+  folder_id: z.number().int().optional(),
+  description: z.string().optional(),
+  type: z.number().int().min(1).max(2).default(1),
+});
+
+export const dashboardUpdateSchema = z.object({
+  id: z.number().int().positive(),
+  name: z.string().min(1).max(300).optional(),
+  description: z.string().optional(),
+  layout: z.array(z.object({
+    i: z.string(),
+    x: z.number(),
+    y: z.number(),
+    w: z.number(),
+    h: z.number(),
+    minW: z.number().optional(),
+    minH: z.number().optional(),
+  })).optional(),
+  config: z.record(z.unknown()).optional(),
+  common_filters: z.array(filterConditionSchema).optional(),
+});
+
+export const folderCreateSchema = z.object({
+  name: z.string().min(1).max(200),
+  parent_id: z.number().int().optional().nullable(),
+  type: z.number().int().min(1).max(2).default(1),
+});
+
+export const reportCreateSchema = z.object({
+  dashboard_id: z.number().int().optional(),
+  name: z.string().min(1).max(300),
+  type: z.enum(['chart', 'table', 'metric', 'sql', 'ai', 'text']),
+  chart_type: z.string().optional(),
+  query_config: z.record(z.unknown()).optional(),
+  chart_config: z.record(z.unknown()).optional(),
+  sql_content: z.string().optional(),
+});
+
+// ============================================================
+// 分析查询 Schema
+// ============================================================
+
+export const analysisMetricSchema = z.object({
+  event_name: z.string().min(1),
+  agg_type: z.enum(['count', 'uv', 'sum', 'avg', 'max', 'min', 'median']),
+  property: z.string().optional(),
+  filters: z.array(filterConditionSchema).optional(),
+  alias: z.string().optional(),
+});
+
+export const analysisQuerySchema = z.object({
+  project_id: z.string().min(1),
+  report_id: z.string().optional(),
+  request_id: z.string().min(1),
+  config: z.object({
+    analysis_type: z.enum([
+      'event', 'retention', 'funnel', 'scatter',
+      'interval', 'user', 'self_service', 'sql',
+    ]),
+    date_range: dateRangeSchema,
+    metrics: z.array(analysisMetricSchema).min(1),
+    group_by: z.array(z.object({
+      property: z.string(),
+      datatable: z.string().optional(),
+    })).optional(),
+    global_filters: z.array(filterConditionSchema).optional(),
+    user_group: z.object({
+      tag_id: z.number().optional(),
+      conditions: z.array(filterConditionSchema).optional(),
+    }).optional(),
+    funnel_steps: z.array(z.object({
+      event_name: z.string(),
+      filters: z.array(filterConditionSchema).optional(),
+    })).optional(),
+    funnel_window: z.number().optional(),
+    retention_event: z.string().optional(),
+    retention_window: z.number().optional(),
+  }),
+});
+
+// ============================================================
+// 埋点管理 Schema
+// ============================================================
+
+export const storyCreateSchema = z.object({
+  name: z.string().min(1).max(300),
+  docs_url: z.string().url().optional(),
+});
+
+export const eventDefCreateSchema = z.object({
+  story_id: z.number().int().optional(),
+  name: z.string().min(1).max(200).regex(/^[a-zA-Z_][a-zA-Z0-9_]*$/),
+  display_name: z.string().optional(),
+  description: z.string().optional(),
+  properties: z.array(z.object({
+    name: z.string().min(1),
+    data_type: z.enum(['string', 'number', 'date', 'boolean', 'array', 'object']),
+    is_required: z.boolean().default(false),
+    description: z.string().optional(),
+  })).optional(),
+});
+
+// ============================================================
+// 标签 Schema
+// ============================================================
+
+export const tagCreateSchema = z.object({
+  name: z.string().min(1).max(200),
+  display_name: z.string().optional(),
+  tag_type: z.enum(['sql', 'condition', 'metric', 'id', 'times', 'group']),
+  entity_type: z.string().optional(),
+  category_id: z.number().int().optional(),
+  config: z.record(z.unknown()).optional(),
+  sql_content: z.string().optional(),
+  description: z.string().optional(),
+  refresh_cron: z.string().optional(),
+});
+
+// ============================================================
+// 指标 Schema
+// ============================================================
+
+export const metricCreateSchema = z.object({
+  name: z.string().min(1).max(200),
+  display_name: z.string().optional(),
+  category_id: z.number().int().optional(),
+  formula: z.object({
+    type: z.enum(['simple', 'composite']),
+    event_name: z.string().optional(),
+    agg_type: z.enum(['count', 'uv', 'sum', 'avg', 'max', 'min', 'median']).optional(),
+    property: z.string().optional(),
+    expression: z.string().optional(),
+  }),
+  description: z.string().optional(),
+});
+
+// ============================================================
+// 预警 Schema
+// ============================================================
+
+export const warningCreateSchema = z.object({
+  name: z.string().min(1).max(300),
+  monitor_rules: z.array(z.object({
+    metric: analysisMetricSchema,
+    condition: z.object({
+      operator: z.string(),
+      threshold: z.number(),
+    }),
+    date_range: dateRangeSchema,
+  })).min(1),
+  notify_config: z.object({
+    channels: z.array(z.enum(['email', 'feishu', 'webhook', 'in_app'])),
+    recipients: z.array(z.number()).optional(),
+  }),
+  check_cron: z.string().optional(),
+});
+
+// ============================================================
+// SQL 分析 Schema
+// ============================================================
+
+export const sqlRunSchema = z.object({
+  sql: z.string().min(1).max(10000),
+  project_id: z.string().min(1),
+  limit: z.number().int().min(1).max(10000).default(1000),
+});
+
+// ============================================================
+// 文件上传 Schema
+// ============================================================
+
+export const uploadSchema = z.object({
+  type: z.enum(['image', 'excel', 'csv', 'pdf', 'other']).default('other'),
+  extra: z.record(z.unknown()).optional(),
+});
