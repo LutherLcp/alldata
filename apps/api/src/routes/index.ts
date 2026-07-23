@@ -6,6 +6,7 @@ import { dashboardRoutes } from '@/modules/dashboard';
 import { analysisRoutes } from '@/modules/analysis';
 import { uploadRoutes } from '@/modules/upload';
 import { noticeRoutes } from '@/modules/notice';
+import { trackingRoutes } from '@/modules/tracking';
 
 export async function registerRoutes(app: FastifyInstance) {
   // 健康检查
@@ -29,4 +30,7 @@ export async function registerRoutes(app: FastifyInstance) {
 
   // 站内信
   await app.register(noticeRoutes, { prefix: '/api/notices' });
+
+  // 埋点管理
+  await app.register(trackingRoutes, { prefix: '/api/tracking' });
 }
