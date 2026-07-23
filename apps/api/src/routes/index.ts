@@ -7,6 +7,8 @@ import { analysisRoutes } from '@/modules/analysis';
 import { uploadRoutes } from '@/modules/upload';
 import { noticeRoutes } from '@/modules/notice';
 import { trackingRoutes } from '@/modules/tracking';
+import { tagRoutes } from '@/modules/tag';
+import { metricRoutes } from '@/modules/metric';
 
 export async function registerRoutes(app: FastifyInstance) {
   // 健康检查
@@ -33,4 +35,10 @@ export async function registerRoutes(app: FastifyInstance) {
 
   // 埋点管理
   await app.register(trackingRoutes, { prefix: '/api/tracking' });
+
+  // 标签管理
+  await app.register(tagRoutes, { prefix: '/api/tags' });
+
+  // 指标管理
+  await app.register(metricRoutes, { prefix: '/api/metrics' });
 }
