@@ -11,6 +11,7 @@ import { LoginPage } from '@/pages/login';
 import { NotFoundPage } from '@/pages/404';
 import { NoPowerPage } from '@/pages/no-power';
 import DashboardPage from '@/pages/dashboard';
+import DashboardDetailPage from '@/pages/dashboard/detail';
 
 // 路由守卫 — 需要登录
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -61,6 +62,7 @@ export default function App() {
       <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="dashboard" element={<DashboardPage />} />
+        <Route path="dashboard/:id" element={<DashboardDetailPage />} />
         <Route path="analysis/*" element={<Placeholder name="行为分析" />} />
         <Route path="tracking/*" element={<Placeholder name="埋点管理" />} />
         <Route path="users/*" element={<Placeholder name="用户分析" />} />
