@@ -12,6 +12,7 @@ import { Responsive, WidthProvider, Layout, Layouts } from 'react-grid-layout';
 import 'react-grid-layout/css/styles.css';
 import { dashboardApi, DashboardItem, ReportItem } from '@/services-new/dashboard';
 import ReportCard from './components/ReportCard';
+import ReportEditor from './components/ReportEditor';
 
 const ReactGridLayout = WidthProvider(Responsive);
 const { Title, Text } = Typography;
@@ -26,6 +27,7 @@ export default function DashboardDetailPage() {
   const [reports, setReports] = useState<ReportItem[]>([]);
   const [layouts, setLayouts] = useState<Layouts>({});
   const [editMode, setEditMode] = useState(false);
+  const [editorOpen, setEditorOpen] = useState(false);
 
   const loadDashboard = useCallback(async () => {
     if (!dashboardId) return;
@@ -166,12 +168,19 @@ export default function DashboardDetailPage() {
           </ReactGridLayout>
         ) : (
           <Empty description="暂无报表，点击编辑添加报表" style={{ marginTop: 100 }}>
-            {editMode && (
-              <Button type="primary" icon={<PlusOutlined />}>添加报表</Button>
-            )}
+            <Button type="primary" icon={<PlusOutlined />} onClick={() => setEditorOpen(true)}>添加报表</Button>
           </Empty>
         )}
       </div>
+
+      {/* 报表编辑器 */}
+      <ReportEditor
+        open={editorOpen}
+        dashboardId={dashboard.id}
+        projectId={dashboard.project_id}
+        onClose={() => setEditorOpen(false)}
+        onSaved={loadDashboard}
+      />
     </div>
   );
 }
