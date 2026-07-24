@@ -9,13 +9,13 @@ import { AnalysisService, AnalysisQuery } from './service';
 export async function analysisRoutes(app: FastifyInstance) {
   const svc = new AnalysisService(app);
 
-  // 执行事件分析查询
+  // 执行分析查询（支持 6 种类型）
   app.post('/query', { preHandler: requireAuth }, async (req, reply) => {
     const body = req.body as AnalysisQuery;
     if (!body.event_name || !body.time_range?.start || !body.time_range?.end) {
       return ApiError.badRequest(reply, '缺少必填参数：event_name, time_range.start, time_range.end');
     }
-    const result = await svc.runEventAnalysis(body);
+    const result = await svc.runAnalysis(body);
     return sendSuccess(reply, result);
   });
 
