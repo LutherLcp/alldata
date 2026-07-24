@@ -26,8 +26,9 @@ export class TrackingService {
     });
   }
 
-  async createStory(data: { project_id: number; name: string; docs_url?: string }, userId: number) {
-    return this.prisma.story.create({ data: { ...data, created_by: userId } });
+  async createStory(data: { project_id: number; name: string; docs_url?: string; description?: string }, userId: number) {
+    const { project_id, name, docs_url } = data;
+    return this.prisma.story.create({ data: { project_id, name, docs_url, created_by: userId } });
   }
 
   async updateStory(id: number, data: { name?: string; docs_url?: string; status?: number }) {
@@ -58,9 +59,10 @@ export class TrackingService {
 
   async createEvent(data: {
     project_id: number; story_id?: number; name: string;
-    display_name?: string; description?: string;
+    display_name?: string; description?: string; event_type?: string;
   }) {
-    return this.prisma.eventDefinition.create({ data });
+    const { project_id, story_id, name, display_name, description } = data;
+    return this.prisma.eventDefinition.create({ data: { project_id, story_id, name, display_name, description } });
   }
 
   async updateEvent(id: number, data: {
