@@ -1,0 +1,1 @@
+export { kocrmRoutes } from './routes';

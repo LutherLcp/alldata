@@ -13,6 +13,8 @@ import { warningRoutes } from '@/modules/warning';
 import { subscriptionRoutes } from '@/modules/subscription';
 import { downloadRoutes } from '@/modules/download';
 import { enumRoutes } from '@/modules/enum';
+import { financeRoutes } from '@/modules/finance';
+import { kocrmRoutes } from '@/modules/kocrm';
 
 export async function registerRoutes(app: FastifyInstance) {
   // 健康检查
@@ -58,4 +60,11 @@ export async function registerRoutes(app: FastifyInstance) {
 
   // 枚举管理
   await app.register(enumRoutes, { prefix: '/api/enums' });
+
+  // ─── V5 模块 ─────────────────────────────
+  // 财务管理
+  await app.register(financeRoutes, { prefix: '/api/finance' });
+
+  // KoCRM 管理
+  await app.register(kocrmRoutes, { prefix: '/api/kocrm' });
 }
