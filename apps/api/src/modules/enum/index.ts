@@ -1,0 +1,1 @@
+export { enumRoutes } from './routes';

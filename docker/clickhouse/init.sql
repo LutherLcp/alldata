@@ -80,5 +80,5 @@ CREATE TABLE IF NOT EXISTS alldata.sql_query_history
     created_at  DateTime DEFAULT now()
 )
 ENGINE = MergeTree()
-ORDER BY (project_id, created_at DESC)
+ORDER BY (project_id, created_at)
 TTL created_at + INTERVAL 90 DAY;

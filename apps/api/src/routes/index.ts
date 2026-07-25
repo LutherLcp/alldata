@@ -9,6 +9,10 @@ import { noticeRoutes } from '@/modules/notice';
 import { trackingRoutes } from '@/modules/tracking';
 import { tagRoutes } from '@/modules/tag';
 import { metricRoutes } from '@/modules/metric';
+import { warningRoutes } from '@/modules/warning';
+import { subscriptionRoutes } from '@/modules/subscription';
+import { downloadRoutes } from '@/modules/download';
+import { enumRoutes } from '@/modules/enum';
 
 export async function registerRoutes(app: FastifyInstance) {
   // 健康检查
@@ -41,4 +45,17 @@ export async function registerRoutes(app: FastifyInstance) {
 
   // 指标管理
   await app.register(metricRoutes, { prefix: '/api/metrics' });
+
+  // ─── V4 模块 ─────────────────────────────
+  // 预警管理
+  await app.register(warningRoutes, { prefix: '/api/warnings' });
+
+  // 推送订阅
+  await app.register(subscriptionRoutes, { prefix: '/api/subscriptions' });
+
+  // 下载任务
+  await app.register(downloadRoutes, { prefix: '/api/downloads' });
+
+  // 枚举管理
+  await app.register(enumRoutes, { prefix: '/api/enums' });
 }

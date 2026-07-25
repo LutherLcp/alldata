@@ -1,4 +1,7 @@
 import 'dotenv/config';
+
+// Global BigInt JSON serialization fix
+(BigInt.prototype as any).toJSON = function () { return Number(this); };
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';

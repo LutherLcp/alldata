@@ -16,6 +16,8 @@ import AnalysisPage from '@/pages/analysis';
 import TrackingPage from '@/pages/tracking';
 import TagsPage from '@/pages/tags';
 import MetricsPage from '@/pages/metrics';
+import AlertsPage from '@/pages/alerts';
+import SettingsPage from '@/pages/settings';
 
 // 路由守卫 — 需要登录
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -73,8 +75,8 @@ export default function App() {
         <Route path="tags/*" element={<TagsPage />} />
         <Route path="metrics/*" element={<MetricsPage />} />
         <Route path="assets/*" element={<Placeholder name="数据资产" />} />
-        <Route path="alerts/*" element={<Placeholder name="预警管理" />} />
-        <Route path="settings/*" element={<Placeholder name="管理中心" />} />
+        <Route path="alerts/*" element={<AlertsPage />} />
+        <Route path="settings/*" element={<SettingsPage />} />
         <Route path="kocrm/*" element={<Placeholder name="KoCRM" />} />
         <Route path="finance/*" element={<Placeholder name="财务管理" />} />
         <Route path="calendar" element={<Placeholder name="版本日历" />} />
