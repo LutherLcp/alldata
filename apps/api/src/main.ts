@@ -1,25 +1,27 @@
-import 'dotenv/config';
-
-// Global BigInt JSON serialization fix
-(BigInt.prototype as any).toJSON = function () { return Number(this); };
-import Fastify from 'fastify';
+import { requestContext } from '@/common/middleware/requestContext';
+import { ensureBucket } from '@/common/utils/minio';
+import { closeRedis, getRedisClient } from '@/common/utils/redis';
+import { config } from '@/config';
+import { errorHandler } from '@/middleware/errorHandler';
+import { auditPlugin } from '@/plugins/audit';
+import { registerRoutes } from '@/routes';
+import { logger } from '@/utils/logger';
+import cookie from '@fastify/cookie';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
+import fastifyJwt from '@fastify/jwt';
+import multipart from '@fastify/multipart';
 import fastifyRateLimit from '@fastify/rate-limit';
 import fastifySwagger from '@fastify/swagger';
 import fastifySwaggerUi from '@fastify/swagger-ui';
-import fastifyJwt from '@fastify/jwt';
-import cookie from '@fastify/cookie';
-import multipart from '@fastify/multipart';
 import { PrismaClient } from '@prisma/client';
-import { config } from '@/config';
-import { logger } from '@/utils/logger';
-import { registerRoutes } from '@/routes';
-import { errorHandler } from '@/middleware/errorHandler';
-import { requireAuth } from '@/plugins/auth';
-import { getRedisClient, closeRedis } from '@/common/utils/redis';
-import { ensureBucket } from '@/common/utils/minio';
-import { requestContext } from '@/common/middleware/requestContext';
+import 'dotenv/config';
+import Fastify from 'fastify';
+
+// Global BigInt JSON serialization fix
+(BigInt.prototype as any).toJSON = function () {
+  return Number(this);
+};
 
 const prisma = new PrismaClient({
   log: config.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
@@ -35,13 +37,19 @@ const app = Fastify({
   ajv: { customOptions: { removeAdditional: 'all', coerceTypes: 'array' } },
 });
 
+// 审计日志插件
+await app.register(auditPlugin);
+
 // 基础插件
 await app.register(cors, { origin: config.CORS_ORIGIN, credentials: true });
 await app.register(helmet, { contentSecurityPolicy: false });
 await app.register(fastifyRateLimit, { max: 200, timeWindow: '1 minute' });
 await app.register(cookie, { secret: config.COOKIE_SECRET });
 await app.register(multipart, { limits: { fileSize: 100 * 1024 * 1024 } });
-await app.register(fastifyJwt, { secret: config.JWT_SECRET, cookie: { cookieName: 'token', signed: false } });
+await app.register(fastifyJwt, {
+  secret: config.JWT_SECRET,
+  cookie: { cookieName: 'token', signed: false },
+});
 
 // 认证：注册全局 preHandler hook 解析 JWT
 if (!app.hasRequestDecorator('tenantId')) {
@@ -120,6 +128,15 @@ const shutdown = async () => {
   process.exit(0);
 };
 
+process.on('SIGTERM', shutdown);
+process.on('SIGINT', shutdown);
+
+start();
+process.on('SIGTERM', shutdown);
+process.on('SIGINT', shutdown);
+
+start();
+start();
 process.on('SIGTERM', shutdown);
 process.on('SIGINT', shutdown);
 

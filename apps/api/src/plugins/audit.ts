@@ -2,7 +2,7 @@
  * 操作审计日志中间件
  * 记录所有 CUD 操作的审计信息
  */
-import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 
 export interface AuditLog {
   id?: number;
@@ -20,10 +20,7 @@ export interface AuditLog {
 /**
  * 记录审计日志
  */
-export async function logAudit(
-  app: FastifyInstance,
-  log: AuditLog
-) {
+export async function logAudit(app: FastifyInstance, log: AuditLog) {
   try {
     await app.prisma.auditLog.create({
       data: {

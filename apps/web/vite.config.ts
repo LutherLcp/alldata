@@ -1,13 +1,10 @@
-import { defineConfig } from 'vite';
+import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react-swc';
 import path from 'path';
-import tailwindcss from '@tailwindcss/vite';
+import { defineConfig } from 'vite';
 
 export default defineConfig({
-  plugins: [
-    react(),
-    tailwindcss(),
-  ],
+  plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
@@ -38,7 +35,14 @@ export default defineConfig({
         manualChunks: {
           vendor: ['react', 'react-dom', 'react-router-dom'],
           antd: ['antd', '@ant-design/icons'],
-          charts: ['@antv/g2', '@ant-design/charts', 'echarts', 'echarts-for-react', '@antv/x6', '@antv/x6-react-components'],
+          charts: [
+            '@antv/g2',
+            '@ant-design/charts',
+            'echarts',
+            'echarts-for-react',
+            '@antv/x6',
+            '@antv/x6-react-components',
+          ],
           utils: ['lodash-es', 'dayjs', 'zod', 'clsx', 'tailwind-merge'],
           i18n: ['i18next', 'react-i18next'],
           editor: ['@monaco-editor/react'],
