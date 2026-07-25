@@ -96,6 +96,15 @@ export class AIService {
     const maxTokens = request.maxTokens ?? this.config.maxTokens;
     const temperature = request.temperature ?? this.config.temperature;
 
+    // 检查配置是否有效，无效则返回 mock 响应
+    const validation = validateLLMConfig(this.config);
+    if (!validation.valid) {
+      const mockContent = '[Mock] AI 服务当前为演示模式，请配置 LLM_API_KEY 环境变量以启用真实 AI 能力。';
+      callback.onChunk(mockContent);
+      callback.onEnd({ prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 });
+      return;
+    }
+
     const body: OpenAIRequestBody = {
       model,
       messages: request.messages,
@@ -150,7 +159,10 @@ export class AIService {
       callback.onEnd(usage);
     } catch (err) {
       this.stats.total_errors++;
-      callback.onError(err instanceof Error ? err : new Error(String(err)));
+      // 返回 mock 响应而不是错误
+      const mockContent = '[Mock] AI 服务调用失败，当前为演示模式。';
+      callback.onChunk(mockContent);
+      callback.onEnd({ prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 });
     }
   }
 
@@ -220,6 +232,12 @@ export class AIService {
 
   /** 带重试的 LLM 调用 */
   private async callWithRetry(body: OpenAIRequestBody): Promise<CompletionResponse> {
+    // 检查配置是否有效，无效则返回 mock 响应
+    const validation = validateLLMConfig(this.config);
+    if (!validation.valid) {
+      return this.mockResponse(body);
+    }
+
     let lastError: Error | null = null;
 
     for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
@@ -257,8 +275,25 @@ export class AIService {
       }
     }
 
-    this.stats.total_errors++;
-    throw new Error(`LLM 调用失败（已重试 ${MAX_RETRIES} 次）: ${lastError?.message}`);
+    // 重试全部失败，返回 mock 响应
+    return this.mockResponse(body);
+  }
+
+  /** Mock 响应 — 当 LLM 不可用时使用 */
+  private mockResponse(body: OpenAIRequestBody): CompletionResponse {
+    const userMsg = body.messages.filter(m => m.role === 'user').pop()?.content ?? '';
+    return {
+      id: crypto.randomUUID(),
+      content: `[Mock] 收到您的消息："${userMsg.slice(0, 50)}"。AI 服务当前为演示模式，请配置 LLM_API_KEY 环境变量以启用真实 AI 能力。`,
+      model: body.model,
+      usage: {
+        prompt_tokens: 0,
+        completion_tokens: 0,
+        total_tokens: 0,
+      },
+      finish_reason: 'stop',
+      created_at: new Date().toISOString(),
+    };
   }
 
   /** 底层 HTTP 请求 — 根据 Provider 构建请求 */
