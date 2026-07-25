@@ -2,7 +2,7 @@
  * 项目管理模块 — 路由定义
  */
 import { FastifyInstance } from 'fastify';
-import { projectCreateSchema, projectUpdateSchema } from '@alldata/shared/schemas/index.js';
+import { projectCreateSchema, projectUpdateSchema } from '@alldata/shared';
 import { requireAuth } from '@/plugins/auth';
 import { sendSuccess, sendPaginated, ApiError } from '@/common/utils/response';
 import { ProjectService } from './service';

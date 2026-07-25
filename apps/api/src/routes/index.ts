@@ -1,6 +1,9 @@
+import { aiRoutes } from '@/modules/ai';
 import { analysisRoutes } from '@/modules/analysis';
 import { authRoutes } from '@/modules/auth';
+import { calendarRoutes } from '@/modules/calendar';
 import { dashboardRoutes } from '@/modules/dashboard';
+import { dataAssetRoutes } from '@/modules/data_asset';
 import { downloadRoutes } from '@/modules/download';
 import { enumRoutes } from '@/modules/enum';
 import { financeRoutes } from '@/modules/finance';
@@ -12,6 +15,7 @@ import { subscriptionRoutes } from '@/modules/subscription';
 import { tagRoutes } from '@/modules/tag';
 import { trackingRoutes } from '@/modules/tracking';
 import { uploadRoutes } from '@/modules/upload';
+import { userRoutes } from '@/modules/user';
 import { warningRoutes } from '@/modules/warning';
 import { FastifyInstance } from 'fastify';
 import { healthRoutes } from './health';
@@ -67,4 +71,18 @@ export async function registerRoutes(app: FastifyInstance) {
 
   // KoCRM 管理
   await app.register(kocrmRoutes, { prefix: '/api/kocrm' });
+
+  // ─── V6 模块 ─────────────────────────────
+  // 用户查询
+  await app.register(userRoutes, { prefix: '/api/users' });
+
+  // 版本日历
+  await app.register(calendarRoutes, { prefix: '/api/calendar' });
+
+  // 数据资产
+  await app.register(dataAssetRoutes, { prefix: '/api/assets' });
+
+  // ─── V7 模块 ─────────────────────────────
+  // AI 智能服务
+  await app.register(aiRoutes, { prefix: '/api/ai' });
 }

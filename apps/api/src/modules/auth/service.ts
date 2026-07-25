@@ -3,7 +3,7 @@
  */
 import { FastifyInstance } from 'fastify';
 import bcrypt from 'bcryptjs';
-import type { LoginRequest, LoginResponse, UserInfo } from '@alldata/shared/types/index.js';
+import type { LoginRequest, LoginResponse, UserInfo } from '@alldata/shared';
 import { getRedisClient } from '@/common/utils/redis';
 
 const JWT_EXPIRES_IN = '7d';

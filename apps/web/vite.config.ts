@@ -45,7 +45,6 @@ export default defineConfig({
           ],
           utils: ['lodash-es', 'dayjs', 'zod', 'clsx', 'tailwind-merge'],
           i18n: ['i18next', 'react-i18next'],
-          editor: ['@monaco-editor/react'],
         },
         // 长缓存优化
         chunkFileNames: 'assets/js/[name]-[hash].js',

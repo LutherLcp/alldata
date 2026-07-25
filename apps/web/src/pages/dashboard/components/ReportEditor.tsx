@@ -3,8 +3,8 @@
  */
 import { useState } from 'react';
 import {
-  Modal, Form, Input, Select, Tabs, Card, Space, Button, Row, Col,
-  InputNumber, Switch, Typography, Divider, message,
+  Modal, Form, Input, Select, Tabs, Row, Col,
+  Switch, Typography, message,
 } from 'antd';
 import { dashboardApi } from '@/services-new/dashboard';
 

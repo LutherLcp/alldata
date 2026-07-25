@@ -140,7 +140,7 @@ export default function AnalysisPage() {
     return (
       <Space direction="vertical" style={{ width: '100%' }} size="middle">
         <Statistic title="总计" value={r.total} />
-        <ChartSet data={{ series: [{ metric: 'count', alias: '数量', data: data.map(d => ({ date: d.bucket, value: d.count })) }] }} chartType="bar" height={300} />
+        <ChartSet data={{ query_id: 'dist', type: 'distribution', elapsed_ms: 0, series: [{ metric: 'count', alias: '数量', data: data.map(d => ({ date: d.bucket, value: d.count })) }] }} chartType="bar" height={300} />
         <Table dataSource={data} columns={columns} rowKey="bucket" size="small" pagination={false} />
       </Space>
     );

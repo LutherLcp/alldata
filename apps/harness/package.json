@@ -6,7 +6,7 @@
   "description": "开发测试 Harness — Mock Server + 种子数据 + API 测试面板 + 集成测试",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "tsc",
     "preview": "vite preview",
     "mock": "tsx src/mock-server/standalone.ts",
     "seed": "tsx src/seed/seed.ts",

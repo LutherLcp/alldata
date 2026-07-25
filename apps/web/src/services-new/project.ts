@@ -2,7 +2,7 @@
  * 项目管理 API 服务
  */
 import { get, post, put, del } from './request';
-import type { Project, PaginatedResult } from '@alldata/shared/types/index.js';
+import type { Project, PaginatedResult } from '@alldata/shared';
 
 export const projectApi = {
   list: (params?: { page?: number; page_size?: number; keyword?: string }) =>

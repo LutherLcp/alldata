@@ -1,7 +1,6 @@
 /**
  * 无权限页面
  */
-import React from 'react';
 import { Button, Result } from 'antd';
 import { useNavigate } from 'react-router-dom';
 

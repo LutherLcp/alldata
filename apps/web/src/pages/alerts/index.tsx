@@ -2,12 +2,11 @@
  * 预警管理页
  */
 import { useEffect, useState, useCallback } from 'react';
-import { Card, Table, Button, Space, Modal, Form, Input, Select, Tag, Typography, message, Popconfirm, Tabs, Descriptions, Timeline, Progress } from 'antd';
+import { Card, Table, Button, Space, Modal, Form, Input, Select, Tag, message, Popconfirm, Tabs, Descriptions, Timeline } from 'antd';
 import { PlusOutlined, ReloadOutlined, DeleteOutlined, PlayCircleOutlined, AlertOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import { useGlobalStore } from '@/stores/global';
 import { warningApi } from '@/services-new/v4';
 
-const { TextArea } = Input;
 const STATUS_MAP: Record<number, { color: string; text: string }> = { 1: { color: 'green', text: '启用' }, 2: { color: 'default', text: '禁用' } };
 
 export default function AlertsPage() {
@@ -62,15 +61,17 @@ export default function AlertsPage() {
           { title: '状态', dataIndex: 'status', width: 80, render: (s: number) => <Tag color={STATUS_MAP[s]?.color}>{STATUS_MAP[s]?.text}</Tag> },
           { title: '触发次数', key: 'logs', width: 100, render: (_: any, r: any) => r._count?.logs || 0 },
           { title: '检查周期', dataIndex: 'check_cron', width: 120, render: (v: string) => v || '-' },
-          { title: '操作', key: 'action', width: 250, render: (_: any, r: any) => (
-            <Space>
-              <Button type="link" size="small" icon={<PlayCircleOutlined />} onClick={() => handleCheck(r.id)}>检查</Button>
-              <Button type="link" size="small" onClick={() => showDetail(r)}>详情</Button>
-              <Popconfirm title="确认删除?" onConfirm={async () => { await warningApi.delete(r.id); loadData(); }}>
-                <Button type="link" size="small" danger icon={<DeleteOutlined />}>删除</Button>
-              </Popconfirm>
-            </Space>
-          )},
+          {
+            title: '操作', key: 'action', width: 250, render: (_: any, r: any) => (
+              <Space>
+                <Button type="link" size="small" icon={<PlayCircleOutlined />} onClick={() => handleCheck(r.id)}>检查</Button>
+                <Button type="link" size="small" onClick={() => showDetail(r)}>详情</Button>
+                <Popconfirm title="确认删除?" onConfirm={async () => { await warningApi.delete(r.id); loadData(); }}>
+                  <Button type="link" size="small" danger icon={<DeleteOutlined />}>删除</Button>
+                </Popconfirm>
+              </Space>
+            )
+          },
         ]}
       />
 
@@ -88,21 +89,25 @@ export default function AlertsPage() {
       <Modal title={`预警详情 — ${current?.name}`} open={detailOpen} onCancel={() => setDetailOpen(false)} footer={null} width={700}>
         {current && (
           <Tabs items={[
-            { key: 'info', label: '规则信息', children: (
-              <Descriptions column={2} size="small">
-                <Descriptions.Item label="状态"><Tag color={STATUS_MAP[current.status]?.color}>{STATUS_MAP[current.status]?.text}</Tag></Descriptions.Item>
-                <Descriptions.Item label="检查周期">{current.check_cron || '未设置'}</Descriptions.Item>
-                <Descriptions.Item label="监控规则" span={2}><code>{JSON.stringify(current.monitor_rules)}</code></Descriptions.Item>
-                <Descriptions.Item label="通知配置" span={2}><code>{JSON.stringify(current.notify_config)}</code></Descriptions.Item>
-              </Descriptions>
-            )},
-            { key: 'logs', label: `触发日志 (${logs.length})`, children: logs.length === 0 ? <div style={{ textAlign: 'center', padding: 40 }}>暂无日志</div> : (
-              <Timeline items={logs.map((l: any) => ({
-                color: l.status === 1 ? 'red' : 'green',
-                dot: l.status === 1 ? <AlertOutlined /> : <CheckCircleOutlined />,
-                children: <div><div>{l.detail?.message || (l.status === 1 ? '预警触发' : '恢复正常')}</div><div style={{ fontSize: 12, color: '#999' }}>{new Date(l.trigger_time).toLocaleString()} · 值: {l.detail?.value} · 阈值: {l.detail?.threshold}</div></div>,
-              }))} />
-            )},
+            {
+              key: 'info', label: '规则信息', children: (
+                <Descriptions column={2} size="small">
+                  <Descriptions.Item label="状态"><Tag color={STATUS_MAP[current.status]?.color}>{STATUS_MAP[current.status]?.text}</Tag></Descriptions.Item>
+                  <Descriptions.Item label="检查周期">{current.check_cron || '未设置'}</Descriptions.Item>
+                  <Descriptions.Item label="监控规则" span={2}><code>{JSON.stringify(current.monitor_rules)}</code></Descriptions.Item>
+                  <Descriptions.Item label="通知配置" span={2}><code>{JSON.stringify(current.notify_config)}</code></Descriptions.Item>
+                </Descriptions>
+              )
+            },
+            {
+              key: 'logs', label: `触发日志 (${logs.length})`, children: logs.length === 0 ? <div style={{ textAlign: 'center', padding: 40 }}>暂无日志</div> : (
+                <Timeline items={logs.map((l: any) => ({
+                  color: l.status === 1 ? 'red' : 'green',
+                  dot: l.status === 1 ? <AlertOutlined /> : <CheckCircleOutlined />,
+                  children: <div><div>{l.detail?.message || (l.status === 1 ? '预警触发' : '恢复正常')}</div><div style={{ fontSize: 12, color: '#999' }}>{new Date(l.trigger_time).toLocaleString()} · 值: {l.detail?.value} · 阈值: {l.detail?.threshold}</div></div>,
+                }))} />
+              )
+            },
           ]} />
         )}
       </Modal>

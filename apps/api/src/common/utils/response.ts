@@ -3,7 +3,7 @@
  * 所有 API 响应统一 { code, message, data } 格式
  */
 import { FastifyReply } from 'fastify';
-import { ERROR_CODES } from '@alldata/shared/constants/index.js';
+import { ERROR_CODES } from '@alldata/shared';
 
 export interface SuccessResponse<T = unknown> {
   code: number;

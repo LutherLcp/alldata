@@ -6,7 +6,7 @@ import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig, AxiosResp
 import { message } from 'antd';
 import { useAuthStore } from '@/stores/auth';
 import { useGlobalStore } from '@/stores/global';
-import type { ApiResponse } from '@alldata/shared/types/index.js';
+import type { ApiResponse } from '@alldata/shared';
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? '/api';
 

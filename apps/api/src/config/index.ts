@@ -16,6 +16,14 @@ export const config = {
   MINIO_BUCKET: process.env.MINIO_BUCKET ?? 'alldata',
   CLICKHOUSE_URL: process.env.CLICKHOUSE_URL ?? 'http://localhost:8123',
   CLICKHOUSE_DATABASE: process.env.CLICKHOUSE_DATABASE ?? 'alldata',
+  // AI / LLM 配置
+  LLM_PROVIDER: process.env.LLM_PROVIDER ?? 'OPENAI',
+  LLM_API_KEY: process.env.LLM_API_KEY ?? '',
+  LLM_BASE_URL: process.env.LLM_BASE_URL ?? '',
+  LLM_MODEL: process.env.LLM_MODEL ?? 'gpt-4o',
+  LLM_MAX_TOKENS: parseInt(process.env.LLM_MAX_TOKENS ?? '4096', 10),
+  LLM_TEMPERATURE: parseFloat(process.env.LLM_TEMPERATURE ?? '0.7'),
+  LLM_TIMEOUT: parseInt(process.env.LLM_TIMEOUT ?? '30000', 10),
 } as const;
 
 export type Config = typeof config;

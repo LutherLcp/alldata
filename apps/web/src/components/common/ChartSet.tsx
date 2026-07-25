@@ -30,10 +30,11 @@ export default function ChartSet({
   showGrid = true,
   colorScheme = 'default',
 }: ChartSetProps) {
-  const colors = COLOR_SCHEMES[colorScheme] || COLOR_SCHEMES.default;
+  const colors: string[] = COLOR_SCHEMES[colorScheme] ?? COLOR_SCHEMES.default ?? [];
+  const series = data.series ?? [];
 
   // 提取日期轴
-  const dates = data.series[0]?.data.map((d) => d.date) || [];
+  const dates = series[0]?.data.map((d) => d.date) ?? [];
 
   const option = (() => {
     if (chartType === 'pie') {
@@ -42,18 +43,18 @@ export default function ChartSet({
         color: colors,
         tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
         legend: showLegend ? { orient: 'vertical', left: 'left' } : undefined,
-        series: data.series.map((s) => ({
+        series: series.map((s) => ({
           name: s.alias,
           type: 'pie',
           radius: ['40%', '70%'],
-          data: s.data.map((d, i) => ({ name: d.date, value: d.value })),
+          data: s.data.map((d) => ({ name: d.date, value: d.value })),
           emphasis: { itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0,0,0,0.5)' } },
         })),
       };
     }
 
     // 折线/柱状/面积图
-    const seriesConfig = data.series.map((s, idx) => ({
+    const seriesConfig = series.map((s, idx) => ({
       name: s.alias,
       type: chartType === 'area' ? 'line' : chartType,
       data: s.data.map((d) => d.value),
@@ -65,7 +66,7 @@ export default function ChartSet({
     return {
       color: colors,
       tooltip: { trigger: 'axis' },
-      legend: showLegend ? { data: data.series.map((s) => s.alias) } : undefined,
+      legend: showLegend ? { data: series.map((s) => s.alias) } : undefined,
       grid: showGrid ? { left: '3%', right: '4%', bottom: '3%', containLabel: true } : undefined,
       xAxis: { type: 'category', data: dates, boundaryGap: chartType === 'bar' },
       yAxis: { type: 'value' },

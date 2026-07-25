@@ -3,7 +3,7 @@
  */
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { ProjectSimple } from '@alldata/shared/types/index.js';
+import type { ProjectSimple } from '@alldata/shared';
 
 interface GlobalState {
   currentProject: ProjectSimple | null;

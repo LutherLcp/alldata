@@ -2,7 +2,7 @@
  * 认证 API 服务
  */
 import { post, get } from './request';
-import type { LoginRequest, LoginResponse, UserInfo } from '@alldata/shared/types/index.js';
+import type { LoginRequest, LoginResponse, UserInfo } from '@alldata/shared';
 
 export const authApi = {
   login: (data: LoginRequest) => post<LoginResponse>('/auth/login', data),

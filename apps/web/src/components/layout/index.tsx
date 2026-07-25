@@ -23,7 +23,6 @@ import {
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/stores/auth';
-import { useGlobalStore } from '@/stores/global';
 import { ProjectSwitcher } from '@/components/common/ProjectSwitcher';
 
 const { Header, Sider, Content } = AntLayout;

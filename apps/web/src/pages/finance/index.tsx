@@ -3,7 +3,7 @@
  */
 import { useEffect, useState, useCallback } from 'react';
 import { Card, Table, Button, Space, Modal, Form, Input, Select, Tag, Tabs, message, Popconfirm, InputNumber, DatePicker } from 'antd';
-import { PlusOutlined, ReloadOutlined, DeleteOutlined, DownloadOutlined } from '@ant-design/icons';
+import { PlusOutlined, ReloadOutlined, DownloadOutlined } from '@ant-design/icons';
 import { financeApi } from '@/services-new/v5';
 
 export default function FinancePage() {
@@ -49,11 +49,13 @@ function SupplierTab() {
           { title: '联系人', dataIndex: 'contact', width: 100, render: (v: string) => v || '-' },
           { title: '电话', dataIndex: 'phone', width: 130, render: (v: string) => v || '-' },
           { title: '状态', dataIndex: 'status', width: 80, render: (s: number) => <Tag color={s === 1 ? 'green' : 'default'}>{s === 1 ? '启用' : '禁用'}</Tag> },
-          { title: '操作', key: 'action', width: 100, render: (_: any, r: any) => (
-            <Popconfirm title="确认删除?" onConfirm={async () => { await financeApi.deleteSupplier(r.id); load(); }}>
-              <Button type="link" size="small" danger>删除</Button>
-            </Popconfirm>
-          )},
+          {
+            title: '操作', key: 'action', width: 100, render: (_: any, r: any) => (
+              <Popconfirm title="确认删除?" onConfirm={async () => { await financeApi.deleteSupplier(r.id); load(); }}>
+                <Button type="link" size="small" danger>删除</Button>
+              </Popconfirm>
+            )
+          },
         ]}
       />
       <Modal title="新建供应商" open={modalOpen} onOk={handleSave} onCancel={() => setModalOpen(false)} destroyOnClose>
@@ -100,11 +102,13 @@ function ShareRatioTab() {
           { title: '分成比例', dataIndex: 'ratio', width: 100, render: (v: any) => `${v}%` },
           { title: '生效日期', dataIndex: 'effective_date', width: 120, render: (v: string) => v?.slice(0, 10) },
           { title: '状态', dataIndex: 'status', width: 80, render: (s: number) => <Tag color={s === 1 ? 'green' : 'default'}>{s === 1 ? '启用' : '禁用'}</Tag> },
-          { title: '操作', key: 'action', width: 100, render: (_: any, r: any) => (
-            <Popconfirm title="确认删除?" onConfirm={async () => { await financeApi.deleteShareRatio(r.id); load(); }}>
-              <Button type="link" size="small" danger>删除</Button>
-            </Popconfirm>
-          )},
+          {
+            title: '操作', key: 'action', width: 100, render: (_: any, r: any) => (
+              <Popconfirm title="确认删除?" onConfirm={async () => { await financeApi.deleteShareRatio(r.id); load(); }}>
+                <Button type="link" size="small" danger>删除</Button>
+              </Popconfirm>
+            )
+          },
         ]}
       />
       <Modal title="新建分成比例" open={modalOpen} onOk={handleSave} onCancel={() => setModalOpen(false)} destroyOnClose>
@@ -153,11 +157,13 @@ function ReconciliationTab() {
           { title: '账期', dataIndex: 'period', width: 100 },
           { title: '币种', dataIndex: 'currency', width: 80 },
           { title: '状态', dataIndex: 'status', width: 80, render: (s: number) => <Tag color={s === 1 ? 'green' : 'default'}>{s === 1 ? '正常' : '异常'}</Tag> },
-          { title: '操作', key: 'action', width: 100, render: (_: any, r: any) => (
-            <Popconfirm title="确认删除?" onConfirm={async () => { await financeApi.deleteReconciliation(r.id); load(); }}>
-              <Button type="link" size="small" danger>删除</Button>
-            </Popconfirm>
-          )},
+          {
+            title: '操作', key: 'action', width: 100, render: (_: any, r: any) => (
+              <Popconfirm title="确认删除?" onConfirm={async () => { await financeApi.deleteReconciliation(r.id); load(); }}>
+                <Button type="link" size="small" danger>删除</Button>
+              </Popconfirm>
+            )
+          },
         ]}
       />
       <Modal title="新建对账记录" open={modalOpen} onOk={handleSave} onCancel={() => setModalOpen(false)} destroyOnClose>

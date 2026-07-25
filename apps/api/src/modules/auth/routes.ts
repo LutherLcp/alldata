@@ -6,7 +6,7 @@
  * GET  /me      — 获取当前用户信息
  */
 import { FastifyInstance } from 'fastify';
-import { loginSchema, refreshTokenSchema } from '@alldata/shared/schemas/index.js';
+import { loginSchema, refreshTokenSchema } from '@alldata/shared';
 import { requireAuth } from '@/plugins/auth';
 import { sendSuccess, ApiError } from '@/common/utils/response';
 import { AuthService } from './service';

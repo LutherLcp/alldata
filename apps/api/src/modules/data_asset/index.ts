@@ -1,0 +1,1 @@
+export { dataAssetRoutes } from './routes';

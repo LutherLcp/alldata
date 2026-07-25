@@ -6,11 +6,11 @@ import { FastifyError, FastifyReply, FastifyRequest } from 'fastify';
 import { ZodError } from 'zod';
 import { Prisma } from '@prisma/client';
 import { logger } from '@/utils/logger';
-import { ERROR_CODES } from '@alldata/shared/constants/index.js';
+import { ERROR_CODES } from '@alldata/shared';
 
 export const errorHandler = (error: FastifyError, request: FastifyRequest, reply: FastifyReply) => {
   logger.error(
-    { err: error, url: request.url, method: request.method, userId: request.user?.userId },
+    { err: error, url: request.url, method: request.method, userId: (request.user as any)?.userId },
     'Request error',
   );
 

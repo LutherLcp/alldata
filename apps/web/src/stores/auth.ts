@@ -3,7 +3,7 @@
  */
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { UserInfo, ProjectSimple } from '@alldata/shared/types/index.js';
+import type { UserInfo } from '@alldata/shared';
 
 interface AuthState {
   token: string | null;

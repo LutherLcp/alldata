@@ -1,13 +1,11 @@
 /**
  * 项目切换器组件
  */
-import React, { useEffect } from 'react';
-import { Select, Button } from 'antd';
-import { PlusOutlined } from '@ant-design/icons';
+import { useEffect } from 'react';
+import { Select } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/stores/auth';
 import { useGlobalStore } from '@/stores/global';
-import type { ProjectSimple } from '@alldata/shared/types/index.js';
 
 export function ProjectSwitcher() {
   const { t } = useTranslation();
@@ -19,7 +17,8 @@ export function ProjectSwitcher() {
     if (userInfo?.projects && userInfo.projects.length > 0) {
       setProjects(userInfo.projects);
       if (!currentProject) {
-        setCurrentProject(userInfo.projects[0]);
+        const first = userInfo.projects[0];
+        if (first) setCurrentProject(first);
       }
     }
   }, [userInfo, currentProject, setProjects, setCurrentProject]);

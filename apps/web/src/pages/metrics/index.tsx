@@ -2,8 +2,8 @@
  * 指标管理页
  */
 import { useEffect, useState, useCallback } from 'react';
-import { Card, Table, Button, Space, Modal, Form, Input, Select, Tag, Typography, message, Popconfirm } from 'antd';
-import { PlusOutlined, ReloadOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons';
+import { Card, Table, Button, Space, Modal, Form, Input, Tag, message, Popconfirm } from 'antd';
+import { PlusOutlined, ReloadOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useGlobalStore } from '@/stores/global';
 import { metricApi } from '@/services-new/metric';
 
@@ -46,11 +46,13 @@ export default function MetricsPage() {
           { title: '显示名', dataIndex: 'display_name', width: 150, render: (v: string) => v || '-' },
           { title: '公式', dataIndex: 'formula', width: 200, render: (f: any) => <code>{JSON.stringify(f)}</code> },
           { title: '状态', dataIndex: 'status', width: 80, render: (s: number) => <Tag color={s === 1 ? 'green' : 'default'}>{s === 1 ? '启用' : '禁用'}</Tag> },
-          { title: '操作', key: 'action', width: 120, render: (_: any, r: any) => (
-            <Popconfirm title="确认删除?" onConfirm={async () => { await metricApi.delete(r.id); loadData(); }}>
-              <Button type="link" size="small" danger icon={<DeleteOutlined />}>删除</Button>
-            </Popconfirm>
-          )},
+          {
+            title: '操作', key: 'action', width: 120, render: (_: any, r: any) => (
+              <Popconfirm title="确认删除?" onConfirm={async () => { await metricApi.delete(r.id); loadData(); }}>
+                <Button type="link" size="small" danger icon={<DeleteOutlined />}>删除</Button>
+              </Popconfirm>
+            )
+          },
         ]}
       />
       <Modal title="新建指标" open={modalOpen} onOk={handleSave} onCancel={() => setModalOpen(false)} destroyOnClose>

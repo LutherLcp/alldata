@@ -3,7 +3,7 @@
  */
 import { useEffect, useState, useCallback } from 'react';
 import { Card, Table, Button, Space, Modal, Form, Input, Select, Tag, Tabs, message, Popconfirm, Progress, Tooltip } from 'antd';
-import { PlusOutlined, ReloadOutlined, DeleteOutlined, SendOutlined, DownloadOutlined, PlayCircleOutlined } from '@ant-design/icons';
+import { PlusOutlined, ReloadOutlined, SendOutlined, PlayCircleOutlined } from '@ant-design/icons';
 import { useGlobalStore } from '@/stores/global';
 import { subscriptionApi, downloadApi, enumApi } from '@/services-new/v4';
 
@@ -52,12 +52,14 @@ function SubscriptionTab({ projectId }: { projectId?: number }) {
           { title: '推送方式', dataIndex: 'notify_type', width: 100 },
           { title: '周期', dataIndex: 'schedule_cron', width: 150 },
           { title: '状态', dataIndex: 'status', width: 80, render: (s: number) => <Tag color={s === 1 ? 'green' : 'default'}>{s === 1 ? '启用' : '禁用'}</Tag> },
-          { title: '操作', key: 'action', width: 200, render: (_: any, r: any) => (
-            <Space>
-              <Tooltip title="立即推送"><Button type="link" size="small" icon={<SendOutlined />} onClick={async () => { const res = await subscriptionApi.send(r.id) as any; message.success(`推送成功，收件人: ${res.recipients}`); }}>推送</Button></Tooltip>
-              <Popconfirm title="确认删除?" onConfirm={async () => { await subscriptionApi.delete(r.id); load(); }}><Button type="link" size="small" danger>删除</Button></Popconfirm>
-            </Space>
-          )},
+          {
+            title: '操作', key: 'action', width: 200, render: (_: any, r: any) => (
+              <Space>
+                <Tooltip title="立即推送"><Button type="link" size="small" icon={<SendOutlined />} onClick={async () => { const res = await subscriptionApi.send(r.id) as any; message.success(`推送成功，收件人: ${res.recipients}`); }}>推送</Button></Tooltip>
+                <Popconfirm title="确认删除?" onConfirm={async () => { await subscriptionApi.delete(r.id); load(); }}><Button type="link" size="small" danger>删除</Button></Popconfirm>
+              </Space>
+            )
+          },
         ]}
       />
       <Modal title="新建订阅" open={modalOpen} onOk={handleSave} onCancel={() => setModalOpen(false)} destroyOnClose>
@@ -93,12 +95,14 @@ function DownloadTab({ projectId }: { projectId?: number }) {
           { title: '类型', dataIndex: 'task_type', width: 100, render: (v: string) => <Tag>{v}</Tag> },
           { title: '状态', dataIndex: 'status', width: 120, render: (s: number, r: any) => <Space><Tag color={TASK_STATUS[s]?.color}>{TASK_STATUS[s]?.text}</Tag>{s === 2 && <Progress percent={r.progress} size="small" style={{ width: 80 }} />}</Space> },
           { title: '文件', dataIndex: 'file_url', width: 200, render: (v: string) => v ? <a href={v}>{v.split('/').pop()}</a> : '-' },
-          { title: '操作', key: 'action', width: 200, render: (_: any, r: any) => (
-            <Space>
-              {r.status === 1 && <Button type="link" size="small" icon={<PlayCircleOutlined />} onClick={async () => { await downloadApi.execute(r.id); message.success('导出完成'); load(); }}>执行</Button>}
-              <Popconfirm title="确认删除?" onConfirm={async () => { await downloadApi.delete(r.id); load(); }}><Button type="link" size="small" danger>删除</Button></Popconfirm>
-            </Space>
-          )},
+          {
+            title: '操作', key: 'action', width: 200, render: (_: any, r: any) => (
+              <Space>
+                {r.status === 1 && <Button type="link" size="small" icon={<PlayCircleOutlined />} onClick={async () => { await downloadApi.execute(r.id); message.success('导出完成'); load(); }}>执行</Button>}
+                <Popconfirm title="确认删除?" onConfirm={async () => { await downloadApi.delete(r.id); load(); }}><Button type="link" size="small" danger>删除</Button></Popconfirm>
+              </Space>
+            )
+          },
         ]}
       />
     </Card>
@@ -138,9 +142,11 @@ function EnumTab({ projectId }: { projectId?: number }) {
           { title: '名称', dataIndex: 'name', width: 200 },
           { title: '描述', dataIndex: 'description', width: 200, render: (v: string) => v || '-' },
           { title: '枚举项', dataIndex: 'items', width: 300, render: (items: any) => Array.isArray(items) ? items.map((i: any) => <Tag key={i.value} style={{ marginBottom: 2 }}>{i.label || i.value}</Tag>) : '-' },
-          { title: '操作', key: 'action', width: 100, render: (_: any, r: any) => (
-            <Popconfirm title="确认删除?" onConfirm={async () => { await enumApi.delete(r.id); load(); }}><Button type="link" size="small" danger>删除</Button></Popconfirm>
-          )},
+          {
+            title: '操作', key: 'action', width: 100, render: (_: any, r: any) => (
+              <Popconfirm title="确认删除?" onConfirm={async () => { await enumApi.delete(r.id); load(); }}><Button type="link" size="small" danger>删除</Button></Popconfirm>
+            )
+          },
         ]}
       />
       <Modal title="新建枚举" open={modalOpen} onOk={handleSave} onCancel={() => setModalOpen(false)} destroyOnClose>

@@ -4,13 +4,13 @@
 import { useEffect, useState, useCallback } from 'react';
 import {
   Card, Table, Button, Space, Modal, Form, Input, Select, Tag, Switch,
-  Typography, message, Tabs, Drawer, Descriptions, Popconfirm, Row, Col,
+  Typography, message, Tabs, Drawer, Descriptions, Popconfirm,
 } from 'antd';
 import { PlusOutlined, ReloadOutlined, EditOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
 import { useGlobalStore } from '@/stores/global';
 import { trackingApi, Story, EventDef, EventProperty } from '@/services-new/tracking';
 
-const { Title, Text } = Typography;
+const { Title } = Typography;
 const { TextArea } = Input;
 
 const STATUS_MAP: Record<number, { color: string; text: string }> = {
@@ -146,14 +146,16 @@ export default function TrackingPage() {
                   { title: '文档', dataIndex: 'docs_url', render: (v: string) => v ? <a href={v} target="_blank">查看</a> : '-' },
                   { title: '事件数', key: 'count', render: (_: any, r: Story) => r._count?.events || 0 },
                   { title: '状态', dataIndex: 'status', render: (s: number) => <Tag color={STATUS_MAP[s]?.color}>{STATUS_MAP[s]?.text}</Tag> },
-                  { title: '操作', key: 'action', render: (_: any, r: Story) => (
-                    <Space>
-                      <Button type="link" size="small" onClick={() => { setSelectedStoryId(r.id); setActiveTab('events'); }}>查看事件</Button>
-                      <Popconfirm title="确认删除?" onConfirm={async () => { await trackingApi.deleteStory(r.id); loadData(); }}>
-                        <Button type="link" size="small" danger>删除</Button>
-                      </Popconfirm>
-                    </Space>
-                  )},
+                  {
+                    title: '操作', key: 'action', render: (_: any, r: Story) => (
+                      <Space>
+                        <Button type="link" size="small" onClick={() => { setSelectedStoryId(r.id); setActiveTab('events'); }}>查看事件</Button>
+                        <Popconfirm title="确认删除?" onConfirm={async () => { await trackingApi.deleteStory(r.id); loadData(); }}>
+                          <Button type="link" size="small" danger>删除</Button>
+                        </Popconfirm>
+                      </Space>
+                    )
+                  },
                 ]}
               />
             </Card>
@@ -183,11 +185,13 @@ export default function TrackingPage() {
                 { title: '属性名', dataIndex: 'name' },
                 { title: '类型', dataIndex: 'data_type' },
                 { title: '必填', dataIndex: 'is_required', render: (v: boolean) => v ? <Tag color="red">是</Tag> : '否' },
-                { title: '操作', key: 'action', render: (_: any, r: EventProperty) => (
-                  <Popconfirm title="确认删除?" onConfirm={async () => { await trackingApi.deleteProperty(r.id); loadData(); }}>
-                    <Button type="link" size="small" danger>删除</Button>
-                  </Popconfirm>
-                )},
+                {
+                  title: '操作', key: 'action', render: (_: any, r: EventProperty) => (
+                    <Popconfirm title="确认删除?" onConfirm={async () => { await trackingApi.deleteProperty(r.id); loadData(); }}>
+                      <Button type="link" size="small" danger>删除</Button>
+                    </Popconfirm>
+                  )
+                },
               ]}
             />
           </>

@@ -42,45 +42,4 @@ func GetProject(c *gin.Context) {
 	response.Success(c, project)
 }
 
-type Dashboard struct {
-	ID          int    `json:"id"`
-	ProjectID   int    `json:"project_id"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Type        string `json:"type"`
-	Status      int    `json:"status"`
-	CreatedAt   string `json:"created_at"`
-}
 
-func ListDashboards(c *gin.Context) {
-	projectID := c.GetHeader("Project-Id")
-	if projectID == "" {
-		projectID = "1"
-	}
-
-	dashboards := []Dashboard{
-		{ID: 1, ProjectID: 1, Name: "核心指标看板", Description: "展示核心业务指标", Type: "dashboard", Status: 1, CreatedAt: "2024-01-01"},
-		{ID: 2, ProjectID: 1, Name: "用户分析看板", Description: "用户行为分析", Type: "dashboard", Status: 1, CreatedAt: "2024-01-02"},
-	}
-	response.Success(c, dashboards)
-}
-
-func GetDashboard(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := strconv.Atoi(idStr)
-	if err != nil {
-		response.BadRequest(c, "无效的看板 ID")
-		return
-	}
-
-	dashboard := Dashboard{
-		ID:          id,
-		ProjectID:   1,
-		Name:        "核心指标看板",
-		Description: "展示核心业务指标",
-		Type:        "dashboard",
-		Status:      1,
-		CreatedAt:   "2024-01-01",
-	}
-	response.Success(c, dashboard)
-}

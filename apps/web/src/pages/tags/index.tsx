@@ -2,7 +2,7 @@
  * 标签管理页
  */
 import { useEffect, useState, useCallback } from 'react';
-import { Card, Table, Button, Space, Modal, Form, Input, Select, Tag, Typography, message, Popconfirm, Tooltip } from 'antd';
+import { Card, Table, Button, Space, Modal, Form, Input, Select, Tag, message, Popconfirm, Tooltip } from 'antd';
 import { PlusOutlined, ReloadOutlined, DeleteOutlined, PlayCircleOutlined } from '@ant-design/icons';
 import { useGlobalStore } from '@/stores/global';
 import { tagApi } from '@/services-new/tag';
@@ -64,14 +64,16 @@ export default function TagsPage() {
           { title: '类型', dataIndex: 'tag_type', width: 100, render: (t: string) => <Tag color="blue">{t}</Tag> },
           { title: '实体数', dataIndex: 'entity_count', width: 100 },
           { title: '状态', dataIndex: 'status', width: 80, render: (s: number) => <Tag color={STATUS_MAP[s]?.color}>{STATUS_MAP[s]?.text}</Tag> },
-          { title: '操作', key: 'action', width: 200, render: (_: any, r: any) => (
-            <Space>
-              <Tooltip title="触发计算"><Button type="link" size="small" icon={<PlayCircleOutlined />} onClick={() => handleRefresh(r.id)}>计算</Button></Tooltip>
-              <Popconfirm title="确认删除?" onConfirm={async () => { await tagApi.delete(r.id); loadData(); }}>
-                <Button type="link" size="small" danger icon={<DeleteOutlined />}>删除</Button>
-              </Popconfirm>
-            </Space>
-          )},
+          {
+            title: '操作', key: 'action', width: 200, render: (_: any, r: any) => (
+              <Space>
+                <Tooltip title="触发计算"><Button type="link" size="small" icon={<PlayCircleOutlined />} onClick={() => handleRefresh(r.id)}>计算</Button></Tooltip>
+                <Popconfirm title="确认删除?" onConfirm={async () => { await tagApi.delete(r.id); loadData(); }}>
+                  <Button type="link" size="small" danger icon={<DeleteOutlined />}>删除</Button>
+                </Popconfirm>
+              </Space>
+            )
+          },
         ]}
       />
       <Modal title="新建标签" open={modalOpen} onOk={handleSave} onCancel={() => setModalOpen(false)} destroyOnClose>

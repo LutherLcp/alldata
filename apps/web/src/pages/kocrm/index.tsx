@@ -3,7 +3,7 @@
  */
 import { useEffect, useState, useCallback } from 'react';
 import { Card, Table, Button, Space, Modal, Form, Input, Select, Tag, Tabs, message, Popconfirm, InputNumber } from 'antd';
-import { PlusOutlined, ReloadOutlined, DeleteOutlined } from '@ant-design/icons';
+import { PlusOutlined, ReloadOutlined } from '@ant-design/icons';
 import { useGlobalStore } from '@/stores/global';
 import { kocrmApi } from '@/services-new/v5';
 
@@ -51,11 +51,13 @@ function AccountTab({ projectId }: { projectId?: number }) {
           { title: '账户名称', dataIndex: 'account_name', width: 200 },
           { title: '账户ID', dataIndex: 'account_id', width: 150 },
           { title: '状态', dataIndex: 'status', width: 80, render: (s: number) => <Tag color={s === 1 ? 'green' : 'default'}>{s === 1 ? '正常' : '禁用'}</Tag> },
-          { title: '操作', key: 'action', width: 100, render: (_: any, r: any) => (
-            <Popconfirm title="确认删除?" onConfirm={async () => { await kocrmApi.deleteAccount(r.id); load(); }}>
-              <Button type="link" size="small" danger>删除</Button>
-            </Popconfirm>
-          )},
+          {
+            title: '操作', key: 'action', width: 100, render: (_: any, r: any) => (
+              <Popconfirm title="确认删除?" onConfirm={async () => { await kocrmApi.deleteAccount(r.id); load(); }}>
+                <Button type="link" size="small" danger>删除</Button>
+              </Popconfirm>
+            )
+          },
         ]}
       />
       <Modal title="新建账户" open={modalOpen} onOk={handleSave} onCancel={() => setModalOpen(false)} destroyOnClose>
@@ -103,11 +105,13 @@ function CreatorTab({ projectId }: { projectId?: number }) {
           { title: '粉丝数', dataIndex: 'followers', width: 100, render: (v: number) => v?.toLocaleString() || 0 },
           { title: '标签', dataIndex: 'tags', width: 200, render: (tags: string[]) => tags?.map((t: string) => <Tag key={t} style={{ marginBottom: 2 }}>{t}</Tag>) || '-' },
           { title: '状态', dataIndex: 'status', width: 80, render: (s: number) => <Tag color={s === 1 ? 'green' : 'default'}>{s === 1 ? '合作中' : '已停止'}</Tag> },
-          { title: '操作', key: 'action', width: 100, render: (_: any, r: any) => (
-            <Popconfirm title="确认删除?" onConfirm={async () => { await kocrmApi.deleteCreator(r.id); load(); }}>
-              <Button type="link" size="small" danger>删除</Button>
-            </Popconfirm>
-          )},
+          {
+            title: '操作', key: 'action', width: 100, render: (_: any, r: any) => (
+              <Popconfirm title="确认删除?" onConfirm={async () => { await kocrmApi.deleteCreator(r.id); load(); }}>
+                <Button type="link" size="small" danger>删除</Button>
+              </Popconfirm>
+            )
+          },
         ]}
       />
       <Modal title="新建达人" open={modalOpen} onOk={handleSave} onCancel={() => setModalOpen(false)} destroyOnClose>

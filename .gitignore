@@ -62,3 +62,4 @@ Thumbs.db
 *.pem
 .vercel
 .netlify
+.qoder

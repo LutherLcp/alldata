@@ -22,6 +22,10 @@ const AlertsPage = lazy(() => import('@/pages/alerts'));
 const SettingsPage = lazy(() => import('@/pages/settings'));
 const FinancePage = lazy(() => import('@/pages/finance'));
 const KocrmPage = lazy(() => import('@/pages/kocrm'));
+const UsersPage = lazy(() => import('@/pages/users'));
+const AssetsPage = lazy(() => import('@/pages/assets'));
+const CalendarPage = lazy(() => import('@/pages/calendar'));
+const AIAssistantPage = lazy(() => import('@/pages/ai-assistant'));
 
 // 路由守卫 — 需要登录
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -45,14 +49,6 @@ const LazyLoad = ({ children }: { children: React.ReactNode }) => (
   <Suspense fallback={<div style={{ textAlign: 'center', padding: 80 }}><Spin size="large" /></div>}>
     {children}
   </Suspense>
-);
-
-// 占位页面（V2+ 版本实现具体内容）
-const Placeholder = ({ name }: { name: string }) => (
-  <div style={{ textAlign: 'center', padding: 80, color: '#999' }}>
-    <h2>{name}</h2>
-    <p>功能开发中...</p>
-  </div>
 );
 
 export default function App() {
@@ -82,15 +78,16 @@ export default function App() {
         <Route path="dashboard/:id" element={<LazyLoad><DashboardDetailPage /></LazyLoad>} />
         <Route path="analysis/*" element={<LazyLoad><AnalysisPage /></LazyLoad>} />
         <Route path="tracking/*" element={<LazyLoad><TrackingPage /></LazyLoad>} />
-        <Route path="users/*" element={<Placeholder name="用户分析" />} />
+        <Route path="users/*" element={<LazyLoad><UsersPage /></LazyLoad>} />
         <Route path="tags/*" element={<LazyLoad><TagsPage /></LazyLoad>} />
         <Route path="metrics/*" element={<LazyLoad><MetricsPage /></LazyLoad>} />
-        <Route path="assets/*" element={<Placeholder name="数据资产" />} />
+        <Route path="assets/*" element={<LazyLoad><AssetsPage /></LazyLoad>} />
         <Route path="alerts/*" element={<LazyLoad><AlertsPage /></LazyLoad>} />
         <Route path="settings/*" element={<LazyLoad><SettingsPage /></LazyLoad>} />
         <Route path="kocrm/*" element={<LazyLoad><KocrmPage /></LazyLoad>} />
         <Route path="finance/*" element={<LazyLoad><FinancePage /></LazyLoad>} />
-        <Route path="calendar" element={<Placeholder name="版本日历" />} />
+        <Route path="calendar" element={<LazyLoad><CalendarPage /></LazyLoad>} />
+        <Route path="ai-assistant/*" element={<LazyLoad><AIAssistantPage /></LazyLoad>} />
       </Route>
 
       {/* 404 */}

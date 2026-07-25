@@ -2,7 +2,7 @@
  * 项目管理服务
  */
 import { FastifyInstance } from 'fastify';
-import type { Project, ProjectConfig } from '@alldata/shared/types/index.js';
+import type { Project, ProjectConfig } from '@alldata/shared';
 
 interface ListOptions {
   page: number;
@@ -60,7 +60,7 @@ export class ProjectService {
         code: data.code,
         name: data.name,
         description: data.description,
-        config: data.config ?? {},
+        config: (data.config ?? {}) as any,
         created_by: userId,
         // 自动创建默认角色和关联
         roles: {
@@ -74,7 +74,7 @@ export class ProjectService {
     });
 
     // 将创建者关联到 admin 角色
-    const adminRole = project.roles.find((r: { name: string }) => r.name === 'admin');
+    const adminRole = (project as any).roles?.find((r: { name: string }) => r.name === 'admin');
     if (adminRole) {
       await this.prisma.userProjectRole.create({
         data: { user_id: userId, project_id: project.id, role_id: adminRole.id },
@@ -91,7 +91,7 @@ export class ProjectService {
       data: {
         ...(data.name !== undefined && { name: data.name }),
         ...(data.description !== undefined && { description: data.description }),
-        ...(data.config !== undefined && { config: data.config }),
+        ...(data.config !== undefined && { config: data.config as any }),
       },
     });
   }

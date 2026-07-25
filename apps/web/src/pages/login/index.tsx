@@ -1,7 +1,7 @@
 /**
  * 登录页面
  */
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Form, Input, Button, Card, message, Typography } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
