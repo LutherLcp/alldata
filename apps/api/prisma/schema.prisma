@@ -642,3 +642,24 @@ model KocrmCreator {
 
   @@map("kocrm_creators")
 }
+
+// ============================================================
+// 审计日志 (V5 安全加固)
+// ============================================================
+
+model AuditLog {
+  id          Int       @id @default(autoincrement())
+  user_id     Int
+  project_id  Int       @default(0)
+  action      String    @db.VarChar(20) // CREATE|UPDATE|DELETE|LOGIN|EXPORT
+  resource    String    @db.VarChar(100)
+  resource_id Int       @default(0)
+  detail      Json      @default("{}")
+  ip          String    @db.VarChar(50) @default("")
+  user_agent  String    @db.VarChar(500) @default("")
+  created_at  DateTime  @default(now())
+
+  @@index([user_id, created_at])
+  @@index([resource, created_at])
+  @@map("audit_logs")
+}
