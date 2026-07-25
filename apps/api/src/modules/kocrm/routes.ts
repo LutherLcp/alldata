@@ -1,14 +1,15 @@
 /**
  * KoCRM 管理路由
  */
-import { FastifyInstance } from 'fastify';
+import { ApiError, sendSuccess } from '@/common/utils/response';
 import { requireAuth } from '@/plugins/auth';
-import { sendSuccess, ApiError } from '@/common/utils/response';
+import { FastifyInstance } from 'fastify';
 import { KocrmService } from './service';
 
 export async function kocrmRoutes(app: FastifyInstance) {
   const svc = new KocrmService(app);
-  const pid = (r: any) => Number((r.headers as any)['project-id']) || Number((r.query as any).project_id);
+  const pid = (r: any) =>
+    Number((r.headers as any)['project-id']) || Number((r.query as any).project_id);
 
   // ─── Account 账户 ───
   app.get('/accounts', { preHandler: requireAuth }, async (req, reply) => {
@@ -18,7 +19,8 @@ export async function kocrmRoutes(app: FastifyInstance) {
   });
   app.post('/accounts', { preHandler: requireAuth }, async (req, reply) => {
     const body = req.body as any;
-    if (!body.project_id || !body.platform || !body.account_name) return ApiError.badRequest(reply, '缺少必填字段');
+    if (!body.project_id || !body.platform || !body.account_name)
+      return ApiError.badRequest(reply, '缺少必填字段');
     return sendSuccess(reply, await svc.createAccount(body), '创建成功', 201);
   });
   app.put('/accounts/:id', { preHandler: requireAuth }, async (req, reply) => {
@@ -39,7 +41,8 @@ export async function kocrmRoutes(app: FastifyInstance) {
   });
   app.post('/creators', { preHandler: requireAuth }, async (req, reply) => {
     const body = req.body as any;
-    if (!body.project_id || !body.platform || !body.name) return ApiError.badRequest(reply, '缺少必填字段');
+    if (!body.project_id || !body.platform || !body.name)
+      return ApiError.badRequest(reply, '缺少必填字段');
     return sendSuccess(reply, await svc.createCreator(body), '创建成功', 201);
   });
   app.put('/creators/:id', { preHandler: requireAuth }, async (req, reply) => {

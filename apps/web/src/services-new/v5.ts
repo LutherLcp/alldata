@@ -1,5 +1,5 @@
 /** V5 API 服务 — 财务/KoCRM */
-import { get, post, put, del } from './request';
+import { del, get, post, put } from './request';
 
 export const financeApi = {
   // 供应商
@@ -8,12 +8,14 @@ export const financeApi = {
   updateSupplier: (id: number, data: any) => put(`/finance/suppliers/${id}`, data),
   deleteSupplier: (id: number) => del(`/finance/suppliers/${id}`),
   // 分成比例
-  listShareRatios: (supplierId?: number) => get('/finance/share-ratios', supplierId ? { supplier_id: supplierId } : {}),
+  listShareRatios: (supplierId?: number) =>
+    get('/finance/share-ratios', supplierId ? { supplier_id: supplierId } : {}),
   createShareRatio: (data: any) => post('/finance/share-ratios', data),
   updateShareRatio: (id: number, data: any) => put(`/finance/share-ratios/${id}`, data),
   deleteShareRatio: (id: number) => del(`/finance/share-ratios/${id}`),
   // 对账
-  listReconciliations: (supplierId?: number) => get('/finance/reconciliations', supplierId ? { supplier_id: supplierId } : {}),
+  listReconciliations: (supplierId?: number) =>
+    get('/finance/reconciliations', supplierId ? { supplier_id: supplierId } : {}),
   createReconciliation: (data: any) => post('/finance/reconciliations', data),
   updateReconciliation: (id: number, data: any) => put(`/finance/reconciliations/${id}`, data),
   deleteReconciliation: (id: number) => del(`/finance/reconciliations/${id}`),

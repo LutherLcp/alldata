@@ -1,9 +1,9 @@
 /**
  * 财务管理路由
  */
-import { FastifyInstance } from 'fastify';
+import { ApiError, sendSuccess } from '@/common/utils/response';
 import { requireAuth } from '@/plugins/auth';
-import { sendSuccess, ApiError } from '@/common/utils/response';
+import { FastifyInstance } from 'fastify';
 import { FinanceService } from './service';
 
 export async function financeRoutes(app: FastifyInstance) {
@@ -30,12 +30,15 @@ export async function financeRoutes(app: FastifyInstance) {
 
   // ─── ShareRatio 分成比例 ───
   app.get('/share-ratios', { preHandler: requireAuth }, async (req, reply) => {
-    const supplierId = (req.query as any).supplier_id ? Number((req.query as any).supplier_id) : undefined;
+    const supplierId = (req.query as any).supplier_id
+      ? Number((req.query as any).supplier_id)
+      : undefined;
     return sendSuccess(reply, await svc.listShareRatios(supplierId));
   });
   app.post('/share-ratios', { preHandler: requireAuth }, async (req, reply) => {
     const body = req.body as any;
-    if (!body.supplier_id || !body.platform || !body.ratio) return ApiError.badRequest(reply, '缺少必填字段');
+    if (!body.supplier_id || !body.platform || !body.ratio)
+      return ApiError.badRequest(reply, '缺少必填字段');
     return sendSuccess(reply, await svc.createShareRatio(body), '创建成功', 201);
   });
   app.put('/share-ratios/:id', { preHandler: requireAuth }, async (req, reply) => {
@@ -50,17 +53,24 @@ export async function financeRoutes(app: FastifyInstance) {
 
   // ─── Reconciliation 对账 ───
   app.get('/reconciliations', { preHandler: requireAuth }, async (req, reply) => {
-    const supplierId = (req.query as any).supplier_id ? Number((req.query as any).supplier_id) : undefined;
+    const supplierId = (req.query as any).supplier_id
+      ? Number((req.query as any).supplier_id)
+      : undefined;
     return sendSuccess(reply, await svc.listReconciliations(supplierId));
   });
   app.post('/reconciliations', { preHandler: requireAuth }, async (req, reply) => {
     const body = req.body as any;
-    if (!body.supplier_id || !body.platform || !body.game || !body.period) return ApiError.badRequest(reply, '缺少必填字段');
+    if (!body.supplier_id || !body.platform || !body.game || !body.period)
+      return ApiError.badRequest(reply, '缺少必填字段');
     return sendSuccess(reply, await svc.createReconciliation(body), '创建成功', 201);
   });
   app.put('/reconciliations/:id', { preHandler: requireAuth }, async (req, reply) => {
     const { id } = req.params as { id: string };
-    return sendSuccess(reply, await svc.updateReconciliation(Number(id), req.body as any), '更新成功');
+    return sendSuccess(
+      reply,
+      await svc.updateReconciliation(Number(id), req.body as any),
+      '更新成功'
+    );
   });
   app.delete('/reconciliations/:id', { preHandler: requireAuth }, async (req, reply) => {
     const { id } = req.params as { id: string };

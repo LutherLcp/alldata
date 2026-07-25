@@ -1,20 +1,20 @@
-import { FastifyInstance } from 'fastify';
-import { healthRoutes } from './health';
-import { authRoutes } from '@/modules/auth';
-import { projectRoutes } from '@/modules/project';
-import { dashboardRoutes } from '@/modules/dashboard';
 import { analysisRoutes } from '@/modules/analysis';
-import { uploadRoutes } from '@/modules/upload';
-import { noticeRoutes } from '@/modules/notice';
-import { trackingRoutes } from '@/modules/tracking';
-import { tagRoutes } from '@/modules/tag';
-import { metricRoutes } from '@/modules/metric';
-import { warningRoutes } from '@/modules/warning';
-import { subscriptionRoutes } from '@/modules/subscription';
+import { authRoutes } from '@/modules/auth';
+import { dashboardRoutes } from '@/modules/dashboard';
 import { downloadRoutes } from '@/modules/download';
 import { enumRoutes } from '@/modules/enum';
 import { financeRoutes } from '@/modules/finance';
 import { kocrmRoutes } from '@/modules/kocrm';
+import { metricRoutes } from '@/modules/metric';
+import { noticeRoutes } from '@/modules/notice';
+import { projectRoutes } from '@/modules/project';
+import { subscriptionRoutes } from '@/modules/subscription';
+import { tagRoutes } from '@/modules/tag';
+import { trackingRoutes } from '@/modules/tracking';
+import { uploadRoutes } from '@/modules/upload';
+import { warningRoutes } from '@/modules/warning';
+import { FastifyInstance } from 'fastify';
+import { healthRoutes } from './health';
 
 export async function registerRoutes(app: FastifyInstance) {
   // 健康检查

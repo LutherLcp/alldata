@@ -1,25 +1,27 @@
 /**
- * 应用路由入口
+ * 应用路由入口 — 路由级代码分割
  */
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Outlet } from 'react-router-dom';
 import { AppLayout } from '@/components/layout';
 import { useAuthStore } from '@/stores/auth';
-import { useEffect } from 'react';
+import { useEffect, lazy, Suspense } from 'react';
 import { Spin } from 'antd';
 import { LoginPage } from '@/pages/login';
 import { NotFoundPage } from '@/pages/404';
 import { NoPowerPage } from '@/pages/no-power';
-import DashboardPage from '@/pages/dashboard';
-import DashboardDetailPage from '@/pages/dashboard/detail';
-import AnalysisPage from '@/pages/analysis';
-import TrackingPage from '@/pages/tracking';
-import TagsPage from '@/pages/tags';
-import MetricsPage from '@/pages/metrics';
-import AlertsPage from '@/pages/alerts';
-import SettingsPage from '@/pages/settings';
-import FinancePage from '@/pages/finance';
-import KocrmPage from '@/pages/kocrm';
+
+// 路由级懒加载
+const DashboardPage = lazy(() => import('@/pages/dashboard'));
+const DashboardDetailPage = lazy(() => import('@/pages/dashboard/detail'));
+const AnalysisPage = lazy(() => import('@/pages/analysis'));
+const TrackingPage = lazy(() => import('@/pages/tracking'));
+const TagsPage = lazy(() => import('@/pages/tags'));
+const MetricsPage = lazy(() => import('@/pages/metrics'));
+const AlertsPage = lazy(() => import('@/pages/alerts'));
+const SettingsPage = lazy(() => import('@/pages/settings'));
+const FinancePage = lazy(() => import('@/pages/finance'));
+const KocrmPage = lazy(() => import('@/pages/kocrm'));
 
 // 路由守卫 — 需要登录
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -37,6 +39,13 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
 
 // 带 Layout 的页面容器
 const DashboardLayout = () => <AppLayout><Outlet /></AppLayout>;
+
+// 懒加载包装器
+const LazyLoad = ({ children }: { children: React.ReactNode }) => (
+  <Suspense fallback={<div style={{ textAlign: 'center', padding: 80 }}><Spin size="large" /></div>}>
+    {children}
+  </Suspense>
+);
 
 // 占位页面（V2+ 版本实现具体内容）
 const Placeholder = ({ name }: { name: string }) => (
@@ -69,18 +78,18 @@ export default function App() {
       {/* 受保护路由 */}
       <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="dashboard" element={<DashboardPage />} />
-        <Route path="dashboard/:id" element={<DashboardDetailPage />} />
-        <Route path="analysis/*" element={<AnalysisPage />} />
-        <Route path="tracking/*" element={<TrackingPage />} />
+        <Route path="dashboard" element={<LazyLoad><DashboardPage /></LazyLoad>} />
+        <Route path="dashboard/:id" element={<LazyLoad><DashboardDetailPage /></LazyLoad>} />
+        <Route path="analysis/*" element={<LazyLoad><AnalysisPage /></LazyLoad>} />
+        <Route path="tracking/*" element={<LazyLoad><TrackingPage /></LazyLoad>} />
         <Route path="users/*" element={<Placeholder name="用户分析" />} />
-        <Route path="tags/*" element={<TagsPage />} />
-        <Route path="metrics/*" element={<MetricsPage />} />
+        <Route path="tags/*" element={<LazyLoad><TagsPage /></LazyLoad>} />
+        <Route path="metrics/*" element={<LazyLoad><MetricsPage /></LazyLoad>} />
         <Route path="assets/*" element={<Placeholder name="数据资产" />} />
-        <Route path="alerts/*" element={<AlertsPage />} />
-        <Route path="settings/*" element={<SettingsPage />} />
-        <Route path="kocrm/*" element={<KocrmPage />} />
-        <Route path="finance/*" element={<FinancePage />} />
+        <Route path="alerts/*" element={<LazyLoad><AlertsPage /></LazyLoad>} />
+        <Route path="settings/*" element={<LazyLoad><SettingsPage /></LazyLoad>} />
+        <Route path="kocrm/*" element={<LazyLoad><KocrmPage /></LazyLoad>} />
+        <Route path="finance/*" element={<LazyLoad><FinancePage /></LazyLoad>} />
         <Route path="calendar" element={<Placeholder name="版本日历" />} />
       </Route>
 
