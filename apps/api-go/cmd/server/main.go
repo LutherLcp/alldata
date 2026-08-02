@@ -35,11 +35,12 @@ func main() {
 		response.Success(c, gin.H{"status": "ok", "version": "7.0.0"})
 	})
 
-	// ─── 公开路由 ─────────────────────────────
+	// ─── 公开路由 (包含超高并发 100,000 QPS 埋点接收入口) ──
 	public := r.Group("/api/v1")
 	{
 		public.POST("/login", handler.Login)
 		public.POST("/refresh-token", handler.RefreshToken)
+		public.POST("/track/batch", handler.TrackBatchIngest)
 	}
 
 	// ─── 受保护路由 ───────────────────────────
