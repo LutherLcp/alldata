@@ -249,3 +249,4 @@ export * from './marketing';
 export * from './abtest';
 export * from './experience';
 export * from './mta';
+export * from './security';

@@ -35,6 +35,7 @@ const MarketingFlowPage = lazy(() => import('@/pages/marketing/flow'));
 const ABTestPage = lazy(() => import('@/pages/abtest'));
 const ExperiencePage = lazy(() => import('@/pages/experience'));
 const MTADashboard = lazy(() => import('@/pages/mta'));
+const SecurityCenterPage = lazy(() => import('@/pages/security'));
 
 // 路由守卫 — 需要登录
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -108,6 +109,7 @@ export default function App() {
         <Route path="abtest/*" element={<LazyLoad><ABTestPage /></LazyLoad>} />
         <Route path="experience/*" element={<LazyLoad><ExperiencePage /></LazyLoad>} />
         <Route path="mta/*" element={<LazyLoad><MTADashboard /></LazyLoad>} />
+        <Route path="security/*" element={<LazyLoad><SecurityCenterPage /></LazyLoad>} />
       </Route>
 
       {/* 404 */}

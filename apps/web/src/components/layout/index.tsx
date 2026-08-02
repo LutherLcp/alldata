@@ -23,6 +23,7 @@ import {
   RobotOutlined,
   RocketOutlined,
   AimOutlined,
+  SecurityScanOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   UserOutlined,
@@ -101,6 +102,7 @@ const rawMenuItems = [
       { key: '/kocrm', icon: <TeamOutlined />, labelKey: 'layout.kocrm' },
       { key: '/finance', icon: <DollarOutlined />, labelKey: 'layout.finance' },
       { key: '/settings', icon: <SettingOutlined />, labelKey: 'layout.settings' },
+      { key: '/security', icon: <SecurityScanOutlined />, label: '数据血缘与 GDPR 安全' },
     ],
   },
 ];
