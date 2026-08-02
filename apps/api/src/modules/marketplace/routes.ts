@@ -2,7 +2,7 @@
  * SDK 编译工厂与开发者插件生态 Fastify 路由
  */
 import { FastifyInstance } from 'fastify';
-import { requireAuth } from '@/middleware/auth';
+import { requireAuth } from '@/plugins/auth';
 import { sendSuccess, ApiError } from '@/common/utils/response';
 import { sdkBuildOptionsSchema, SDKBuildOptions } from '@alldata/shared';
 import { generateSDKBundle, getMarketplacePlugins } from './service';

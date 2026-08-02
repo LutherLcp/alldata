@@ -2,7 +2,7 @@
  * 数据血缘图谱与 GDPR 隐私安全 Fastify 路由
  */
 import { FastifyInstance } from 'fastify';
-import { requireAuth } from '@/middleware/auth';
+import { requireAuth } from '@/plugins/auth';
 import { sendSuccess, ApiError } from '@/common/utils/response';
 import { getProjectDataLineage, executeGDPRForget } from './service';
 
