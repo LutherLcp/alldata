@@ -250,3 +250,4 @@ export * from './abtest';
 export * from './experience';
 export * from './mta';
 export * from './security';
+export * from './marketplace';

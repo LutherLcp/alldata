@@ -24,6 +24,7 @@ import {
   RocketOutlined,
   AimOutlined,
   SecurityScanOutlined,
+  BuildOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   UserOutlined,
@@ -81,6 +82,7 @@ const rawMenuItems = [
     children: [
       { key: '/tracking', icon: <TagOutlined />, labelKey: 'layout.tracking' },
       { key: '/assets', icon: <DatabaseOutlined />, labelKey: 'layout.assets' },
+      { key: '/marketplace', icon: <BuildOutlined />, label: 'SDK 工厂与插件生态' },
     ],
   },
   {

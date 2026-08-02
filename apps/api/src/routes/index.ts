@@ -8,6 +8,7 @@ import { abtestRoutes } from '@/modules/abtest/routes';
 import { experienceRoutes } from '@/modules/experience/routes';
 import { mtaRoutes } from '@/modules/mta/routes';
 import { securityRoutes } from '@/modules/security/routes';
+import { marketplaceRoutes } from '@/modules/marketplace/routes';
 import { dashboardRoutes } from '@/modules/dashboard';
 import { dataAssetRoutes } from '@/modules/data_asset';
 import { downloadRoutes } from '@/modules/download';
@@ -109,4 +110,7 @@ export async function registerRoutes(app: FastifyInstance) {
 
   // ─── V14 模块 (数据血缘与 GDPR 隐私安全) ──
   await app.register(securityRoutes, { prefix: '/api/security' });
+
+  // ─── V15 模块 (SDK 编译工厂与插件生态) ───
+  await app.register(marketplaceRoutes, { prefix: '/api/marketplace' });
 }
