@@ -26,6 +26,14 @@ const UsersPage = lazy(() => import('@/pages/users'));
 const AssetsPage = lazy(() => import('@/pages/assets'));
 const CalendarPage = lazy(() => import('@/pages/calendar'));
 const AIAssistantPage = lazy(() => import('@/pages/ai-assistant'));
+const ExportsPage = lazy(() => import('@/pages/download-management'));
+const NotificationPage = lazy(() => import('@/pages/notification'));
+const User360ProfilePage = lazy(() => import('@/pages/cdp/profile'));
+const CustomerJourneyPage = lazy(() => import('@/pages/cdp/journey'));
+const CohortPage = lazy(() => import('@/pages/cdp/cohort'));
+const MarketingFlowPage = lazy(() => import('@/pages/marketing/flow'));
+const ABTestPage = lazy(() => import('@/pages/abtest'));
+const ExperiencePage = lazy(() => import('@/pages/experience'));
 
 // 路由守卫 — 需要登录
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -44,9 +52,11 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
 // 带 Layout 的页面容器
 const DashboardLayout = () => <AppLayout><Outlet /></AppLayout>;
 
-// 懒加载包装器
+import { TablePageSkeleton } from '@/components/common/PageSkeleton';
+
+// 懒加载包装器 — 使用无闪烁骨架屏
 const LazyLoad = ({ children }: { children: React.ReactNode }) => (
-  <Suspense fallback={<div style={{ textAlign: 'center', padding: 80 }}><Spin size="large" /></div>}>
+  <Suspense fallback={<TablePageSkeleton />}>
     {children}
   </Suspense>
 );
@@ -88,6 +98,14 @@ export default function App() {
         <Route path="finance/*" element={<LazyLoad><FinancePage /></LazyLoad>} />
         <Route path="calendar" element={<LazyLoad><CalendarPage /></LazyLoad>} />
         <Route path="ai-assistant/*" element={<LazyLoad><AIAssistantPage /></LazyLoad>} />
+        <Route path="exports/*" element={<LazyLoad><ExportsPage /></LazyLoad>} />
+        <Route path="notification/*" element={<LazyLoad><NotificationPage /></LazyLoad>} />
+        <Route path="cdp/profile" element={<LazyLoad><User360ProfilePage /></LazyLoad>} />
+        <Route path="cdp/journey" element={<LazyLoad><CustomerJourneyPage /></LazyLoad>} />
+        <Route path="cdp/cohort" element={<LazyLoad><CohortPage /></LazyLoad>} />
+        <Route path="marketing/flow/*" element={<LazyLoad><MarketingFlowPage /></LazyLoad>} />
+        <Route path="abtest/*" element={<LazyLoad><ABTestPage /></LazyLoad>} />
+        <Route path="experience/*" element={<LazyLoad><ExperiencePage /></LazyLoad>} />
       </Route>
 
       {/* 404 */}

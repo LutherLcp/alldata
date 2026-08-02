@@ -27,10 +27,9 @@ request.interceptors.request.use(
       config.headers.Authorization = `Bearer ${authStore.token}`;
     }
 
-    // 注入当前项目 ID
-    if (globalStore.currentProject) {
-      config.headers['Project-Id'] = String(globalStore.currentProject.id);
-    }
+    // 注入当前项目 ID (增加默认 1 兜底，防止缺少 project_id 报错)
+    const currentProj = globalStore.currentProject;
+    config.headers['Project-Id'] = String(currentProj?.id ?? 1);
 
     // 注入语言
     config.headers['Language'] = globalStore.language || 'zh_CN';
@@ -47,7 +46,8 @@ request.interceptors.request.use(
 request.interceptors.response.use(
   (response: AxiosResponse<ApiResponse>) => {
     const { data } = response;
-    if (data.code === 200) {
+    // 判定 2xx 成功响应 (包含 200 OK 与 201 Created)
+    if (data && data.code >= 200 && data.code < 300) {
       return response;
     }
     // 业务错误

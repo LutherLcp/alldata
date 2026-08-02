@@ -118,9 +118,6 @@ services:
         condition: service_healthy
       minio:
         condition: service_healthy
-    volumes:
-      - ./apps/api:/app
-      - /app/node_modules
     networks:
       - alldata-network
 
@@ -137,9 +134,6 @@ services:
       VITE_WS_URL: ws://localhost:4000
     depends_on:
       - api
-    volumes:
-      - ./apps/web:/app
-      - /app/node_modules
     networks:
       - alldata-network
 

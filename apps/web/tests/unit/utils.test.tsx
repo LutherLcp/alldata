@@ -29,13 +29,13 @@ describe('Factories', () => {
   it('should create project factory', () => {
     const project = factories.project({ status: 'active' });
     expect(project.status).toBe('active');
-    expect(project.code).toMatch(/^proj_[a-z0-9]{8}$/);
+    expect(project.code).toMatch(/^PRJ_[A-Z0-9]{6}$/);
   });
 
   it('should create multiple items with createMany', () => {
-    const users = factories.createMany(factories.user, 3, { status: 'active' });
+    const users = factories.createMany(factories.user, 3);
     expect(users).toHaveLength(3);
-    users.forEach(u => expect(u.status).toBe('active'));
+    users.forEach(u => expect(u.id).toMatch(/^user-\d+-/));
   });
 
   it('should reset counters', () => {

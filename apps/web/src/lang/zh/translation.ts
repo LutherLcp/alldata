@@ -35,6 +35,8 @@ export default {
     metrics: '指标管理',
     assets: '数据资产',
     alerts: '预警管理',
+    exports: '导出中心',
+    notification: '消息通知',
     settings: '管理中心',
     finance: '财务管理',
     kocrm: 'KoCRM',

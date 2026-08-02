@@ -2,6 +2,10 @@ import { aiRoutes } from '@/modules/ai';
 import { analysisRoutes } from '@/modules/analysis';
 import { authRoutes } from '@/modules/auth';
 import { calendarRoutes } from '@/modules/calendar';
+import { cdpRoutes } from '@/modules/cdp/routes';
+import { marketingRoutes } from '@/modules/marketing/routes';
+import { abtestRoutes } from '@/modules/abtest/routes';
+import { experienceRoutes } from '@/modules/experience/routes';
 import { dashboardRoutes } from '@/modules/dashboard';
 import { dataAssetRoutes } from '@/modules/data_asset';
 import { downloadRoutes } from '@/modules/download';
@@ -85,4 +89,16 @@ export async function registerRoutes(app: FastifyInstance) {
   // ─── V7 模块 ─────────────────────────────
   // AI 智能服务
   await app.register(aiRoutes, { prefix: '/api/ai' });
+
+  // ─── V9 模块 (CDP 与客户旅程) ──────────────
+  await app.register(cdpRoutes, { prefix: '/api/cdp' });
+
+  // ─── V10 模块 (营销 Flow) ──────────────────
+  await app.register(marketingRoutes, { prefix: '/api/marketing' });
+
+  // ─── V11 模块 (A/B Test 实验平台) ─────────
+  await app.register(abtestRoutes, { prefix: '/api/abtest' });
+
+  // ─── V12 模块 (AI Copilot & Session 录屏) ──
+  await app.register(experienceRoutes, { prefix: '/api/experience' });
 }

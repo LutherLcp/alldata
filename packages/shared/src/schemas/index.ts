@@ -4,39 +4,8 @@
  * 前后端共享的参数验证，确保接口数据一致性。
  */
 import { z } from 'zod';
-
-// ============================================================
-// 通用 Schema
-// ============================================================
-
-export const pageParamsSchema = z.object({
-  page: z.number().int().min(1).default(1),
-  page_size: z.number().int().min(1).max(200).default(20),
-  keyword: z.string().optional(),
-  sort_field: z.string().optional(),
-  sort_order: z.enum(['asc', 'desc']).optional(),
-});
-
-export const dateRangeSchema = z.object({
-  start: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  end: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  granularity: z.enum(['hour', 'day', 'week', 'month']).optional(),
-});
-
-export const filterConditionSchema = z.object({
-  property: z.string().min(1),
-  operator: z.enum([
-    'eq', 'ne', 'gt', 'gte', 'lt', 'lte',
-    'in', 'not_in', 'like', 'not_like',
-    'is_null', 'is_not_null', 'between', 'not_between',
-  ]),
-  value: z.unknown(),
-  data_type: z.enum(['string', 'number', 'date', 'boolean', 'array', 'object']).optional(),
-});
-
-export const idParamSchema = z.object({
-  id: z.coerce.number().int().positive(),
-});
+import { dateRangeSchema, filterConditionSchema } from './common';
+export * from './common';
 
 // ============================================================
 // 认证 Schema
@@ -250,6 +219,23 @@ export const sqlRunSchema = z.object({
 });
 
 // ============================================================
+// 导出任务与通知 Schema
+// ============================================================
+
+export const exportTaskCreateSchema = z.object({
+  task_name: z.string().min(1).max(300),
+  task_type: z.enum(['report', 'datatable', 'analysis']).default('analysis'),
+  config: z.record(z.unknown()).optional(),
+});
+
+export const notificationCreateSchema = z.object({
+  title: z.string().min(1).max(300),
+  content: z.string().min(1),
+  type: z.enum(['system', 'alert', 'export', 'subscription']).default('system'),
+  target_user_ids: z.array(z.number()).optional(),
+});
+
+// ============================================================
 // 文件上传 Schema
 // ============================================================
 
@@ -257,3 +243,8 @@ export const uploadSchema = z.object({
   type: z.enum(['image', 'excel', 'csv', 'pdf', 'other']).default('other'),
   extra: z.record(z.unknown()).optional(),
 });
+
+export * from './cdp';
+export * from './marketing';
+export * from './abtest';
+export * from './experience';

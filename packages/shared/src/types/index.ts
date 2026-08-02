@@ -713,3 +713,184 @@ export interface KocrmCreator {
   meta: Record<string, unknown>;
   created_at: string;
 }
+
+// ============================================================
+// CDP 与 客户旅程域 (Version 9.0)
+// ============================================================
+
+export interface User360Profile {
+  user_id: string;
+  project_id: number;
+  nickname?: string;
+  avatar?: string;
+  email?: string;
+  phone_masked?: string;
+  gender?: string;
+  city?: string;
+  ltv_score: number; // 用户生命周期价值分级 1-100
+  rfm_category: string; // 高价值客户 / 潜力客户 / 流失风险客户 / 一般客户
+  tags: string[];
+  first_visit_at: string;
+  last_active_at: string;
+  total_events: number;
+  total_orders?: number;
+  total_spend?: number;
+  recent_events: Array<{
+    event_name: string;
+    display_name?: string;
+    timestamp: string;
+    properties?: Record<string, unknown>;
+  }>;
+}
+
+export interface CustomerJourneyNode {
+  name: string;
+  category?: string;
+  value: number; // 访问/流向人数
+}
+
+export interface CustomerJourneyLink {
+  source: string;
+  target: string;
+  value: number;
+}
+
+export interface CustomerJourneyPath {
+  nodes: CustomerJourneyNode[];
+  links: CustomerJourneyLink[];
+  dropoff_rate: number; // 总体流失率
+}
+
+export interface CohortGroup {
+  id: number;
+  project_id: number;
+  name: string;
+  description?: string;
+  entity_type: 'user' | 'device';
+  rules: FilterCondition[];
+  user_count: number;
+  refresh_cron?: string;
+  last_refreshed_at?: string;
+  created_by: number;
+  created_at: string;
+  updated_at: string;
+}
+
+// ============================================================
+// 营销自动化 Flow 域 (Version 10.0)
+// ============================================================
+
+export interface FlowNode {
+  id: string;
+  type: 'trigger' | 'condition' | 'action' | 'split';
+  label: string;
+  config?: Record<string, unknown>;
+}
+
+export interface FlowEdge {
+  source: string;
+  target: string;
+  label?: string;
+}
+
+export interface MarketingFlow {
+  id: number;
+  project_id: number;
+  name: string;
+  description?: string;
+  status: 1 | 2 | 3; // 1=草稿 2=运行中 3=已暂停
+  trigger_type: 'event' | 'cron' | 'cohort';
+  nodes: FlowNode[];
+  edges: FlowEdge[];
+  triggered_count: number; // 触达总人数
+  conversion_count: number; // 转化总人数
+  conversion_rate: number; // 转化率 CR
+  created_by: number;
+  created_at: string;
+  updated_at: string;
+}
+
+// ============================================================
+// A/B Testing 与 Feature Flags 域 (Version 11.0)
+// ============================================================
+
+export interface FeatureFlag {
+  id: number;
+  project_id: number;
+  key: string;
+  name: string;
+  description?: string;
+  status: 1 | 2; // 1=开启 2=关闭
+  rollout_percentage: number;
+  rules?: FilterCondition[];
+  created_by: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ABVariant {
+  name: string;
+  weight: number;
+  sample_count: number;
+  conversion_count: number;
+  conversion_rate: number;
+  p_value?: number;
+  is_winner?: boolean;
+  config?: Record<string, unknown>;
+}
+
+export interface ABExperiment {
+  id: number;
+  project_id: number;
+  key: string;
+  name: string;
+  hypothesis?: string;
+  target_metric: string;
+  status: 1 | 2 | 3; // 1=准备中 2=进行中 3=已完成
+  variants: ABVariant[];
+  winning_variant?: string;
+  p_value: number; // 显著性 p值 (< 0.05 证明显著)
+  created_by: number;
+  created_at: string;
+  updated_at: string;
+}
+
+// ============================================================
+// AI Copilot 与 Session Replay 体验重放域 (Version 12.0)
+// ============================================================
+
+export interface CopilotQueryResult {
+  prompt: string;
+  sql: string;
+  explanation: string;
+  chart_type: 'line' | 'bar' | 'pie';
+  columns: string[];
+  rows: Record<string, unknown>[];
+}
+
+export interface SessionRecording {
+  session_id: string;
+  project_id: number;
+  user_id: string;
+  duration_seconds: number;
+  events_count: number;
+  has_error: boolean;
+  page_url: string;
+  device: string;
+  recorded_at: string;
+  events: Array<{ type: number; timestamp: number; data: unknown }>;
+}
+
+export interface HeatmapPoint {
+  x: number;
+  y: number;
+  value: number;
+}
+
+export interface HeatmapData {
+  page_url: string;
+  device: string;
+  total_clicks: number;
+  max_intensity: number;
+  points: HeatmapPoint[];
+}

@@ -35,3 +35,10 @@ export const enumApi = {
   update: (id: number, data: any) => put(`/enums/${id}`, data),
   delete: (id: number) => del(`/enums/${id}`),
 };
+
+export const noticeApi = {
+  list: (projectId: number) => get('/notices', { project_id: projectId }),
+  unreadCount: (projectId: number) => get('/notices/unread-count', { project_id: projectId }),
+  markRead: (ids: number[]) => post('/notices/read', { ids }),
+  markAllRead: (projectId: number) => post('/notices/read-all', { project_id: projectId }),
+};

@@ -8,8 +8,9 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
+      '@alldata/shared/tests/factories': path.resolve(__dirname, '../../packages/shared/tests/factories/index.ts'),
       '@alldata/shared': path.resolve(__dirname, '../../packages/shared/src'),
+      '@': path.resolve(__dirname, './src'),
     },
   },
   test: {

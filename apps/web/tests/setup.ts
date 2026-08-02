@@ -5,6 +5,8 @@ import { cleanup } from '@testing-library/react';
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key, i18n: { changeLanguage: vi.fn() } }),
   Trans: ({ children }: { children: React.ReactNode }) => children,
+  initReactI18next: { type: '3rdParty', init: vi.fn() },
+  I18nextProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
 
 vi.mock('zustand', async () => {
@@ -21,19 +23,19 @@ vi.mock('zustand', async () => {
   };
 });
 
-vi.mock('@tanstack/react-query', () => ({
-  useQuery: vi.fn(),
-  useMutation: vi.fn(),
-  useQueryClient: vi.fn(() => ({
-    invalidateQueries: vi.fn(),
-    setQueryData: vi.fn(),
-    getQueryData: vi.fn(),
-  })),
-  QueryClient: vi.fn(() => ({
-    getQueryCache: vi.fn(() => ({ findAll: vi.fn(() => []) })),
-    getMutationCache: vi.fn(() => ({ findAll: vi.fn(() => []) })),
-  })),
-}));
+vi.mock('@tanstack/react-query', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@tanstack/react-query')>();
+  return {
+    ...actual,
+    useQuery: vi.fn(),
+    useMutation: vi.fn(),
+    useQueryClient: vi.fn(() => ({
+      invalidateQueries: vi.fn(),
+      setQueryData: vi.fn(),
+      getQueryData: vi.fn(),
+    })),
+  };
+});
 
 vi.mock('axios', () => ({
   default: {

@@ -132,12 +132,3 @@ process.on('SIGTERM', shutdown);
 process.on('SIGINT', shutdown);
 
 start();
-process.on('SIGTERM', shutdown);
-process.on('SIGINT', shutdown);
-
-start();
-start();
-process.on('SIGTERM', shutdown);
-process.on('SIGINT', shutdown);
-
-start();

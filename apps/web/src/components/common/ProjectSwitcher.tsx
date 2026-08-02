@@ -12,14 +12,14 @@ export function ProjectSwitcher() {
   const { userInfo } = useAuthStore();
   const { currentProject, projects, setCurrentProject, setProjects } = useGlobalStore();
 
-  // 从 userInfo 中初始化项目列表
+  // 从 userInfo 中初始化项目列表 (带默认项目 1 兜底)
   useEffect(() => {
-    if (userInfo?.projects && userInfo.projects.length > 0) {
-      setProjects(userInfo.projects);
-      if (!currentProject) {
-        const first = userInfo.projects[0];
-        if (first) setCurrentProject(first);
-      }
+    const list = (userInfo?.projects && userInfo.projects.length > 0)
+      ? userInfo.projects
+      : [{ id: 1, code: 'default', name: '全域电商主项目' }];
+    setProjects(list);
+    if (!currentProject && list[0]) {
+      setCurrentProject(list[0]);
     }
   }, [userInfo, currentProject, setProjects, setCurrentProject]);
 

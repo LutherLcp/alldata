@@ -127,6 +127,10 @@ func main() {
 		protected.POST("/ai/insight", handler.AIInsight)
 		protected.POST("/ai/anomaly/detect", handler.AIAnomalyDetect)
 		protected.POST("/ai/anomaly/interpret", handler.AIAnomalyInterpret)
+
+		// 导出与异步中心
+		protected.GET("/exports", handler.ListExportTasks)
+		protected.GET("/export/fast-stream", handler.FastStreamExport)
 	}
 
 	// 启动服务器

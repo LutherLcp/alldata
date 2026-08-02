@@ -99,7 +99,8 @@ export class AIService {
     // 检查配置是否有效，无效则返回 mock 响应
     const validation = validateLLMConfig(this.config);
     if (!validation.valid) {
-      const mockContent = '[Mock] AI 服务当前为演示模式，请配置 LLM_API_KEY 环境变量以启用真实 AI 能力。';
+      const mockContent =
+        '[Mock] AI 服务当前为演示模式，请配置 LLM_API_KEY 环境变量以启用真实 AI 能力。';
       callback.onChunk(mockContent);
       callback.onEnd({ prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 });
       return;
@@ -155,7 +156,10 @@ export class AIService {
       }
 
       const elapsed = Date.now() - startTime;
-      this.recordUsage(usage ?? { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 }, elapsed);
+      this.recordUsage(
+        usage ?? { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
+        elapsed
+      );
       callback.onEnd(usage);
     } catch (err) {
       this.stats.total_errors++;
@@ -167,7 +171,9 @@ export class AIService {
   }
 
   /** 流式响应 — AsyncGenerator 方式 */
-  async *streamGenerator(request: CompletionRequest): AsyncGenerator<string, TokenUsage | undefined> {
+  async *streamGenerator(
+    request: CompletionRequest
+  ): AsyncGenerator<string, TokenUsage | undefined> {
     const startTime = Date.now();
     const model = request.model ?? this.config.model;
     const maxTokens = request.maxTokens ?? this.config.maxTokens;
@@ -222,7 +228,10 @@ export class AIService {
       }
     } finally {
       const elapsed = Date.now() - startTime;
-      this.recordUsage(usage ?? { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 }, elapsed);
+      this.recordUsage(
+        usage ?? { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
+        elapsed
+      );
     }
 
     return usage;
@@ -281,7 +290,7 @@ export class AIService {
 
   /** Mock 响应 — 当 LLM 不可用时使用 */
   private mockResponse(body: OpenAIRequestBody): CompletionResponse {
-    const userMsg = body.messages.filter(m => m.role === 'user').pop()?.content ?? '';
+    const userMsg = body.messages.filter((m) => m.role === 'user').pop()?.content ?? '';
     return {
       id: crypto.randomUUID(),
       content: `[Mock] 收到您的消息："${userMsg.slice(0, 50)}"。AI 服务当前为演示模式，请配置 LLM_API_KEY 环境变量以启用真实 AI 能力。`,
