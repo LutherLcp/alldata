@@ -40,8 +40,13 @@ const app = Fastify({
 // 审计日志插件
 await app.register(auditPlugin);
 
-// 基础插件
-await app.register(cors, { origin: config.CORS_ORIGIN, credentials: true });
+// 基础插件 (允许 Cloudflare Pages 与本地跨域)
+await app.register(cors, {
+  origin: (origin, cb) => {
+    cb(null, true);
+  },
+  credentials: true,
+});
 await app.register(helmet, { contentSecurityPolicy: false });
 await app.register(fastifyRateLimit, { max: 200, timeWindow: '1 minute' });
 await app.register(cookie, { secret: config.COOKIE_SECRET });

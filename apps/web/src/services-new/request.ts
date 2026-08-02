@@ -8,7 +8,8 @@ import { useAuthStore } from '@/stores/auth';
 import { useGlobalStore } from '@/stores/global';
 import type { ApiResponse } from '@alldata/shared';
 
-const BASE_URL = import.meta.env.VITE_API_URL ?? '/api';
+const rawBaseURL = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || '/api';
+const BASE_URL = rawBaseURL.endsWith('/api') ? rawBaseURL : `${rawBaseURL.replace(/\/$/, '')}/api`;
 
 const request: AxiosInstance = axios.create({
   baseURL: BASE_URL,
