@@ -22,6 +22,7 @@ import {
   ExperimentOutlined,
   RobotOutlined,
   RocketOutlined,
+  AimOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   UserOutlined,
@@ -69,6 +70,7 @@ const rawMenuItems = [
       { key: '/marketing/flow', icon: <PartitionOutlined />, label: '营销自动化 Flow' },
       { key: '/abtest', icon: <ExperimentOutlined />, label: 'A/B 实验与灰度' },
       { key: '/experience', icon: <RobotOutlined />, label: 'AI Copilot 与录屏' },
+      { key: '/mta', icon: <AimOutlined />, label: '全渠道多触点归因 (MTA)' },
     ],
   },
   {

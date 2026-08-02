@@ -6,6 +6,7 @@ import { cdpRoutes } from '@/modules/cdp/routes';
 import { marketingRoutes } from '@/modules/marketing/routes';
 import { abtestRoutes } from '@/modules/abtest/routes';
 import { experienceRoutes } from '@/modules/experience/routes';
+import { mtaRoutes } from '@/modules/mta/routes';
 import { dashboardRoutes } from '@/modules/dashboard';
 import { dataAssetRoutes } from '@/modules/data_asset';
 import { downloadRoutes } from '@/modules/download';
@@ -101,4 +102,7 @@ export async function registerRoutes(app: FastifyInstance) {
 
   // ─── V12 模块 (AI Copilot & Session 录屏) ──
   await app.register(experienceRoutes, { prefix: '/api/experience' });
+
+  // ─── V13 模块 (全渠道多触点归因 MTA) ─────
+  await app.register(mtaRoutes, { prefix: '/api/mta' });
 }
