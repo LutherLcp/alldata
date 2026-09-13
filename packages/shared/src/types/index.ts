@@ -54,10 +54,20 @@ export interface FilterCondition {
 }
 
 export type FilterOperator =
-  | 'eq' | 'ne' | 'gt' | 'gte' | 'lt' | 'lte'
-  | 'in' | 'not_in' | 'like' | 'not_like'
-  | 'is_null' | 'is_not_null'
-  | 'between' | 'not_between';
+  | 'eq'
+  | 'ne'
+  | 'gt'
+  | 'gte'
+  | 'lt'
+  | 'lte'
+  | 'in'
+  | 'not_in'
+  | 'like'
+  | 'not_like'
+  | 'is_null'
+  | 'is_not_null'
+  | 'between'
+  | 'not_between';
 
 export type DataType = 'string' | 'number' | 'date' | 'boolean' | 'array' | 'object';
 
@@ -248,9 +258,18 @@ export interface Report {
 
 export type ReportType = 'chart' | 'table' | 'metric' | 'sql' | 'ai' | 'text';
 export type ChartType =
-  | 'line' | 'bar' | 'horizontal_bar' | 'pie' | 'area'
-  | 'scatter' | 'heatmap' | 'funnel' | 'wordcloud'
-  | 'map' | 'sankey' | 'pivot';
+  | 'line'
+  | 'bar'
+  | 'horizontal_bar'
+  | 'pie'
+  | 'area'
+  | 'scatter'
+  | 'heatmap'
+  | 'funnel'
+  | 'wordcloud'
+  | 'map'
+  | 'sankey'
+  | 'pivot';
 
 export interface SoftLink {
   id: number;
@@ -284,9 +303,14 @@ export interface AnalysisQueryConfig {
 }
 
 export type AnalysisType =
-  | 'event' | 'retention' | 'funnel'
-  | 'scatter' | 'interval' | 'user'
-  | 'self_service' | 'sql';
+  | 'event'
+  | 'retention'
+  | 'funnel'
+  | 'scatter'
+  | 'interval'
+  | 'user'
+  | 'self_service'
+  | 'sql';
 
 export interface AnalysisMetric {
   event_name: string;

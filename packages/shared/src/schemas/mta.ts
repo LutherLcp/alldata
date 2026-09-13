@@ -34,7 +34,7 @@ export const channelROISchema = z.object({
   attributed_revenue: z.number(),
   total_cost: z.number(),
   roas: z.number(), // Return on Ad Spend (收益率)
-  cac: z.number(),  // Customer Acquisition Cost (获客成本)
+  cac: z.number(), // Customer Acquisition Cost (获客成本)
 });
 
 export type ChannelROI = z.infer<typeof channelROISchema>;

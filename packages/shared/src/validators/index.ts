@@ -30,17 +30,25 @@ export const idParamSchema = z.object({
 });
 
 export const projectCodeParamSchema = z.object({
-  code: z.string().min(2).max(50).regex(/^[a-zA-Z0-9_-]+$/),
+  code: z
+    .string()
+    .min(2)
+    .max(50)
+    .regex(/^[a-zA-Z0-9_-]+$/),
 });
 
-export const createIdSchema = (fieldName = 'id') => z.object({
-  [fieldName]: uuidSchema,
-});
+export const createIdSchema = (fieldName = 'id') =>
+  z.object({
+    [fieldName]: uuidSchema,
+  });
 
 export const fileUploadSchema = z.object({
   filename: z.string().min(1).max(255),
   mimetype: z.string().min(1),
-  size: z.number().positive().max(100 * 1024 * 1024),
+  size: z
+    .number()
+    .positive()
+    .max(100 * 1024 * 1024),
   encoding: z.string().optional(),
 });
 
@@ -64,54 +72,52 @@ export const nullableSchema = <T extends z.ZodTypeAny>(schema: T) => schema.null
 
 export const transformToDate = z.preprocess(
   (val) => (typeof val === 'string' || typeof val === 'number' ? new Date(val) : val),
-  z.date()
+  z.date(),
 );
 
 export const transformToNumber = z.preprocess(
   (val) => (typeof val === 'string' ? Number(val) : val),
-  z.number()
+  z.number(),
 );
 
-export const transformToBoolean = z.preprocess(
-  (val) => {
-    if (typeof val === 'boolean') return val;
-    if (typeof val === 'string') return val === 'true' || val === '1';
-    if (typeof val === 'number') return val !== 0;
-    return false;
-  },
-  z.boolean()
-);
+export const transformToBoolean = z.preprocess((val) => {
+  if (typeof val === 'boolean') return val;
+  if (typeof val === 'string') return val === 'true' || val === '1';
+  if (typeof val === 'number') return val !== 0;
+  return false;
+}, z.boolean());
 
 export const transformToArray = <T extends z.ZodTypeAny>(itemSchema: T) =>
-  z.preprocess(
-    (val) => {
-      if (Array.isArray(val)) return val;
-      if (typeof val === 'string') {
-        try {
-          return JSON.parse(val);
-        } catch {
-          return val.split(',').map(s => s.trim());
-        }
+  z.preprocess((val) => {
+    if (Array.isArray(val)) return val;
+    if (typeof val === 'string') {
+      try {
+        return JSON.parse(val);
+      } catch {
+        return val.split(',').map((s) => s.trim());
       }
-      return [];
-    },
-    z.array(itemSchema)
-  );
+    }
+    return [];
+  }, z.array(itemSchema));
 
 export const createApiResponseSchema = <T extends z.ZodTypeAny>(dataSchema: T) =>
   z.object({
     success: z.boolean(),
     data: dataSchema.optional(),
-    error: z.object({
-      code: z.string(),
-      message: z.string(),
-      details: z.record(z.unknown()).optional(),
-    }).optional(),
-    meta: z.object({
-      timestamp: z.string().datetime(),
-      requestId: z.string().uuid(),
-      version: z.string(),
-    }).optional(),
+    error: z
+      .object({
+        code: z.string(),
+        message: z.string(),
+        details: z.record(z.unknown()).optional(),
+      })
+      .optional(),
+    meta: z
+      .object({
+        timestamp: z.string().datetime(),
+        requestId: z.string().uuid(),
+        version: z.string(),
+      })
+      .optional(),
   });
 
 export const createPaginatedResponseSchema = <T extends z.ZodTypeAny>(itemSchema: T) =>

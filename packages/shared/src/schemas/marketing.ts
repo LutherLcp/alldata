@@ -15,9 +15,13 @@ export const flowCreateSchema = z.object({
   description: z.string().optional(),
   trigger_type: z.enum(['event', 'cron', 'cohort']).default('event'),
   nodes: z.array(flowNodeSchema).min(1),
-  edges: z.array(z.object({
-    source: z.string(),
-    target: z.string(),
-    label: z.string().optional(),
-  })).optional(),
+  edges: z
+    .array(
+      z.object({
+        source: z.string(),
+        target: z.string(),
+        label: z.string().optional(),
+      }),
+    )
+    .optional(),
 });

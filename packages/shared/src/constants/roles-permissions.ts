@@ -245,9 +245,7 @@ export const ROLE_PERMISSIONS: Record<Role, readonly Permission[]> = {
     PERMISSIONS.FINANCE_READ,
     PERMISSIONS.KOCRM_READ,
   ],
-  [ROLES.GUEST]: [
-    PERMISSIONS.DASHBOARD_READ,
-  ],
+  [ROLES.GUEST]: [PERMISSIONS.DASHBOARD_READ],
 } as const;
 
 export const EVENT_TYPES = {

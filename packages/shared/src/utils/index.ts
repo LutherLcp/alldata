@@ -23,8 +23,8 @@ export function formatNumber(
   options: { decimals?: number; prefix?: string; suffix?: string } = {},
 ): string {
   if (num == null || num === '') return '-';
-  const n = typeof num === 'string' ? parseFloat(num) : num;
-  if (isNaN(n)) return '-';
+  const n = typeof num === 'string' ? Number.parseFloat(num) : num;
+  if (Number.isNaN(n)) return '-';
   const { decimals = 2, prefix = '', suffix = '' } = options;
   const formatted = n.toLocaleString('en-US', {
     minimumFractionDigits: 0,
@@ -54,7 +54,7 @@ export function formatFileSize(bytes: number): string {
   const k = 1024;
   const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
+  return `${Number.parseFloat((bytes / k ** i).toFixed(2))} ${sizes[i]}`;
 }
 
 /** URL 参数序列化 */
@@ -100,9 +100,11 @@ export function buildTree<T extends { id: number | string; parent_id?: number | 
   }
 
   for (const item of items) {
-    const node = map.get(item.id)!;
-    if (item.parent_id != null && map.has(item.parent_id)) {
-      map.get(item.parent_id)!.children.push(node);
+    const node = map.get(item.id);
+    if (!node) continue;
+    const parent = item.parent_id != null ? map.get(item.parent_id) : undefined;
+    if (parent) {
+      parent.children.push(node);
     } else {
       roots.push(node);
     }

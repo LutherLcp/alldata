@@ -32,7 +32,11 @@ export const refreshTokenSchema = z.object({
 // ============================================================
 
 export const projectCreateSchema = z.object({
-  code: z.string().min(2).max(100).regex(/^[a-z0-9_-]+$/),
+  code: z
+    .string()
+    .min(2)
+    .max(100)
+    .regex(/^[a-z0-9_-]+$/),
   name: z.string().min(1).max(200),
   description: z.string().optional(),
   config: z.record(z.unknown()).optional(),
@@ -60,15 +64,19 @@ export const dashboardUpdateSchema = z.object({
   id: z.number().int().positive(),
   name: z.string().min(1).max(300).optional(),
   description: z.string().optional(),
-  layout: z.array(z.object({
-    i: z.string(),
-    x: z.number(),
-    y: z.number(),
-    w: z.number(),
-    h: z.number(),
-    minW: z.number().optional(),
-    minH: z.number().optional(),
-  })).optional(),
+  layout: z
+    .array(
+      z.object({
+        i: z.string(),
+        x: z.number(),
+        y: z.number(),
+        w: z.number(),
+        h: z.number(),
+        minW: z.number().optional(),
+        minH: z.number().optional(),
+      }),
+    )
+    .optional(),
   config: z.record(z.unknown()).optional(),
   common_filters: z.array(filterConditionSchema).optional(),
 });
@@ -107,24 +115,40 @@ export const analysisQuerySchema = z.object({
   request_id: z.string().min(1),
   config: z.object({
     analysis_type: z.enum([
-      'event', 'retention', 'funnel', 'scatter',
-      'interval', 'user', 'self_service', 'sql',
+      'event',
+      'retention',
+      'funnel',
+      'scatter',
+      'interval',
+      'user',
+      'self_service',
+      'sql',
     ]),
     date_range: dateRangeSchema,
     metrics: z.array(analysisMetricSchema).min(1),
-    group_by: z.array(z.object({
-      property: z.string(),
-      datatable: z.string().optional(),
-    })).optional(),
+    group_by: z
+      .array(
+        z.object({
+          property: z.string(),
+          datatable: z.string().optional(),
+        }),
+      )
+      .optional(),
     global_filters: z.array(filterConditionSchema).optional(),
-    user_group: z.object({
-      tag_id: z.number().optional(),
-      conditions: z.array(filterConditionSchema).optional(),
-    }).optional(),
-    funnel_steps: z.array(z.object({
-      event_name: z.string(),
-      filters: z.array(filterConditionSchema).optional(),
-    })).optional(),
+    user_group: z
+      .object({
+        tag_id: z.number().optional(),
+        conditions: z.array(filterConditionSchema).optional(),
+      })
+      .optional(),
+    funnel_steps: z
+      .array(
+        z.object({
+          event_name: z.string(),
+          filters: z.array(filterConditionSchema).optional(),
+        }),
+      )
+      .optional(),
     funnel_window: z.number().optional(),
     retention_event: z.string().optional(),
     retention_window: z.number().optional(),
@@ -142,15 +166,23 @@ export const storyCreateSchema = z.object({
 
 export const eventDefCreateSchema = z.object({
   story_id: z.number().int().optional(),
-  name: z.string().min(1).max(200).regex(/^[a-zA-Z_][a-zA-Z0-9_]*$/),
+  name: z
+    .string()
+    .min(1)
+    .max(200)
+    .regex(/^[a-zA-Z_][a-zA-Z0-9_]*$/),
   display_name: z.string().optional(),
   description: z.string().optional(),
-  properties: z.array(z.object({
-    name: z.string().min(1),
-    data_type: z.enum(['string', 'number', 'date', 'boolean', 'array', 'object']),
-    is_required: z.boolean().default(false),
-    description: z.string().optional(),
-  })).optional(),
+  properties: z
+    .array(
+      z.object({
+        name: z.string().min(1),
+        data_type: z.enum(['string', 'number', 'date', 'boolean', 'array', 'object']),
+        is_required: z.boolean().default(false),
+        description: z.string().optional(),
+      }),
+    )
+    .optional(),
 });
 
 // ============================================================
@@ -193,14 +225,18 @@ export const metricCreateSchema = z.object({
 
 export const warningCreateSchema = z.object({
   name: z.string().min(1).max(300),
-  monitor_rules: z.array(z.object({
-    metric: analysisMetricSchema,
-    condition: z.object({
-      operator: z.string(),
-      threshold: z.number(),
-    }),
-    date_range: dateRangeSchema,
-  })).min(1),
+  monitor_rules: z
+    .array(
+      z.object({
+        metric: analysisMetricSchema,
+        condition: z.object({
+          operator: z.string(),
+          threshold: z.number(),
+        }),
+        date_range: dateRangeSchema,
+      }),
+    )
+    .min(1),
   notify_config: z.object({
     channels: z.array(z.enum(['email', 'feishu', 'webhook', 'in_app'])),
     recipients: z.array(z.number()).optional(),

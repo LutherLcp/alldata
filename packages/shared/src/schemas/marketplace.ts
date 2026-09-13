@@ -3,7 +3,14 @@
  */
 import { z } from 'zod';
 
-export const sdkPlatformSchema = z.enum(['web_js', 'wechat_mp', 'ios_swift', 'android_kotlin', 'flutter', 'react_native']);
+export const sdkPlatformSchema = z.enum([
+  'web_js',
+  'wechat_mp',
+  'ios_swift',
+  'android_kotlin',
+  'flutter',
+  'react_native',
+]);
 
 export type SDKPlatform = z.infer<typeof sdkPlatformSchema>;
 

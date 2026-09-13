@@ -3,7 +3,13 @@
  */
 import { z } from 'zod';
 
-export const lineageNodeTypeSchema = z.enum(['sdk', 'raw_table', 'materialized_view', 'data_mart', 'dashboard_report']);
+export const lineageNodeTypeSchema = z.enum([
+  'sdk',
+  'raw_table',
+  'materialized_view',
+  'data_mart',
+  'dashboard_report',
+]);
 
 export const dataLineageNodeSchema = z.object({
   id: z.string(),
