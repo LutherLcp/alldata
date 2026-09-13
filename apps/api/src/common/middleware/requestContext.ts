@@ -2,7 +2,7 @@
  * 请求上下文中间件
  * 从请求头提取 project-id, trace-id, language 注入到 request
  */
-import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { v4 as uuidv4 } from 'uuid';
 
 // 扩展 FastifyRequest 类型

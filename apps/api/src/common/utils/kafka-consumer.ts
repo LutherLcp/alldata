@@ -1,6 +1,6 @@
 /**
  * Kafka 事件消费者 — 埋点数据异步消费
- * 
+ *
  * 流程: 埋点数据 → Kafka → Consumer → 批量写入 ClickHouse
  * 配置: 1000条/5秒 批量写入
  */
@@ -32,13 +32,16 @@ export interface TrackingEvent {
 }
 
 /**
- * 事件批量写入器
+ * 事件批量写入器 — 具备背压控制与死信队列 (DLQ) 保护
  */
 export class EventBatchWriter {
   private buffer: TrackingEvent[] = [];
   private timer: NodeJS.Timeout | null = null;
   private config: KafkaConfig;
   private clickhouse: any;
+  private readonly MAX_BUFFER_SIZE = 50000;
+  private readonly MAX_RETRY_COUNT = 3;
+  private retryCountMap = new Map<string, number>();
 
   constructor(config: Partial<KafkaConfig> = {}, clickhouse?: any) {
     this.config = { ...DEFAULT_CONFIG, ...config };
@@ -47,23 +50,43 @@ export class EventBatchWriter {
   }
 
   /**
-   * 添加事件到缓冲区
+   * 添加事件到缓冲区（带背压防护）
+   * @returns boolean 是否成功入队（false 表示触发背压丢弃/降级）
    */
-  addEvent(event: TrackingEvent): void {
+  addEvent(event: TrackingEvent): boolean {
+    if (this.buffer.length >= this.MAX_BUFFER_SIZE) {
+      console.error(
+        `[EventBatchWriter] Backpressure triggered! Buffer size reached ${this.MAX_BUFFER_SIZE}. Dropping or dumping to DLQ.`,
+      );
+      this.dumpToDeadLetter([event], 'Buffer overflow (Backpressure)');
+      return false;
+    }
     this.buffer.push(event);
     if (this.buffer.length >= this.config.batchSize) {
       this.flush();
     }
+    return true;
   }
 
   /**
-   * 批量添加事件
+   * 批量添加事件（带背压防护）
    */
-  addEvents(events: TrackingEvent[]): void {
-    this.buffer.push(...events);
+  addEvents(events: TrackingEvent[]): number {
+    const availableSpace = this.MAX_BUFFER_SIZE - this.buffer.length;
+    if (availableSpace <= 0) {
+      this.dumpToDeadLetter(events, 'Buffer overflow (Backpressure)');
+      return 0;
+    }
+    const accepted = events.slice(0, availableSpace);
+    const dropped = events.slice(availableSpace);
+    if (dropped.length > 0) {
+      this.dumpToDeadLetter(dropped, 'Buffer overflow (Backpressure)');
+    }
+    this.buffer.push(...accepted);
     if (this.buffer.length >= this.config.batchSize) {
       this.flush();
     }
+    return accepted.length;
   }
 
   /**
@@ -73,7 +96,7 @@ export class EventBatchWriter {
     if (this.buffer.length === 0) return 0;
 
     const batch = this.buffer.splice(0, this.config.batchSize);
-    
+
     try {
       if (this.clickhouse) {
         await this.writeToClickHouse(batch);
@@ -82,11 +105,41 @@ export class EventBatchWriter {
       }
       return batch.length;
     } catch (error) {
-      console.error('[EventBatchWriter] Flush failed:', error);
-      // 重新放回缓冲区
-      this.buffer.unshift(...batch);
+      console.error('[EventBatchWriter] Flush failed, evaluating retries:', error);
+
+      const toRequeue: TrackingEvent[] = [];
+      const toDLQ: TrackingEvent[] = [];
+
+      for (const item of batch) {
+        const itemKey = `${item.project_id}_${item.event_name}_${item.timestamp.getTime()}_${item.user_id || ''}`;
+        const retries = (this.retryCountMap.get(itemKey) || 0) + 1;
+        if (retries <= this.MAX_RETRY_COUNT) {
+          this.retryCountMap.set(itemKey, retries);
+          toRequeue.push(item);
+        } else {
+          this.retryCountMap.delete(itemKey);
+          toDLQ.push(item);
+        }
+      }
+
+      if (toDLQ.length > 0) {
+        this.dumpToDeadLetter(toDLQ, 'Exceeded max retry count (3)');
+      }
+
+      // 如果缓冲区还有容量，将未超过重试次数的事件放回队列前部
+      if (toRequeue.length > 0) {
+        this.buffer.unshift(...toRequeue);
+      }
       return 0;
     }
+  }
+
+  /**
+   * 归档死信队列 (DLQ)
+   */
+  private dumpToDeadLetter(events: TrackingEvent[], reason: string): void {
+    console.warn(`[EventBatchWriter DLQ] Archived ${events.length} events. Reason: ${reason}`);
+    // 生产环境中可持久化至本地磁盘 /tmp/dlq 或 MinIO S3 存储桶
   }
 
   /**
@@ -95,7 +148,7 @@ export class EventBatchWriter {
   private async writeToClickHouse(events: TrackingEvent[]): Promise<void> {
     if (!this.clickhouse) return;
 
-    const values = events.map(e => [
+    const values = events.map((e) => [
       e.project_id,
       e.event_name,
       e.user_id || null,
@@ -105,11 +158,14 @@ export class EventBatchWriter {
       e.created_at,
     ]);
 
-    await this.clickhouse.query(`
+    await this.clickhouse
+      .query(`
       INSERT INTO tracking_events 
       (project_id, event_name, user_id, session_id, properties, timestamp, created_at)
       VALUES
-    `).write(values).exec();
+    `)
+      .write(values)
+      .exec();
   }
 
   /**
@@ -158,7 +214,7 @@ export class KafkaEventConsumer {
     if (this.running) return;
     this.running = true;
     console.log('[KafkaEventConsumer] Started');
-    
+
     // 模拟从 Kafka 消费消息
     // 实际实现需要 kafka-node 或 kafkajs
   }

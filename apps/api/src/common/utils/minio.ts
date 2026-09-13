@@ -1,11 +1,11 @@
+import type { Readable } from 'stream';
+import { config } from '@/config';
+import { logger } from '@/utils/logger';
 /**
  * MinIO 客户端封装
  * S3 兼容对象存储，用于文件上传/下载
  */
 import * as Minio from 'minio';
-import { Readable } from 'stream';
-import { config } from '@/config';
-import { logger } from '@/utils/logger';
 
 let minioClient: Minio.Client | null = null;
 

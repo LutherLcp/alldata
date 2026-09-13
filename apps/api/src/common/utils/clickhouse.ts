@@ -1,9 +1,9 @@
+import { logger } from '@/utils/logger';
 /**
  * ClickHouse 客户端封装
  * 为 V2 分析引擎预备，V1 仅建立连接基础
  */
-import { createClient, ClickHouseClient } from '@clickhouse/client';
-import { logger } from '@/utils/logger';
+import { type ClickHouseClient, createClient } from '@clickhouse/client';
 
 const CLICKHOUSE_URL = process.env.CLICKHOUSE_URL ?? 'http://localhost:8123';
 const CLICKHOUSE_USERNAME = process.env.CLICKHOUSE_USERNAME ?? 'default';

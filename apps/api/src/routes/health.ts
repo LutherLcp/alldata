@@ -1,4 +1,4 @@
-import { FastifyInstance } from 'fastify';
+import type { FastifyInstance } from 'fastify';
 
 export async function healthRoutes(app: FastifyInstance) {
   app.get('/health', async () => ({
@@ -12,7 +12,10 @@ export async function healthRoutes(app: FastifyInstance) {
       return { success: true, data: { status: 'ready' } };
     } catch {
       reply.code(503);
-      return { success: false, error: { code: 'NOT_READY', message: 'Database not ready', statusCode: 503 } };
+      return {
+        success: false,
+        error: { code: 'NOT_READY', message: 'Database not ready', statusCode: 503 },
+      };
     }
   });
 }

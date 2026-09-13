@@ -1,6 +1,6 @@
 /**
  * ClickHouse 物化视图定义 — 预聚合加速分析查询
- * 
+ *
  * 按 project_id + event_date 预聚合
  */
 

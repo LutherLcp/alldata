@@ -1,9 +1,9 @@
+import { ERROR_CODES } from '@alldata/shared';
 /**
  * 统一响应格式封装
  * 所有 API 响应统一 { code, message, data } 格式
  */
-import { FastifyReply } from 'fastify';
-import { ERROR_CODES } from '@alldata/shared';
+import type { FastifyReply } from 'fastify';
 
 export interface SuccessResponse<T = unknown> {
   code: number;
@@ -18,7 +18,12 @@ export interface ErrorResponse {
 }
 
 /** 成功响应 */
-export function sendSuccess<T>(reply: FastifyReply, data: T, message = 'success', code = 200): void {
+export function sendSuccess<T>(
+  reply: FastifyReply,
+  data: T,
+  message = 'success',
+  code = 200,
+): void {
   reply.code(code).send({ code, message, data });
 }
 

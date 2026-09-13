@@ -144,6 +144,8 @@ model Dashboard {
   reports         Report[]
   soft_links      SoftLink[]
 
+  @@index([project_id, status])
+  @@index([folder_id])
   @@map("dashboards")
 }
 
@@ -164,6 +166,8 @@ model Report {
 
   dashboard    Dashboard? @relation(fields: [dashboard_id], references: [id], onDelete: Cascade)
 
+  @@index([dashboard_id])
+  @@index([project_id])
   @@map("reports")
 }
 
@@ -180,6 +184,7 @@ model SoftLink {
 
   dashboard    Dashboard @relation(fields: [dashboard_id], references: [id], onDelete: Cascade)
 
+  @@index([dashboard_id])
   @@map("dashboard_soft_links")
 }
 
@@ -200,6 +205,7 @@ model Story {
   project     Project           @relation(fields: [project_id], references: [id], onDelete: Cascade)
   events      EventDefinition[]
 
+  @@index([project_id, status])
   @@map("stories")
 }
 
@@ -218,6 +224,8 @@ model EventDefinition {
   properties   EventProperty[]
 
   @@unique([project_id, name])
+  @@index([project_id, status])
+  @@index([story_id])
   @@map("event_definitions")
 }
 
@@ -232,6 +240,7 @@ model EventProperty {
 
   event       EventDefinition @relation(fields: [event_id], references: [id], onDelete: Cascade)
 
+  @@index([event_id])
   @@map("event_properties")
 }
 
@@ -261,6 +270,7 @@ model UserTag {
   project        Project          @relation(fields: [project_id], references: [id], onDelete: Cascade)
   histories      TagHistory[]
 
+  @@index([project_id, status, tag_type])
   @@map("user_tags")
 }
 
@@ -275,6 +285,7 @@ model TagHistory {
 
   tag          UserTag   @relation(fields: [tag_id], references: [id], onDelete: Cascade)
 
+  @@index([tag_id, created_at])
   @@map("user_tag_histories")
 }
 
@@ -298,6 +309,7 @@ model Metric {
 
   project      Project   @relation(fields: [project_id], references: [id], onDelete: Cascade)
 
+  @@index([project_id, status])
   @@map("metrics")
 }
 
@@ -351,6 +363,7 @@ model DataTable {
   project      Project          @relation(fields: [project_id], references: [id], onDelete: Cascade)
   columns      DataTableColumn[]
 
+  @@index([project_id, status])
   @@map("datatables")
 }
 
@@ -367,6 +380,7 @@ model DataTableColumn {
 
   datatable    DataTable @relation(fields: [datatable_id], references: [id], onDelete: Cascade)
 
+  @@index([datatable_id])
   @@map("datatable_columns")
 }
 
@@ -386,6 +400,7 @@ model Dataset {
 
   project     Project   @relation(fields: [project_id], references: [id], onDelete: Cascade)
 
+  @@index([project_id, status])
   @@map("datasets")
 }
 
@@ -405,6 +420,7 @@ model Attribute {
 
   project      Project   @relation(fields: [project_id], references: [id], onDelete: Cascade)
 
+  @@index([project_id, status])
   @@map("attributes")
 }
 
@@ -427,6 +443,7 @@ model Warning {
   project       Project       @relation(fields: [project_id], references: [id], onDelete: Cascade)
   logs          WarningLog[]
 
+  @@index([project_id, status])
   @@map("warnings")
 }
 
@@ -440,6 +457,7 @@ model WarningLog {
 
   warning       Warning   @relation(fields: [warning_id], references: [id], onDelete: Cascade)
 
+  @@index([warning_id, trigger_time])
   @@map("warning_logs")
 }
 

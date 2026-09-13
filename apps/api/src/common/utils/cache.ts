@@ -54,7 +54,7 @@ export async function cacheGet<T>(key: string): Promise<T | null> {
 export async function cacheSet(
   key: string,
   value: any,
-  ttl: number = CACHE_TTL.MEDIUM
+  ttl: number = CACHE_TTL.MEDIUM,
 ): Promise<void> {
   // L1: 内存缓存
   setL1(key, value);
@@ -82,39 +82,65 @@ export async function cacheDel(key: string): Promise<void> {
 }
 
 /**
- * 按前缀删除缓存
+ * 按前缀删除缓存 (非阻塞 SCAN 流式清理)
  */
 export async function cacheDelByPrefix(prefix: string): Promise<void> {
   // 清理 L1
   for (const key of memoryCache.keys()) {
     if (key.startsWith(prefix)) memoryCache.delete(key);
   }
-  // 清理 L2
+  // 清理 L2 (使用 SCAN 游标避免阻塞 Redis 单线程)
   try {
     const redis = getRedisClient();
-    const keys = await redis.keys(`${prefix}*`);
-    if (keys.length > 0) await redis.del(...keys);
+    const stream = redis.scanStream({
+      match: `${prefix}*`,
+      count: 100,
+    });
+
+    await new Promise<void>((resolve, reject) => {
+      stream.on('data', (keys: string[]) => {
+        if (keys.length > 0) {
+          const pipeline = redis.pipeline();
+          keys.forEach((k) => pipeline.del(k));
+          pipeline.exec().catch((err) => {
+            // ignore pipeline error
+          });
+        }
+      });
+      stream.on('end', () => resolve());
+      stream.on('error', (err) => reject(err));
+    });
   } catch (e) {
     // ignore
   }
 }
 
+import { globalSingleflight } from './singleflight';
+
 /**
- * 带缓存的函数包装器
+ * 带分层缓存 + Singleflight 防击穿的函数包装器
  */
 export function withCache<TArgs extends any[], TResult>(
   fn: (...args: TArgs) => Promise<TResult>,
   keyGenerator: (...args: TArgs) => string,
-  ttl: number = CACHE_TTL.MEDIUM
+  ttl: number = CACHE_TTL.MEDIUM,
 ) {
   return async (...args: TArgs): Promise<TResult> => {
     const key = keyGenerator(...args);
+    // 先查缓存 (L1 -> L2)
     const cached = await cacheGet<TResult>(key);
     if (cached !== null) return cached;
 
-    const result = await fn(...args);
-    await cacheSet(key, result, ttl);
-    return result;
+    // 缓存未命中：使用 Singleflight 保护，避免高并发打穿 DB
+    return globalSingleflight.do(key, async () => {
+      // 双重检查缓存（并发请求中较晚获得的可能已被较早的填补）
+      const recheck = await cacheGet<TResult>(key);
+      if (recheck !== null) return recheck;
+
+      const result = await fn(...args);
+      await cacheSet(key, result, ttl);
+      return result;
+    });
   };
 }
 

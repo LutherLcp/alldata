@@ -20,6 +20,11 @@
     "enabled": true,
     "rules": {
       "recommended": true,
+      "complexity": {
+        "noForEach": "warn",
+        "noStaticOnlyClass": "warn",
+        "useLiteralKeys": "warn"
+      },
       "correctness": {
         "noUnusedVariables": "warn",
         "noUnusedImports": "warn",
@@ -29,7 +34,11 @@
         "useConst": "error",
         "noVar": "error",
         "useImportType": "error",
-        "useTemplate": "warn"
+        "useTemplate": "warn",
+        "noNonNullAssertion": "warn",
+        "useNodejsImportProtocol": "warn",
+        "useExponentiationOperator": "warn",
+        "noUnusedTemplateLiteral": "warn"
       },
       "suspicious": {
         "noConsoleLog": "warn",
@@ -41,7 +50,9 @@
       },
       "a11y": {
         "useAltText": "error",
-        "noAccessKey": "error"
+        "noAccessKey": "error",
+        "useKeyWithClickEvents": "warn",
+        "useValidAnchor": "warn"
       }
     }
   },

@@ -1,4 +1,4 @@
-import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 
 export async function authPlugin(app: FastifyInstance) {
   if (!app.hasRequestDecorator('user')) {
@@ -45,7 +45,8 @@ export async function requireRole(...roles: string[]) {
   return async (request: FastifyRequest, reply: FastifyReply) => {
     await requireAuth(request, reply);
     if (reply.sent) return;
-    if (!roles.includes((request as any).user!.role)) {
+    const user = (request as any).user as { role: string } | undefined;
+    if (!user || !roles.includes(user.role)) {
       return reply.code(403).send({
         code: 403,
         message: '权限不足',

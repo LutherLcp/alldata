@@ -1,10 +1,10 @@
+import { getRedisClient } from '@/common/utils/redis';
+import { ApiError } from '@/common/utils/response';
 /**
  * Redis 滑动窗口限流中间件
  * 按 API 路径 + 用户 ID 粒度限流
  */
-import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { getRedisClient } from '@/common/utils/redis';
-import { ApiError } from '@/common/utils/response';
+import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 
 interface RateLimitOptions {
   /** 最大请求数 */

@@ -1,10 +1,10 @@
+import { config } from '@/config';
+import { logger } from '@/utils/logger';
 /**
  * Redis 客户端封装
  * 基于 ioredis，提供单例模式 + 常用方法
  */
 import Redis from 'ioredis';
-import { config } from '@/config';
-import { logger } from '@/utils/logger';
 
 let redisClient: Redis | null = null;
 
@@ -63,13 +63,25 @@ export async function cacheDel(key: string): Promise<void> {
   await redis.del(key);
 }
 
-/** 批量删除（按前缀） */
+/** 批量删除（按前缀，非阻塞 SCAN 游标） */
 export async function cacheDelByPrefix(prefix: string): Promise<void> {
   const redis = getRedisClient();
-  const keys = await redis.keys(`${prefix}*`);
-  if (keys.length > 0) {
-    await redis.del(...keys);
-  }
+  const stream = redis.scanStream({
+    match: `${prefix}*`,
+    count: 100,
+  });
+
+  return new Promise<void>((resolve, reject) => {
+    stream.on('data', (keys: string[]) => {
+      if (keys.length > 0) {
+        const pipeline = redis.pipeline();
+        keys.forEach((k) => pipeline.del(k));
+        pipeline.exec().catch(() => {});
+      }
+    });
+    stream.on('end', () => resolve());
+    stream.on('error', (err) => reject(err));
+  });
 }
 
 /** JSON 缓存 */

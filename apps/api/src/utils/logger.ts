@@ -1,5 +1,5 @@
-import pino from 'pino';
 import { config } from '@/config';
+import pino from 'pino';
 
 const isDevelopment = config.NODE_ENV === 'development';
 

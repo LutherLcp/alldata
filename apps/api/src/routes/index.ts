@@ -1,30 +1,30 @@
+import { abtestRoutes } from '@/modules/abtest/routes';
 import { aiRoutes } from '@/modules/ai';
 import { analysisRoutes } from '@/modules/analysis';
 import { authRoutes } from '@/modules/auth';
 import { calendarRoutes } from '@/modules/calendar';
 import { cdpRoutes } from '@/modules/cdp/routes';
-import { marketingRoutes } from '@/modules/marketing/routes';
-import { abtestRoutes } from '@/modules/abtest/routes';
-import { experienceRoutes } from '@/modules/experience/routes';
-import { mtaRoutes } from '@/modules/mta/routes';
-import { securityRoutes } from '@/modules/security/routes';
-import { marketplaceRoutes } from '@/modules/marketplace/routes';
 import { dashboardRoutes } from '@/modules/dashboard';
 import { dataAssetRoutes } from '@/modules/data_asset';
 import { downloadRoutes } from '@/modules/download';
 import { enumRoutes } from '@/modules/enum';
+import { experienceRoutes } from '@/modules/experience/routes';
 import { financeRoutes } from '@/modules/finance';
 import { kocrmRoutes } from '@/modules/kocrm';
+import { marketingRoutes } from '@/modules/marketing/routes';
+import { marketplaceRoutes } from '@/modules/marketplace/routes';
 import { metricRoutes } from '@/modules/metric';
+import { mtaRoutes } from '@/modules/mta/routes';
 import { noticeRoutes } from '@/modules/notice';
 import { projectRoutes } from '@/modules/project';
+import { securityRoutes } from '@/modules/security/routes';
 import { subscriptionRoutes } from '@/modules/subscription';
 import { tagRoutes } from '@/modules/tag';
 import { trackingRoutes } from '@/modules/tracking';
 import { uploadRoutes } from '@/modules/upload';
 import { userRoutes } from '@/modules/user';
 import { warningRoutes } from '@/modules/warning';
-import { FastifyInstance } from 'fastify';
+import type { FastifyInstance } from 'fastify';
 import { healthRoutes } from './health';
 
 export async function registerRoutes(app: FastifyInstance) {

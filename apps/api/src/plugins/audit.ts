@@ -2,7 +2,7 @@
  * 操作审计日志中间件
  * 记录所有 CUD 操作的审计信息
  */
-import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
+import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 
 export interface AuditLog {
   id?: number;
