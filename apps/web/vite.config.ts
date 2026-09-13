@@ -3,8 +3,16 @@ import react from '@vitejs/plugin-react-swc';
 import path from 'path';
 import { defineConfig } from 'vite';
 
+/**
+ * Vite 配置
+ * - Tailwind CSS v4：使用 @tailwindcss/vite 插件（内置 PostCSS 处理，无需额外配置）
+ * - 代码分割：按业务域拆分 chunk，优化长缓存策略
+ */
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [
+    react(),
+    tailwindcss(), // Tailwind CSS v4 — 替代 postcss + tailwindcss 插件
+  ],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
@@ -27,26 +35,29 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
-    sourcemap: false, // 生产环境关闭 sourcemap
-    chunkSizeWarningLimit: 500,
+    sourcemap: false,
+    chunkSizeWarningLimit: 600,
     rollupOptions: {
       output: {
-        // 路由级代码分割 — 每个页面独立 chunk
+        // 按业务域拆分 chunk — 最大化长缓存利用率
         manualChunks: {
-          vendor: ['react', 'react-dom', 'react-router-dom'],
-          antd: ['antd', '@ant-design/icons'],
-          charts: [
-            '@antv/g2',
-            '@ant-design/charts',
-            'echarts',
-            'echarts-for-react',
-            '@antv/x6',
-            '@antv/x6-react-components',
-          ],
-          utils: ['lodash-es', 'dayjs', 'zod', 'clsx', 'tailwind-merge'],
-          i18n: ['i18next', 'react-i18next'],
+          // 核心框架
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          // UI 组件库
+          'vendor-antd': ['antd', '@ant-design/icons'],
+          // 常用分析图表 (ECharts)
+          'vendor-echarts': ['echarts', 'echarts-for-react'],
+          // 高级多维可视化 (AntV G2 / Charts)
+          'vendor-antv-g2': ['@antv/g2', '@ant-design/charts'],
+          // 营销工作流画布引擎 (仅营销 Flow 模块使用)
+          'vendor-x6': ['@antv/x6', '@antv/x6-react-components'],
+          // 状态管理 + 服务端状态
+          'vendor-state': ['zustand', '@tanstack/react-query'],
+          // 工具库
+          'vendor-utils': ['lodash-es', 'dayjs', 'zod', 'clsx', 'tailwind-merge', 'axios'],
+          // 国际化
+          'vendor-i18n': ['i18next', 'react-i18next'],
         },
-        // 长缓存优化
         chunkFileNames: 'assets/js/[name]-[hash].js',
         entryFileNames: 'assets/js/[name]-[hash].js',
         assetFileNames: 'assets/[ext]/[name]-[hash].[ext]',

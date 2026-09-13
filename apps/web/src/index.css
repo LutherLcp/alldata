@@ -1,0 +1,247 @@
+/**
+ * Tailwind CSS v4 — CSS-first 配置
+ * 替代 tailwind.config.js（v3 JS 配置）
+ */
+@import "tailwindcss";
+
+/* ─── 设计令牌 (Design Tokens) ────────────────────────────── */
+@theme {
+  /* 主色系 — JoyBlue */
+  --color-primary: #0089ff;
+  --color-primary-hover: #006ce0;
+  --color-primary-light: #e0efff;
+
+  /* 语义色 */
+  --color-success: #52c41a;
+  --color-warning: #faad14;
+  --color-error: #ff4d4f;
+  --color-info: #1677ff;
+
+  /* 中性色 */
+  --color-gray-50: #f8fafc;
+  --color-gray-100: #f1f5f9;
+  --color-gray-200: #e2e8f0;
+  --color-gray-300: #cbd5e1;
+  --color-gray-400: #94a3b8;
+  --color-gray-500: #64748b;
+  --color-gray-600: #475569;
+  --color-gray-700: #334155;
+  --color-gray-800: #1e293b;
+  --color-gray-900: #0f172a;
+
+  /* JoyBlue 色阶 */
+  --color-joyblue-50: #f0f7ff;
+  --color-joyblue-100: #e0efff;
+  --color-joyblue-200: #badeff;
+  --color-joyblue-300: #7cc3ff;
+  --color-joyblue-400: #36a3ff;
+  --color-joyblue-500: #0089ff;
+  --color-joyblue-600: #006ce0;
+  --color-joyblue-700: #0055b3;
+  --color-joyblue-800: #004799;
+  --color-joyblue-900: #003d80;
+
+  /* 字体系列 */
+  --font-family-sans: "Inter", "PingFang SC", "Microsoft YaHei", system-ui, -apple-system,
+    sans-serif;
+  --font-family-mono: "JetBrains Mono", "Fira Code", "Cascadia Code", monospace;
+
+  /* 圆角 */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-2xl: 16px;
+  --radius-full: 9999px;
+
+  /* 阴影 */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+
+  /* 断点 */
+  --breakpoint-3xl: 1920px;
+
+  /* 动画时长 */
+  --duration-fast: 150ms;
+  --duration-normal: 250ms;
+  --duration-slow: 350ms;
+
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+}
+
+/* ─── 关键帧动画 ─────────────────────────────────────────── */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(-10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes pulseSoft {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* ─── 自定义工具类 ────────────────────────────────────────── */
+@utility container-dashboard {
+  max-width: 1440px;
+  margin-inline: auto;
+  padding-inline: 24px;
+}
+
+@utility text-gradient-primary {
+  background: linear-gradient(135deg, #0089ff 0%, #6366f1 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+@utility card-glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-xl);
+}
+
+@utility animate-fade-in {
+  animation: fadeIn var(--duration-normal) var(--ease-out);
+}
+
+@utility animate-slide-up {
+  animation: slideUp var(--duration-normal) var(--ease-out);
+}
+
+@utility animate-slide-down {
+  animation: slideDown var(--duration-normal) var(--ease-out);
+}
+
+@utility animate-slide-in-right {
+  animation: slideInRight var(--duration-normal) var(--ease-out);
+}
+
+@utility animate-pulse-soft {
+  animation: pulseSoft 2s ease-in-out infinite;
+}
+
+@utility skeleton-loading {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* ─── 全局基础样式 ────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-family: var(--font-family-sans);
+  line-height: 1.5;
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--color-gray-50);
+  color: var(--color-gray-800);
+  font-size: 0.875rem;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 滚动条美化 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-gray-300);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-gray-400);
+}
+
+/* 选中文本颜色 */
+::selection {
+  background-color: var(--color-joyblue-100);
+  color: var(--color-joyblue-700);
+}
+
+/* 焦点轮廓统一 */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* 代码块字体 */
+code,
+pre,
+kbd,
+samp {
+  font-family: var(--font-family-mono);
+}
