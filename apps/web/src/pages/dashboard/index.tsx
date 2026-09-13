@@ -1,20 +1,41 @@
+import { type DashboardItem, type FolderNode, dashboardApi } from '@/services-new/dashboard';
+import { useGlobalStore } from '@/stores/global';
+import {
+  DashboardOutlined,
+  DeleteOutlined,
+  EditOutlined,
+  FolderOutlined,
+  HomeOutlined,
+  LinkOutlined,
+  MoreOutlined,
+  PlusOutlined,
+  ReloadOutlined,
+} from '@ant-design/icons';
+import {
+  Breadcrumb,
+  Button,
+  Card,
+  Col,
+  Dropdown,
+  Empty,
+  Form,
+  Input,
+  Modal,
+  Row,
+  Space,
+  Spin,
+  Tag,
+  Tooltip,
+  Tree,
+  Typography,
+  message,
+} from 'antd';
+import dayjs from 'dayjs';
 /**
  * 看板列表页 — 文件夹树 + 看板卡片
  */
-import { useEffect, useState, useCallback } from 'react';
-import {
-  Tree, Card, Row, Col, Button, Modal, Form, Input, Space, Typography,
-  Empty, Spin, Dropdown, Tag, Tooltip, message, Breadcrumb,
-} from 'antd';
-import {
-  PlusOutlined, FolderOutlined, DashboardOutlined,
-  EditOutlined, DeleteOutlined, MoreOutlined,
-  HomeOutlined, ReloadOutlined, LinkOutlined,
-} from '@ant-design/icons';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useGlobalStore } from '@/stores/global';
-import { dashboardApi, FolderNode, DashboardItem } from '@/services-new/dashboard';
-import dayjs from 'dayjs';
 
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
@@ -59,7 +80,9 @@ export default function DashboardPage() {
     }
   }, [projectId, selectedFolderId]);
 
-  useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   // ─── 文件夹操作 ────────────────────────
   const handleCreateFolder = (parentId?: number) => {
@@ -147,7 +170,9 @@ export default function DashboardPage() {
           <FolderOutlined />
           <span>{node.name}</span>
           {node.dashboards?.length ? (
-            <Text type="secondary" style={{ fontSize: 12 }}>({node.dashboards.length})</Text>
+            <Text type="secondary" style={{ fontSize: 12 }}>
+              ({node.dashboards.length})
+            </Text>
           ) : null}
         </Space>
       ),
@@ -157,22 +182,45 @@ export default function DashboardPage() {
 
   // ─── 面包屑 ──────────────────────────
   const breadcrumbItems = [
-    { title: <><HomeOutlined /> 看板</> },
+    {
+      title: (
+        <>
+          <HomeOutlined /> 看板
+        </>
+      ),
+    },
     ...(selectedFolderId ? [{ title: '当前文件夹' }] : []),
   ];
 
   return (
     <div style={{ display: 'flex', gap: 16, height: '100%' }}>
       {/* ─── 左侧：文件夹树 ─── */}
-      <div style={{
-        width: 260, flexShrink: 0, borderRight: '1px solid #f0f0f0',
-        paddingRight: 16, overflow: 'auto',
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+      <div
+        style={{
+          width: 260,
+          flexShrink: 0,
+          borderRight: '1px solid #f0f0f0',
+          paddingRight: 16,
+          overflow: 'auto',
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: 12,
+          }}
+        >
           <Text strong>文件夹</Text>
           <Space size={4}>
             <Tooltip title="新建文件夹">
-              <Button type="text" size="small" icon={<PlusOutlined />} onClick={() => handleCreateFolder()} />
+              <Button
+                type="text"
+                size="small"
+                icon={<PlusOutlined />}
+                onClick={() => handleCreateFolder()}
+              />
             </Tooltip>
             <Tooltip title="刷新">
               <Button type="text" size="small" icon={<ReloadOutlined />} onClick={loadData} />
@@ -181,7 +229,13 @@ export default function DashboardPage() {
         </div>
 
         <div
-          style={{ cursor: 'pointer', padding: '6px 8px', borderRadius: 6, marginBottom: 4, background: !selectedFolderId ? '#e6f4ff' : 'transparent' }}
+          style={{
+            cursor: 'pointer',
+            padding: '6px 8px',
+            borderRadius: 6,
+            marginBottom: 4,
+            background: !selectedFolderId ? '#e6f4ff' : 'transparent',
+          }}
           onClick={() => setSelectedFolderId(undefined)}
         >
           <HomeOutlined style={{ marginRight: 8 }} />
@@ -194,27 +248,55 @@ export default function DashboardPage() {
             expandedKeys={expandedKeys}
             onExpand={(keys) => setExpandedKeys(keys as number[])}
             selectedKeys={selectedFolderId ? [selectedFolderId] : []}
-            onSelect={(keys) => setSelectedFolderId(keys[0] as number || undefined)}
+            onSelect={(keys) => setSelectedFolderId((keys[0] as number) || undefined)}
             titleRender={(nodeData: any) => (
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  width: '100%',
+                }}
+              >
                 <span>{nodeData.title}</span>
                 <Dropdown
                   menu={{
                     items: [
-                      { key: 'edit', label: '重命名', icon: <EditOutlined />, onClick: () => handleEditFolder(folderTree.find(f => f.id === nodeData.key)!) },
-                      { key: 'delete', label: '删除', icon: <DeleteOutlined />, danger: true, onClick: () => handleDeleteFolder(nodeData.key) },
+                      {
+                        key: 'edit',
+                        label: '重命名',
+                        icon: <EditOutlined />,
+                        onClick: () =>
+                          handleEditFolder(folderTree.find((f) => f.id === nodeData.key)!),
+                      },
+                      {
+                        key: 'delete',
+                        label: '删除',
+                        icon: <DeleteOutlined />,
+                        danger: true,
+                        onClick: () => handleDeleteFolder(nodeData.key),
+                      },
                     ],
                   }}
                   trigger={['click']}
                 >
-                  <Button type="text" size="small" icon={<MoreOutlined />} onClick={(e) => e.stopPropagation()} />
+                  <Button
+                    type="text"
+                    size="small"
+                    icon={<MoreOutlined />}
+                    onClick={(e) => e.stopPropagation()}
+                  />
                 </Dropdown>
               </div>
             )}
             blockNode
           />
         ) : (
-          <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无文件夹" style={{ marginTop: 40 }} />
+          <Empty
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
+            description="暂无文件夹"
+            style={{ marginTop: 40 }}
+          />
         )}
       </div>
 
@@ -222,7 +304,14 @@ export default function DashboardPage() {
       <div style={{ flex: 1, overflow: 'auto' }}>
         <Breadcrumb items={breadcrumbItems} style={{ marginBottom: 16 }} />
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: 16,
+          }}
+        >
           <Title level={4} style={{ margin: 0 }}>
             {selectedFolderId ? '文件夹看板' : '全部看板'}
           </Title>
@@ -240,21 +329,43 @@ export default function DashboardPage() {
                     hoverable
                     onClick={() => navigate(`/dashboard/${d.id}`)}
                     actions={[
-                      <Tooltip title="编辑" key="edit"><EditOutlined /></Tooltip>,
-                      <Tooltip title="分享" key="share"><LinkOutlined /></Tooltip>,
-                      <Tooltip title="归档" key="del"><DeleteOutlined onClick={(e) => { e.stopPropagation(); handleDeleteDashboard(d.id, d.name); }} /></Tooltip>,
+                      <Tooltip title="编辑" key="edit">
+                        <EditOutlined />
+                      </Tooltip>,
+                      <Tooltip title="分享" key="share">
+                        <LinkOutlined />
+                      </Tooltip>,
+                      <Tooltip title="归档" key="del">
+                        <DeleteOutlined
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteDashboard(d.id, d.name);
+                          }}
+                        />
+                      </Tooltip>,
                     ]}
                   >
                     <Card.Meta
                       avatar={<DashboardOutlined style={{ fontSize: 24, color: '#1677ff' }} />}
                       title={d.name}
                       description={
-                        <Paragraph ellipsis={{ rows: 2 }} type="secondary" style={{ marginBottom: 0, minHeight: 44 }}>
+                        <Paragraph
+                          ellipsis={{ rows: 2 }}
+                          type="secondary"
+                          style={{ marginBottom: 0, minHeight: 44 }}
+                        >
                           {d.description || '暂无描述'}
                         </Paragraph>
                       }
                     />
-                    <div style={{ marginTop: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div
+                      style={{
+                        marginTop: 12,
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                      }}
+                    >
                       <Tag color={d.status === 1 ? 'green' : 'default'}>
                         {d.status === 1 ? '正常' : '已归档'}
                       </Tag>
@@ -275,7 +386,9 @@ export default function DashboardPage() {
             </Row>
           ) : (
             <Empty description="暂无看板" style={{ marginTop: 80 }}>
-              <Button type="primary" onClick={handleCreateDashboard}>创建第一个看板</Button>
+              <Button type="primary" onClick={handleCreateDashboard}>
+                创建第一个看板
+              </Button>
             </Empty>
           )}
         </Spin>
@@ -290,7 +403,11 @@ export default function DashboardPage() {
         destroyOnClose
       >
         <Form form={folderForm} layout="vertical">
-          <Form.Item name="name" label="文件夹名称" rules={[{ required: true, message: '请输入名称' }]}>
+          <Form.Item
+            name="name"
+            label="文件夹名称"
+            rules={[{ required: true, message: '请输入名称' }]}
+          >
             <Input placeholder="输入文件夹名称" maxLength={100} />
           </Form.Item>
           <Form.Item name="parent_id" label="父文件夹 ID" hidden>
@@ -308,7 +425,11 @@ export default function DashboardPage() {
         destroyOnClose
       >
         <Form form={dashboardForm} layout="vertical">
-          <Form.Item name="name" label="看板名称" rules={[{ required: true, message: '请输入名称' }]}>
+          <Form.Item
+            name="name"
+            label="看板名称"
+            rules={[{ required: true, message: '请输入名称' }]}
+          >
             <Input placeholder="输入看板名称" maxLength={200} />
           </Form.Item>
           <Form.Item name="description" label="描述">

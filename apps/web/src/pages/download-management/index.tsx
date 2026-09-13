@@ -1,11 +1,32 @@
+import { downloadApi } from '@/services-new/v4';
+import { useGlobalStore } from '@/stores/global';
+import {
+  DeleteOutlined,
+  DownloadOutlined,
+  FileExcelOutlined,
+  FileTextOutlined,
+  PlusOutlined,
+  ReloadOutlined,
+} from '@ant-design/icons';
+import {
+  Button,
+  Card,
+  Form,
+  Input,
+  Modal,
+  Popconfirm,
+  Progress,
+  Select,
+  Space,
+  Table,
+  Tag,
+  Typography,
+  message,
+} from 'antd';
 /**
  * 大文件异步导出中心页
  */
-import { useEffect, useState, useCallback } from 'react';
-import { Card, Table, Button, Space, Modal, Form, Input, Select, Progress, Tag, message, Popconfirm, Typography } from 'antd';
-import { DownloadOutlined, ReloadOutlined, PlusOutlined, DeleteOutlined, FileExcelOutlined, FileTextOutlined } from '@ant-design/icons';
-import { useGlobalStore } from '@/stores/global';
-import { downloadApi } from '@/services-new/v4';
+import { useCallback, useEffect, useState } from 'react';
 
 const { Text } = Typography;
 
@@ -22,7 +43,7 @@ function formatBytes(bytes: number, decimals = 2) {
   const dm = decimals < 0 ? 0 : decimals;
   const sizes = ['B', 'KB', 'MB', 'GB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+  return Number.parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 }
 
 export default function DownloadManagementPage() {
@@ -85,7 +106,14 @@ export default function DownloadManagementPage() {
           <Button icon={<ReloadOutlined />} onClick={loadData}>
             刷新
           </Button>
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => { form.resetFields(); setModalOpen(true); }}>
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => {
+              form.resetFields();
+              setModalOpen(true);
+            }}
+          >
             新建导出任务
           </Button>
         </Space>
@@ -104,7 +132,11 @@ export default function DownloadManagementPage() {
             width: 250,
             render: (text: string, r: any) => (
               <Space>
-                {r.task_name.endsWith('.csv') ? <FileTextOutlined style={{ color: '#1890ff' }} /> : <FileExcelOutlined style={{ color: '#52c41a' }} />}
+                {r.task_name.endsWith('.csv') ? (
+                  <FileTextOutlined style={{ color: '#1890ff' }} />
+                ) : (
+                  <FileExcelOutlined style={{ color: '#52c41a' }} />
+                )}
                 <Text style={{ fontWeight: 'bold' }}>{text}</Text>
               </Space>
             ),
@@ -114,7 +146,13 @@ export default function DownloadManagementPage() {
             dataIndex: 'task_type',
             width: 120,
             render: (type: string) => (
-              <Tag color="blue">{type === 'analysis' ? '分析报表' : type === 'datatable' ? '全量明细' : '自定义查询'}</Tag>
+              <Tag color="blue">
+                {type === 'analysis'
+                  ? '分析报表'
+                  : type === 'datatable'
+                    ? '全量明细'
+                    : '自定义查询'}
+              </Tag>
             ),
           },
           {
@@ -122,7 +160,11 @@ export default function DownloadManagementPage() {
             dataIndex: 'progress',
             width: 180,
             render: (val: number, r: any) => (
-              <Progress percent={val} size="small" status={r.status === 4 ? 'exception' : r.status === 3 ? 'success' : 'active'} />
+              <Progress
+                percent={val}
+                size="small"
+                status={r.status === 4 ? 'exception' : r.status === 3 ? 'success' : 'active'}
+              />
             ),
           },
           {
@@ -161,7 +203,9 @@ export default function DownloadManagementPage() {
                     下载
                   </Button>
                 ) : (
-                  <Text type="secondary" style={{ fontSize: 12 }}>生成中...</Text>
+                  <Text type="secondary" style={{ fontSize: 12 }}>
+                    生成中...
+                  </Text>
                 )}
                 <Popconfirm title="确定删除该导出任务?" onConfirm={() => handleDelete(r.id)}>
                   <Button type="link" size="small" danger icon={<DeleteOutlined />}>
@@ -182,7 +226,11 @@ export default function DownloadManagementPage() {
         destroyOnClose
       >
         <Form form={form} layout="vertical">
-          <Form.Item name="task_name" label="任务名称" rules={[{ required: true, message: '请输入导出任务名称' }]}>
+          <Form.Item
+            name="task_name"
+            label="任务名称"
+            rules={[{ required: true, message: '请输入导出任务名称' }]}
+          >
             <Input placeholder="例: 2026年7月全量用户行为明细.xlsx" />
           </Form.Item>
           <Form.Item name="task_type" label="导出数据源类型" initialValue="analysis">

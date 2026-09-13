@@ -1,10 +1,11 @@
 /**
  * 标签管理 API
  */
-import { get, post, put, del } from './request';
+import { del, get, post, put } from './request';
 
 export const tagApi = {
-  list: (projectId: number, tagType?: string) => get('/tags', { project_id: projectId, tag_type: tagType }),
+  list: (projectId: number, tagType?: string) =>
+    get('/tags', { project_id: projectId, tag_type: tagType }),
   get: (id: number) => get(`/tags/${id}`),
   create: (data: any) => post('/tags', data),
   update: (id: number, data: any) => put(`/tags/${id}`, data),

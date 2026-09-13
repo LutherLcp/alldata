@@ -1,5 +1,5 @@
 /** V4 API 服务 — 预警/订阅/下载/枚举 */
-import { get, post, put, del } from './request';
+import { del, get, post, put } from './request';
 
 export const warningApi = {
   list: (projectId: number) => get('/warnings', { project_id: projectId }),
@@ -17,7 +17,8 @@ export const subscriptionApi = {
   update: (id: number, data: any) => put(`/subscriptions/subscriptions/${id}`, data),
   delete: (id: number) => del(`/subscriptions/subscriptions/${id}`),
   send: (id: number) => post(`/subscriptions/subscriptions/${id}/send`, {}),
-  listPushConfigs: (projectId: number) => get('/subscriptions/push-configs', { project_id: projectId }),
+  listPushConfigs: (projectId: number) =>
+    get('/subscriptions/push-configs', { project_id: projectId }),
   createPushConfig: (data: any) => post('/subscriptions/push-configs', data),
   deletePushConfig: (id: number) => del(`/subscriptions/push-configs/${id}`),
 };

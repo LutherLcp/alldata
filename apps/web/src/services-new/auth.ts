@@ -1,8 +1,8 @@
+import type { LoginRequest, LoginResponse, UserInfo } from '@alldata/shared';
 /**
  * 认证 API 服务
  */
-import { post, get } from './request';
-import type { LoginRequest, LoginResponse, UserInfo } from '@alldata/shared';
+import { get, post } from './request';
 
 export const authApi = {
   login: (data: LoginRequest) => post<LoginResponse>('/auth/login', data),

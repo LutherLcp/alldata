@@ -32,6 +32,5 @@ export const userApi = {
   get: (id: number) => get<UserItem>(`/users/${id}`),
   getTimeline: (id: number, projectId: number) =>
     get<UserTimelineEvent[]>(`/users/${id}/timeline`, { project_id: projectId }),
-  updateStatus: (id: number, status: number) =>
-    put<UserItem>(`/users/${id}/status`, { status }),
+  updateStatus: (id: number, status: number) => put<UserItem>(`/users/${id}/status`, { status }),
 };

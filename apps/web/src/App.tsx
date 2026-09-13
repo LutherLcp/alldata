@@ -1,15 +1,15 @@
+import { AppLayout } from '@/components/layout';
+import { NotFoundPage } from '@/pages/404';
+import { LoginPage } from '@/pages/login';
+import { NoPowerPage } from '@/pages/no-power';
+import { useAuthStore } from '@/stores/auth';
+import { Spin } from 'antd';
+import { Suspense, lazy, useEffect } from 'react';
 /**
  * 应用路由入口 — 路由级代码分割
  */
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import { Outlet } from 'react-router-dom';
-import { AppLayout } from '@/components/layout';
-import { useAuthStore } from '@/stores/auth';
-import { useEffect, lazy, Suspense } from 'react';
-import { Spin } from 'antd';
-import { LoginPage } from '@/pages/login';
-import { NotFoundPage } from '@/pages/404';
-import { NoPowerPage } from '@/pages/no-power';
 
 // 路由级懒加载
 const DashboardPage = lazy(() => import('@/pages/dashboard'));
@@ -53,26 +53,37 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
 };
 
 // 带 Layout 的页面容器
-const DashboardLayout = () => <AppLayout><Outlet /></AppLayout>;
+const DashboardLayout = () => (
+  <AppLayout>
+    <Outlet />
+  </AppLayout>
+);
 
 import { TablePageSkeleton } from '@/components/common/PageSkeleton';
 
 // 懒加载包装器 — 使用无闪烁骨架屏
 const LazyLoad = ({ children }: { children: React.ReactNode }) => (
-  <Suspense fallback={<TablePageSkeleton />}>
-    {children}
-  </Suspense>
+  <Suspense fallback={<TablePageSkeleton />}>{children}</Suspense>
 );
 
 export default function App() {
   const { loading, checkAuth } = useAuthStore();
 
   // 在顶层初始化 auth 状态，避免死锁
-  useEffect(() => { checkAuth(); }, [checkAuth]);
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
 
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div
+        style={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
         <Spin size="large" />
       </div>
     );
@@ -81,37 +92,225 @@ export default function App() {
   return (
     <Routes>
       {/* 公开路由 */}
-      <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
+      <Route
+        path="/login"
+        element={
+          <PublicRoute>
+            <LoginPage />
+          </PublicRoute>
+        }
+      />
       <Route path="/no-power" element={<NoPowerPage />} />
 
       {/* 受保护路由 */}
-      <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
+      <Route
+        element={
+          <ProtectedRoute>
+            <DashboardLayout />
+          </ProtectedRoute>
+        }
+      >
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="dashboard" element={<LazyLoad><DashboardPage /></LazyLoad>} />
-        <Route path="dashboard/:id" element={<LazyLoad><DashboardDetailPage /></LazyLoad>} />
-        <Route path="analysis/*" element={<LazyLoad><AnalysisPage /></LazyLoad>} />
-        <Route path="tracking/*" element={<LazyLoad><TrackingPage /></LazyLoad>} />
-        <Route path="users/*" element={<LazyLoad><UsersPage /></LazyLoad>} />
-        <Route path="tags/*" element={<LazyLoad><TagsPage /></LazyLoad>} />
-        <Route path="metrics/*" element={<LazyLoad><MetricsPage /></LazyLoad>} />
-        <Route path="assets/*" element={<LazyLoad><AssetsPage /></LazyLoad>} />
-        <Route path="alerts/*" element={<LazyLoad><AlertsPage /></LazyLoad>} />
-        <Route path="settings/*" element={<LazyLoad><SettingsPage /></LazyLoad>} />
-        <Route path="kocrm/*" element={<LazyLoad><KocrmPage /></LazyLoad>} />
-        <Route path="finance/*" element={<LazyLoad><FinancePage /></LazyLoad>} />
-        <Route path="calendar" element={<LazyLoad><CalendarPage /></LazyLoad>} />
-        <Route path="ai-assistant/*" element={<LazyLoad><AIAssistantPage /></LazyLoad>} />
-        <Route path="exports/*" element={<LazyLoad><ExportsPage /></LazyLoad>} />
-        <Route path="notification/*" element={<LazyLoad><NotificationPage /></LazyLoad>} />
-        <Route path="cdp/profile" element={<LazyLoad><User360ProfilePage /></LazyLoad>} />
-        <Route path="cdp/journey" element={<LazyLoad><CustomerJourneyPage /></LazyLoad>} />
-        <Route path="cdp/cohort" element={<LazyLoad><CohortPage /></LazyLoad>} />
-        <Route path="marketing/flow/*" element={<LazyLoad><MarketingFlowPage /></LazyLoad>} />
-        <Route path="abtest/*" element={<LazyLoad><ABTestPage /></LazyLoad>} />
-        <Route path="experience/*" element={<LazyLoad><ExperiencePage /></LazyLoad>} />
-        <Route path="mta/*" element={<LazyLoad><MTADashboard /></LazyLoad>} />
-        <Route path="security/*" element={<LazyLoad><SecurityCenterPage /></LazyLoad>} />
-        <Route path="marketplace/*" element={<LazyLoad><MarketplacePage /></LazyLoad>} />
+        <Route
+          path="dashboard"
+          element={
+            <LazyLoad>
+              <DashboardPage />
+            </LazyLoad>
+          }
+        />
+        <Route
+          path="dashboard/:id"
+          element={
+            <LazyLoad>
+              <DashboardDetailPage />
+            </LazyLoad>
+          }
+        />
+        <Route
+          path="analysis/*"
+          element={
+            <LazyLoad>
+              <AnalysisPage />
+            </LazyLoad>
+          }
+        />
+        <Route
+          path="tracking/*"
+          element={
+            <LazyLoad>
+              <TrackingPage />
+            </LazyLoad>
+          }
+        />
+        <Route
+          path="users/*"
+          element={
+            <LazyLoad>
+              <UsersPage />
+            </LazyLoad>
+          }
+        />
+        <Route
+          path="tags/*"
+          element={
+            <LazyLoad>
+              <TagsPage />
+            </LazyLoad>
+          }
+        />
+        <Route
+          path="metrics/*"
+          element={
+            <LazyLoad>
+              <MetricsPage />
+            </LazyLoad>
+          }
+        />
+        <Route
+          path="assets/*"
+          element={
+            <LazyLoad>
+              <AssetsPage />
+            </LazyLoad>
+          }
+        />
+        <Route
+          path="alerts/*"
+          element={
+            <LazyLoad>
+              <AlertsPage />
+            </LazyLoad>
+          }
+        />
+        <Route
+          path="settings/*"
+          element={
+            <LazyLoad>
+              <SettingsPage />
+            </LazyLoad>
+          }
+        />
+        <Route
+          path="kocrm/*"
+          element={
+            <LazyLoad>
+              <KocrmPage />
+            </LazyLoad>
+          }
+        />
+        <Route
+          path="finance/*"
+          element={
+            <LazyLoad>
+              <FinancePage />
+            </LazyLoad>
+          }
+        />
+        <Route
+          path="calendar"
+          element={
+            <LazyLoad>
+              <CalendarPage />
+            </LazyLoad>
+          }
+        />
+        <Route
+          path="ai-assistant/*"
+          element={
+            <LazyLoad>
+              <AIAssistantPage />
+            </LazyLoad>
+          }
+        />
+        <Route
+          path="exports/*"
+          element={
+            <LazyLoad>
+              <ExportsPage />
+            </LazyLoad>
+          }
+        />
+        <Route
+          path="notification/*"
+          element={
+            <LazyLoad>
+              <NotificationPage />
+            </LazyLoad>
+          }
+        />
+        <Route
+          path="cdp/profile"
+          element={
+            <LazyLoad>
+              <User360ProfilePage />
+            </LazyLoad>
+          }
+        />
+        <Route
+          path="cdp/journey"
+          element={
+            <LazyLoad>
+              <CustomerJourneyPage />
+            </LazyLoad>
+          }
+        />
+        <Route
+          path="cdp/cohort"
+          element={
+            <LazyLoad>
+              <CohortPage />
+            </LazyLoad>
+          }
+        />
+        <Route
+          path="marketing/flow/*"
+          element={
+            <LazyLoad>
+              <MarketingFlowPage />
+            </LazyLoad>
+          }
+        />
+        <Route
+          path="abtest/*"
+          element={
+            <LazyLoad>
+              <ABTestPage />
+            </LazyLoad>
+          }
+        />
+        <Route
+          path="experience/*"
+          element={
+            <LazyLoad>
+              <ExperiencePage />
+            </LazyLoad>
+          }
+        />
+        <Route
+          path="mta/*"
+          element={
+            <LazyLoad>
+              <MTADashboard />
+            </LazyLoad>
+          }
+        />
+        <Route
+          path="security/*"
+          element={
+            <LazyLoad>
+              <SecurityCenterPage />
+            </LazyLoad>
+          }
+        />
+        <Route
+          path="marketplace/*"
+          element={
+            <LazyLoad>
+              <MarketplacePage />
+            </LazyLoad>
+          }
+        />
       </Route>
 
       {/* 404 */}

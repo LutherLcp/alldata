@@ -1,11 +1,11 @@
+import { useAuthStore } from '@/stores/auth';
+import { useGlobalStore } from '@/stores/global';
+import { Select } from 'antd';
 /**
  * 项目切换器组件
  */
 import { useEffect } from 'react';
-import { Select } from 'antd';
 import { useTranslation } from 'react-i18next';
-import { useAuthStore } from '@/stores/auth';
-import { useGlobalStore } from '@/stores/global';
 
 export function ProjectSwitcher() {
   const { t } = useTranslation();
@@ -14,9 +14,10 @@ export function ProjectSwitcher() {
 
   // 从 userInfo 中初始化项目列表 (带默认项目 1 兜底)
   useEffect(() => {
-    const list = (userInfo?.projects && userInfo.projects.length > 0)
-      ? userInfo.projects
-      : [{ id: 1, code: 'default', name: '全域电商主项目' }];
+    const list =
+      userInfo?.projects && userInfo.projects.length > 0
+        ? userInfo.projects
+        : [{ id: 1, code: 'default', name: '全域电商主项目' }];
     setProjects(list);
     if (!currentProject && list[0]) {
       setCurrentProject(list[0]);

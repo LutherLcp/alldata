@@ -1,7 +1,7 @@
 /**
  * 看板模块 API 服务
  */
-import { get, post, put, del } from './request';
+import { del, get, post, put } from './request';
 
 // ─── 类型定义 ─────────────────────────────
 export interface FolderNode {
@@ -58,24 +58,25 @@ export const dashboardApi = {
     put<FolderNode>(`/dashboards/folders/${id}`, data),
 
   // 删除文件夹
-  deleteFolder: (id: number) =>
-    del(`/dashboards/folders/${id}`),
+  deleteFolder: (id: number) => del(`/dashboards/folders/${id}`),
 
   // ─── 看板 ─────────────────────────────
   listDashboards: (projectId: number, folderId?: number) =>
     get<DashboardItem[]>('/dashboards', { project_id: projectId, folder_id: folderId }),
 
-  getDashboard: (id: number) =>
-    get<DashboardItem>(`/dashboards/${id}`),
+  getDashboard: (id: number) => get<DashboardItem>(`/dashboards/${id}`),
 
-  createDashboard: (data: { project_id: number; folder_id?: number; name: string; description?: string }) =>
-    post<DashboardItem>('/dashboards', data),
+  createDashboard: (data: {
+    project_id: number;
+    folder_id?: number;
+    name: string;
+    description?: string;
+  }) => post<DashboardItem>('/dashboards', data),
 
   updateDashboard: (id: number, data: Partial<DashboardItem>) =>
     put<DashboardItem>(`/dashboards/${id}`, data),
 
-  deleteDashboard: (id: number) =>
-    del(`/dashboards/${id}`),
+  deleteDashboard: (id: number) => del(`/dashboards/${id}`),
 
   // ─── 报表 ─────────────────────────────
   createReport: (data: Partial<ReportItem> & { name: string; type: string }) =>
@@ -84,13 +85,11 @@ export const dashboardApi = {
   updateReport: (id: number, data: Partial<ReportItem>) =>
     put<ReportItem>(`/dashboards/reports/${id}`, data),
 
-  deleteReport: (id: number) =>
-    del(`/dashboards/reports/${id}`),
+  deleteReport: (id: number) => del(`/dashboards/reports/${id}`),
 
   // ─── 软链 ─────────────────────────────
   createSoftLink: (data: { dashboard_id: number; name?: string; expire_at?: string }) =>
     post('/dashboards/soft-links', data),
 
-  getSoftLink: (token: string) =>
-    get(`/dashboards/soft-links/${token}`),
+  getSoftLink: (token: string) => get(`/dashboards/soft-links/${token}`),
 };

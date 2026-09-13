@@ -30,7 +30,9 @@ class HighThroughputTracker {
    * 触发事件 (非阻塞直接入队)
    */
   public track(eventName: string, properties: Record<string, unknown> = {}) {
-    const distinctId = localStorage.getItem('alldata_distinct_id') || 'anon_' + Math.random().toString(36).substring(2, 9);
+    const distinctId =
+      localStorage.getItem('alldata_distinct_id') ||
+      'anon_' + Math.random().toString(36).substring(2, 9);
     if (!localStorage.getItem('alldata_distinct_id')) {
       localStorage.setItem('alldata_distinct_id', distinctId);
     }

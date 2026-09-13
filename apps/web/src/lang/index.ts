@@ -3,8 +3,8 @@
  */
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
-import zh from './zh/translation';
 import en from './en/translation';
+import zh from './zh/translation';
 
 const savedLang = localStorage.getItem('lang') || 'zh';
 

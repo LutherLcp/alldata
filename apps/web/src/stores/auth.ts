@@ -1,9 +1,9 @@
+import type { UserInfo } from '@alldata/shared';
 /**
  * 认证状态管理
  */
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { UserInfo } from '@alldata/shared';
 
 interface AuthState {
   token: string | null;
@@ -37,8 +37,7 @@ export const useAuthStore = create<AuthState>()(
           loading: false,
         }),
 
-      setUserInfo: (info) =>
-        set({ userInfo: info, isAuthenticated: true }),
+      setUserInfo: (info) => set({ userInfo: info, isAuthenticated: true }),
 
       logout: () =>
         set({

@@ -1,13 +1,13 @@
+import { authApi } from '@/services-new/auth';
+import { useAuthStore } from '@/stores/auth';
+import { LockOutlined, UserOutlined } from '@ant-design/icons';
+import { Button, Card, Form, Input, Typography, message } from 'antd';
 /**
  * 登录页面
  */
 import { useState } from 'react';
-import { Form, Input, Button, Card, message, Typography } from 'antd';
-import { UserOutlined, LockOutlined } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useAuthStore } from '@/stores/auth';
-import { authApi } from '@/services-new/auth';
+import { useNavigate } from 'react-router-dom';
 
 const { Title } = Typography;
 
@@ -32,16 +32,20 @@ export function LoginPage() {
   };
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    }}>
+    <div
+      style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      }}
+    >
       <Card style={{ width: 400, boxShadow: '0 8px 24px rgba(0,0,0,0.15)' }}>
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <Title level={2} style={{ marginBottom: 4 }}>AllData</Title>
+          <Title level={2} style={{ marginBottom: 4 }}>
+            AllData
+          </Title>
           <Typography.Text type="secondary">全域数据运营平台</Typography.Text>
         </div>
         <Form onFinish={onFinish} size="large">

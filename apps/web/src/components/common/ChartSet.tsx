@@ -1,9 +1,9 @@
+import type { AnalysisResult } from '@/services-new/analysis';
 /**
  * ChartSet — 通用图表渲染组件
  * 支持折线/柱状/饼图/面积图
  */
 import ReactEChartsCore from 'echarts-for-react';
-import type { AnalysisResult } from '@/services-new/analysis';
 
 interface ChartSetProps {
   data: AnalysisResult;
@@ -48,38 +48,51 @@ export default function ChartSet({
           type: 'pie',
           radius: ['40%', '70%'],
           data: s.data.map((d) => ({ name: d.date, value: d.value })),
-          emphasis: { itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0,0,0,0.5)' } },
+          emphasis: {
+            itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0,0,0,0.5)' },
+          },
         })),
       };
     }
 
-    // 折线/柱状/面积图
+    // 折线/柱状/面积图 (带 LTTB 降采样与大数组渐进渲染)
+    const isLargeData = dates.length > 2000;
     const seriesConfig = series.map((s, idx) => ({
       name: s.alias,
       type: chartType === 'area' ? 'line' : chartType,
       data: s.data.map((d) => d.value),
       smooth: true,
+      // LTTB 降采样：保留数据形态的同时大幅度提升渲染性能
+      sampling: 'lttb' as const,
+      // 大数据量渐进式分批渲染
+      large: isLargeData,
+      largeThreshold: 2000,
+      progressive: isLargeData ? 2000 : 0,
+      progressiveThreshold: 3000,
       areaStyle: chartType === 'area' ? { opacity: 0.3 } : undefined,
       itemStyle: { color: colors[idx % colors.length] },
     }));
 
     return {
       color: colors,
-      tooltip: { trigger: 'axis' },
+      tooltip: { trigger: 'axis', axisPointer: { type: 'cross' } },
       legend: showLegend ? { data: series.map((s) => s.alias) } : undefined,
-      grid: showGrid ? { left: '3%', right: '4%', bottom: '3%', containLabel: true } : undefined,
+      grid: showGrid
+        ? { left: '3%', right: '4%', bottom: dates.length > 100 ? '12%' : '3%', containLabel: true }
+        : undefined,
       xAxis: { type: 'category', data: dates, boundaryGap: chartType === 'bar' },
       yAxis: { type: 'value' },
+      // 大数据量自动展示缩放滑动条
+      dataZoom:
+        dates.length > 100
+          ? [
+              { type: 'inside', start: 0, end: 100 },
+              { type: 'slider', start: 0, end: 100, height: 18, bottom: 8 },
+            ]
+          : undefined,
       series: seriesConfig,
     };
   })();
 
-  return (
-    <ReactEChartsCore
-      option={option}
-      style={{ height, width: '100%' }}
-      notMerge
-      lazyUpdate
-    />
-  );
+  return <ReactEChartsCore option={option} style={{ height, width: '100%' }} notMerge lazyUpdate />;
 }

@@ -51,9 +51,7 @@ export interface AnalysisResult {
 }
 
 export const analysisApi = {
-  runQuery: (query: AnalysisQuery) =>
-    post<AnalysisResult>('/analysis/query', query),
+  runQuery: (query: AnalysisQuery) => post<AnalysisResult>('/analysis/query', query),
 
-  cancelQuery: (queryId: string) =>
-    post('/analysis/query/cancel', { query_id: queryId }),
+  cancelQuery: (queryId: string) => post('/analysis/query/cancel', { query_id: queryId }),
 };

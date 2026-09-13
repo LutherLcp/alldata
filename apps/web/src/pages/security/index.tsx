@@ -1,11 +1,31 @@
+import request from '@/services-new/request';
+import type { DataLineageNode } from '@alldata/shared';
+import {
+  DeleteOutlined,
+  LockOutlined,
+  NodeIndexOutlined,
+  SafetyCertificateOutlined,
+  SecurityScanOutlined,
+} from '@ant-design/icons';
+import {
+  Badge,
+  Button,
+  Card,
+  Col,
+  Input,
+  Modal,
+  Row,
+  Space,
+  Table,
+  Tabs,
+  Tag,
+  Typography,
+  message,
+} from 'antd';
 /**
  * 数据血缘图谱与 GDPR 隐私安全控制中心
  */
 import { useEffect, useState } from 'react';
-import { Card, Row, Col, Table, Input, Button, Tag, Tabs, Space, Typography, Modal, message, Badge } from 'antd';
-import { SafetyCertificateOutlined, NodeIndexOutlined, DeleteOutlined, LockOutlined, SecurityScanOutlined } from '@ant-design/icons';
-import request from '@/services-new/request';
-import type { DataLineageNode } from '@alldata/shared';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -104,7 +124,8 @@ export default function SecurityCenterPage() {
       title: '预估记录体量',
       dataIndex: 'record_count',
       key: 'record_count',
-      render: (val?: number) => (val ? <Text strong>{val.toLocaleString()} 条</Text> : <Text type="secondary">-</Text>),
+      render: (val?: number) =>
+        val ? <Text strong>{val.toLocaleString()} 条</Text> : <Text type="secondary">-</Text>,
     },
   ];
 
@@ -118,7 +139,8 @@ export default function SecurityCenterPage() {
               企业级数据血缘图谱 & GDPR 隐私安全中心
             </Title>
             <Paragraph type="secondary" style={{ margin: 0, fontSize: 13 }}>
-              可视化管理全链路数据依赖脉络 (SDK ➔ 原始表 ➔ 物化视图 ➔ 报表)，并提供数据脱敏与 GDPR 遗忘执行
+              可视化管理全链路数据依赖脉络 (SDK ➔ 原始表 ➔ 物化视图 ➔ 报表)，并提供数据脱敏与 GDPR
+              遗忘执行
             </Paragraph>
           </div>
         </div>
@@ -143,8 +165,18 @@ export default function SecurityCenterPage() {
                   <Row gutter={[16, 16]}>
                     {nodes.map((node) => (
                       <Col span={8} key={node.id}>
-                        <Card size="small" hoverable style={{ borderLeft: '4px solid #1890ff', borderRadius: 8 }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Card
+                          size="small"
+                          hoverable
+                          style={{ borderLeft: '4px solid #1890ff', borderRadius: 8 }}
+                        >
+                          <div
+                            style={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center',
+                            }}
+                          >
                             <Text strong>{node.label}</Text>
                             <Tag color="green">ONLINE</Tag>
                           </div>
@@ -152,7 +184,14 @@ export default function SecurityCenterPage() {
                             标识: <code>{node.id}</code>
                           </div>
                           {node.record_count && (
-                            <div style={{ marginTop: 4, fontSize: 13, color: '#52c41a', fontWeight: 'bold' }}>
+                            <div
+                              style={{
+                                marginTop: 4,
+                                fontSize: 13,
+                                color: '#52c41a',
+                                fontWeight: 'bold',
+                              }}
+                            >
                               数据量: {node.record_count.toLocaleString()} 条
                             </div>
                           )}
@@ -163,7 +202,13 @@ export default function SecurityCenterPage() {
                 </Card>
 
                 <Card title="血缘节点元数据明细表" style={{ borderRadius: 12 }}>
-                  <Table dataSource={nodes} columns={nodeColumns} rowKey="id" loading={loading} pagination={false} />
+                  <Table
+                    dataSource={nodes}
+                    columns={nodeColumns}
+                    rowKey="id"
+                    loading={loading}
+                    pagination={false}
+                  />
                 </Card>
               </div>
             ),
@@ -178,11 +223,17 @@ export default function SecurityCenterPage() {
             children: (
               <Row gutter={16}>
                 <Col span={12}>
-                  <Card title="GDPR / CCPA 数据物理擦除 (Right to be Forgotten)" style={{ borderRadius: 12 }}>
+                  <Card
+                    title="GDPR / CCPA 数据物理擦除 (Right to be Forgotten)"
+                    style={{ borderRadius: 12 }}
+                  >
                     <Paragraph type="secondary" style={{ fontSize: 13 }}>
-                      依据 GDPR 第 17 条与 CCPA 规定，当用户提出注销或删除数据请求时，系统将从 ClickHouse 存储与 PostgreSQL 中彻底清除其历史痕迹。
+                      依据 GDPR 第 17 条与 CCPA 规定，当用户提出注销或删除数据请求时，系统将从
+                      ClickHouse 存储与 PostgreSQL 中彻底清除其历史痕迹。
                     </Paragraph>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginTop: 24 }}>
+                    <div
+                      style={{ display: 'flex', flexDirection: 'column', gap: 16, marginTop: 24 }}
+                    >
                       <Input
                         size="large"
                         placeholder="请输入 Distinct ID / 用户匿名标识 (如 user_1001)"
@@ -204,29 +255,56 @@ export default function SecurityCenterPage() {
                   </Card>
                 </Col>
                 <Col span={12}>
-                  <Card title="动态敏感数据脱敏规则 (Data Masking Policies)" style={{ borderRadius: 12 }}>
+                  <Card
+                    title="动态敏感数据脱敏规则 (Data Masking Policies)"
+                    style={{ borderRadius: 12 }}
+                  >
                     <Space direction="vertical" style={{ width: '100%' }} size="middle">
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                        }}
+                      >
                         <div>
                           <Text strong>手机号码脱敏</Text>
                           <br />
-                          <Text type="secondary" style={{ fontSize: 12 }}>示例: 138****1234 (仅管理员可解密查看)</Text>
+                          <Text type="secondary" style={{ fontSize: 12 }}>
+                            示例: 138****1234 (仅管理员可解密查看)
+                          </Text>
                         </div>
                         <Tag color="green">已启用</Tag>
                       </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                        }}
+                      >
                         <div>
                           <Text strong>电子邮箱脱敏</Text>
                           <br />
-                          <Text type="secondary" style={{ fontSize: 12 }}>示例: us***@domain.com</Text>
+                          <Text type="secondary" style={{ fontSize: 12 }}>
+                            示例: us***@domain.com
+                          </Text>
                         </div>
                         <Tag color="green">已启用</Tag>
                       </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                        }}
+                      >
                         <div>
                           <Text strong>身份证/证件号脱敏</Text>
                           <br />
-                          <Text type="secondary" style={{ fontSize: 12 }}>示例: 110101********1234</Text>
+                          <Text type="secondary" style={{ fontSize: 12 }}>
+                            示例: 110101********1234
+                          </Text>
                         </div>
                         <Tag color="green">已启用</Tag>
                       </div>

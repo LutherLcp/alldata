@@ -1,12 +1,17 @@
+import { useAuthStore } from '@/stores/auth';
+import { useGlobalStore } from '@/stores/global';
+import type { ApiResponse } from '@alldata/shared';
+import { message } from 'antd';
 /**
  * Axios 请求封装
  * 统一拦截器、Token 注入、错误处理
  */
-import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig, AxiosResponse } from 'axios';
-import { message } from 'antd';
-import { useAuthStore } from '@/stores/auth';
-import { useGlobalStore } from '@/stores/global';
-import type { ApiResponse } from '@alldata/shared';
+import axios, {
+  type AxiosInstance,
+  type AxiosError,
+  type InternalAxiosRequestConfig,
+  type AxiosResponse,
+} from 'axios';
 
 const rawBaseURL = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || '/api';
 const BASE_URL = rawBaseURL.endsWith('/api') ? rawBaseURL : `${rawBaseURL.replace(/\/$/, '')}/api`;

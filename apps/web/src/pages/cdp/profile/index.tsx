@@ -1,11 +1,31 @@
+import { useGlobalStore } from '@/stores/global';
+import type { User360Profile } from '@alldata/shared/types';
+import {
+  FireOutlined,
+  SafetyCertificateOutlined,
+  SearchOutlined,
+  ShoppingCartOutlined,
+  ThunderboltOutlined,
+  UserOutlined,
+} from '@ant-design/icons';
+import {
+  Avatar,
+  Button,
+  Card,
+  Col,
+  Descriptions,
+  Input,
+  Progress,
+  Row,
+  Space,
+  Tag,
+  Timeline,
+  Typography,
+} from 'antd';
 /**
  * 360° 用户全景画像 Dashboard 页
  */
 import { useEffect, useState } from 'react';
-import { Card, Row, Col, Avatar, Tag, Timeline, Typography, Space, Input, Button, Descriptions, Progress } from 'antd';
-import { UserOutlined, SearchOutlined, SafetyCertificateOutlined, ThunderboltOutlined, FireOutlined, ShoppingCartOutlined } from '@ant-design/icons';
-import { useGlobalStore } from '@/stores/global';
-import { User360Profile } from '@alldata/shared/types';
 
 const { Title, Text } = Typography;
 
@@ -36,10 +56,30 @@ export default function User360ProfilePage() {
         total_orders: 12,
         total_spend: 3480,
         recent_events: [
-          { event_name: 'view_product_detail', display_name: '浏览商品详情页 (智能手表 Pro)', timestamp: '10分钟前', properties: { price: 1299, category: '数码' } },
-          { event_name: 'add_to_cart', display_name: '加入购物车 (智能手表 Pro)', timestamp: '25分钟前', properties: { quantity: 1 } },
-          { event_name: 'submit_order', display_name: '提交订单支付成功', timestamp: '2小时前', properties: { order_id: 'ORD_20260801_771', amount: 1299 } },
-          { event_name: 'app_launch', display_name: '通过 iOS Push 点击打开应用', timestamp: '3小时前', properties: { channel: 'push_notice' } },
+          {
+            event_name: 'view_product_detail',
+            display_name: '浏览商品详情页 (智能手表 Pro)',
+            timestamp: '10分钟前',
+            properties: { price: 1299, category: '数码' },
+          },
+          {
+            event_name: 'add_to_cart',
+            display_name: '加入购物车 (智能手表 Pro)',
+            timestamp: '25分钟前',
+            properties: { quantity: 1 },
+          },
+          {
+            event_name: 'submit_order',
+            display_name: '提交订单支付成功',
+            timestamp: '2小时前',
+            properties: { order_id: 'ORD_20260801_771', amount: 1299 },
+          },
+          {
+            event_name: 'app_launch',
+            display_name: '通过 iOS Push 点击打开应用',
+            timestamp: '3小时前',
+            properties: { channel: 'push_notice' },
+          },
         ],
       });
       setLoading(false);
@@ -62,7 +102,12 @@ export default function User360ProfilePage() {
             onChange={(e) => setSearchUserId(e.target.value)}
             style={{ width: 280 }}
           />
-          <Button type="primary" icon={<SearchOutlined />} loading={loading} onClick={() => fetchProfile(searchUserId)}>
+          <Button
+            type="primary"
+            icon={<SearchOutlined />}
+            loading={loading}
+            onClick={() => fetchProfile(searchUserId)}
+          >
             精准检索
           </Button>
         </Space>
@@ -71,7 +116,14 @@ export default function User360ProfilePage() {
       {profile && (
         <Row gutter={[16, 16]}>
           <Col xs={24} lg={8}>
-            <Card title="用户基本信息" extra={<Tag color="gold"><SafetyCertificateOutlined /> {profile.rfm_category}</Tag>}>
+            <Card
+              title="用户基本信息"
+              extra={
+                <Tag color="gold">
+                  <SafetyCertificateOutlined /> {profile.rfm_category}
+                </Tag>
+              }
+            >
               <div style={{ textAlign: 'center', marginBottom: 20 }}>
                 <Avatar size={80} src={profile.avatar} icon={<UserOutlined />} />
                 <Title level={4} style={{ marginTop: 12, marginBottom: 4 }}>
@@ -90,7 +142,11 @@ export default function User360ProfilePage() {
 
               <div style={{ marginTop: 20 }}>
                 <Text style={{ fontWeight: 'bold' }}>生命周期 LTV 价值评估 (Score):</Text>
-                <Progress percent={profile.ltv_score} status="active" strokeColor={{ '0%': '#108ee9', '100%': '#87d068' }} />
+                <Progress
+                  percent={profile.ltv_score}
+                  status="active"
+                  strokeColor={{ '0%': '#108ee9', '100%': '#87d068' }}
+                />
               </div>
             </Card>
           </Col>
@@ -99,20 +155,32 @@ export default function User360ProfilePage() {
             <Row gutter={[16, 16]}>
               <Col span={8}>
                 <Card size="small">
-                  <div style={{ color: '#8c8c8c' }}><FireOutlined style={{ color: '#ff4d4f' }} /> 累计行为事件</div>
-                  <Title level={3} style={{ margin: '8px 0 0 0' }}>{profile.total_events} 次</Title>
+                  <div style={{ color: '#8c8c8c' }}>
+                    <FireOutlined style={{ color: '#ff4d4f' }} /> 累计行为事件
+                  </div>
+                  <Title level={3} style={{ margin: '8px 0 0 0' }}>
+                    {profile.total_events} 次
+                  </Title>
                 </Card>
               </Col>
               <Col span={8}>
                 <Card size="small">
-                  <div style={{ color: '#8c8c8c' }}><ShoppingCartOutlined style={{ color: '#52c41a' }} /> 履约订单数</div>
-                  <Title level={3} style={{ margin: '8px 0 0 0' }}>{profile.total_orders} 笔</Title>
+                  <div style={{ color: '#8c8c8c' }}>
+                    <ShoppingCartOutlined style={{ color: '#52c41a' }} /> 履约订单数
+                  </div>
+                  <Title level={3} style={{ margin: '8px 0 0 0' }}>
+                    {profile.total_orders} 笔
+                  </Title>
                 </Card>
               </Col>
               <Col span={8}>
                 <Card size="small">
-                  <div style={{ color: '#8c8c8c' }}><ThunderboltOutlined style={{ color: '#722ed1' }} /> LTV 累计消费</div>
-                  <Title level={3} style={{ margin: '8px 0 0 0' }}>¥ {profile.total_spend}</Title>
+                  <div style={{ color: '#8c8c8c' }}>
+                    <ThunderboltOutlined style={{ color: '#722ed1' }} /> LTV 累计消费
+                  </div>
+                  <Title level={3} style={{ margin: '8px 0 0 0' }}>
+                    ¥ {profile.total_spend}
+                  </Title>
                 </Card>
               </Col>
 
@@ -120,7 +188,11 @@ export default function User360ProfilePage() {
                 <Card title="智能画像动态标签云" size="small">
                   <Space wrap size={[8, 8]}>
                     {profile.tags.map((tag, idx) => (
-                      <Tag color={idx % 2 === 0 ? 'blue' : 'purple'} key={tag} style={{ fontSize: 13, padding: '4px 10px' }}>
+                      <Tag
+                        color={idx % 2 === 0 ? 'blue' : 'purple'}
+                        key={tag}
+                        style={{ fontSize: 13, padding: '4px 10px' }}
+                      >
                         #{tag}
                       </Tag>
                     ))}

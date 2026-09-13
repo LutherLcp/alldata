@@ -1,12 +1,9 @@
+import { dashboardApi } from '@/services-new/dashboard';
+import { Col, Form, Input, Modal, Row, Select, Switch, Tabs, Typography, message } from 'antd';
 /**
  * 报表编辑器 — 配置报表类型/图表/查询/样式
  */
 import { useState } from 'react';
-import {
-  Modal, Form, Input, Select, Tabs, Row, Col,
-  Switch, Typography, message,
-} from 'antd';
-import { dashboardApi } from '@/services-new/dashboard';
 
 const { TextArea } = Input;
 const { Text } = Typography;
@@ -38,7 +35,14 @@ const CHART_TYPES = [
   { value: 'number', label: '数字指标' },
 ];
 
-export default function ReportEditor({ open, dashboardId, projectId, report, onClose, onSaved }: ReportEditorProps) {
+export default function ReportEditor({
+  open,
+  dashboardId,
+  projectId,
+  report,
+  onClose,
+  onSaved,
+}: ReportEditorProps) {
   const [form] = Form.useForm();
   const [saving, setSaving] = useState(false);
   const isEdit = !!report;
@@ -87,24 +91,26 @@ export default function ReportEditor({ open, dashboardId, projectId, report, onC
   };
 
   // 编辑时回填
-  const initialValues = report ? {
-    name: report.name,
-    type: report.type,
-    chart_type: report.chart_type,
-    event_name: report.query_config?.event_name,
-    sql_content: report.sql_content || report.query_config?.sql,
-    show_legend: report.chart_config?.show_legend ?? true,
-    show_grid: report.chart_config?.show_grid ?? true,
-    color_scheme: report.chart_config?.color_scheme || 'default',
-    stack: report.chart_config?.stack ?? false,
-  } : {
-    type: 'chart',
-    chart_type: 'bar',
-    show_legend: true,
-    show_grid: true,
-    color_scheme: 'default',
-    stack: false,
-  };
+  const initialValues = report
+    ? {
+        name: report.name,
+        type: report.type,
+        chart_type: report.chart_type,
+        event_name: report.query_config?.event_name,
+        sql_content: report.sql_content || report.query_config?.sql,
+        show_legend: report.chart_config?.show_legend ?? true,
+        show_grid: report.chart_config?.show_grid ?? true,
+        color_scheme: report.chart_config?.color_scheme || 'default',
+        stack: report.chart_config?.stack ?? false,
+      }
+    : {
+        type: 'chart',
+        chart_type: 'bar',
+        show_legend: true,
+        show_grid: true,
+        color_scheme: 'default',
+        stack: false,
+      };
 
   return (
     <Modal
@@ -135,57 +141,61 @@ export default function ReportEditor({ open, dashboardId, projectId, report, onC
           </Col>
         </Row>
 
-        <Tabs items={[
-          {
-            key: 'query',
-            label: '数据查询',
-            children: (
-              <>
-                <Form.Item name="event_name" label="事件名称">
-                  <Input placeholder="例: page_view, button_click" />
-                </Form.Item>
-                <Form.Item name="sql_content" label="SQL 内容（SQL 类型专用）">
-                  <TextArea rows={4} placeholder="SELECT * FROM events WHERE ..." />
-                </Form.Item>
-                <Text type="secondary">提示: 图表类型选择事件名，SQL 类型填写查询语句</Text>
-              </>
-            ),
-          },
-          {
-            key: 'style',
-            label: '图表样式',
-            children: (
-              <>
-                <Row gutter={16}>
-                  <Col span={8}>
-                    <Form.Item name="show_legend" label="显示图例" valuePropName="checked">
-                      <Switch />
-                    </Form.Item>
-                  </Col>
-                  <Col span={8}>
-                    <Form.Item name="show_grid" label="显示网格" valuePropName="checked">
-                      <Switch />
-                    </Form.Item>
-                  </Col>
-                  <Col span={8}>
-                    <Form.Item name="stack" label="堆叠" valuePropName="checked">
-                      <Switch />
-                    </Form.Item>
-                  </Col>
-                </Row>
-                <Form.Item name="color_scheme" label="配色方案">
-                  <Select options={[
-                    { value: 'default', label: '默认' },
-                    { value: 'blue', label: '蓝色系' },
-                    { value: 'warm', label: '暖色系' },
-                    { value: 'cool', label: '冷色系' },
-                    { value: 'rainbow', label: '彩虹' },
-                  ]} />
-                </Form.Item>
-              </>
-            ),
-          },
-        ]} />
+        <Tabs
+          items={[
+            {
+              key: 'query',
+              label: '数据查询',
+              children: (
+                <>
+                  <Form.Item name="event_name" label="事件名称">
+                    <Input placeholder="例: page_view, button_click" />
+                  </Form.Item>
+                  <Form.Item name="sql_content" label="SQL 内容（SQL 类型专用）">
+                    <TextArea rows={4} placeholder="SELECT * FROM events WHERE ..." />
+                  </Form.Item>
+                  <Text type="secondary">提示: 图表类型选择事件名，SQL 类型填写查询语句</Text>
+                </>
+              ),
+            },
+            {
+              key: 'style',
+              label: '图表样式',
+              children: (
+                <>
+                  <Row gutter={16}>
+                    <Col span={8}>
+                      <Form.Item name="show_legend" label="显示图例" valuePropName="checked">
+                        <Switch />
+                      </Form.Item>
+                    </Col>
+                    <Col span={8}>
+                      <Form.Item name="show_grid" label="显示网格" valuePropName="checked">
+                        <Switch />
+                      </Form.Item>
+                    </Col>
+                    <Col span={8}>
+                      <Form.Item name="stack" label="堆叠" valuePropName="checked">
+                        <Switch />
+                      </Form.Item>
+                    </Col>
+                  </Row>
+                  <Form.Item name="color_scheme" label="配色方案">
+                    <Select
+                      options={[
+                        { value: 'default', label: '默认' },
+                        { value: 'blue', label: '蓝色系' },
+                        { value: 'warm', label: '暖色系' },
+                        { value: 'cool', label: '冷色系' },
+                        { value: 'rainbow', label: '彩虹' },
+                      ]}
+                    />
+                  </Form.Item>
+                </>
+              ),
+            },
+          ]}
+        />
       </Form>
     </Modal>
   );

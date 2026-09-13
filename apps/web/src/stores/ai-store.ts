@@ -3,13 +3,13 @@
  * 管理对话历史、侧边栏、洞察与异常检测状态
  */
 import {
-  aiApi,
-  streamChat,
   type AnomalyInterpretation,
   type AnomalyResult,
   type ChatMessage,
   type InsightResponse,
   type ModelInfo,
+  aiApi,
+  streamChat,
 } from '@/services-new/ai';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
@@ -81,6 +81,12 @@ interface AIState {
   }) => Promise<void>;
   interpretAnomalies: (metricName: string, context?: string) => Promise<void>;
   clearAnomalies: () => void;
+
+  // NL2SQL
+  generateNL2SQL: (
+    question: string,
+    projectId: number,
+  ) => Promise<{ sql: string; explanation: string; tables_used: string[] } | null>;
 }
 
 /** 生成唯一 ID */
@@ -160,7 +166,7 @@ export const useAIStore = create<AIState>()(
                   messages: [...sess.messages, userMsg],
                   title: sess.messages.length === 0 ? content.slice(0, 20) : sess.title,
                 }
-              : sess
+              : sess,
           ),
           isGenerating: true,
         }));
@@ -172,7 +178,9 @@ export const useAIStore = create<AIState>()(
           const assistantMsg: ChatMessage = { role: 'assistant', content: res.content };
           set((s) => ({
             sessions: s.sessions.map((sess) =>
-              sess.id === sessionId ? { ...sess, messages: [...sess.messages, assistantMsg] } : sess
+              sess.id === sessionId
+                ? { ...sess, messages: [...sess.messages, assistantMsg] }
+                : sess,
             ),
           }));
         } finally {
@@ -198,7 +206,7 @@ export const useAIStore = create<AIState>()(
                   messages: [...sess.messages, userMsg],
                   title: sess.messages.length === 0 ? content.slice(0, 20) : sess.title,
                 }
-              : sess
+              : sess,
           ),
           isGenerating: true,
           streamingContent: '',
@@ -213,13 +221,15 @@ export const useAIStore = create<AIState>()(
               fullContent += chunk;
               set({ streamingContent: fullContent });
             },
-            { model: selectedModel || undefined }
+            { model: selectedModel || undefined },
           );
 
           const assistantMsg: ChatMessage = { role: 'assistant', content: fullContent };
           set((s) => ({
             sessions: s.sessions.map((sess) =>
-              sess.id === sessionId ? { ...sess, messages: [...sess.messages, assistantMsg] } : sess
+              sess.id === sessionId
+                ? { ...sess, messages: [...sess.messages, assistantMsg] }
+                : sess,
             ),
           }));
         } finally {
@@ -292,6 +302,16 @@ export const useAIStore = create<AIState>()(
       },
 
       clearAnomalies: () => set({ anomalies: [], anomalyInterpretation: null }),
+
+      // ── NL2SQL ──
+      generateNL2SQL: async (question, projectId) => {
+        try {
+          const res = await aiApi.nl2sql({ question, project_id: projectId });
+          return res;
+        } catch {
+          return null;
+        }
+      },
     }),
     {
       name: 'alldata-ai',
@@ -301,6 +321,6 @@ export const useAIStore = create<AIState>()(
         selectedModel: state.selectedModel,
         sidebarOpen: state.sidebarOpen,
       }),
-    }
-  )
+    },
+  ),
 );

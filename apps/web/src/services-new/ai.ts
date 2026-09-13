@@ -1,10 +1,10 @@
+import { useAuthStore } from '@/stores/auth';
+import { useGlobalStore } from '@/stores/global';
 /**
  * AI 模块 API 服务
  * 封装 AI 对话、洞察、异常检测等接口
  */
 import { get, post } from './request';
-import { useAuthStore } from '@/stores/auth';
-import { useGlobalStore } from '@/stores/global';
 
 // ─── 类型定义 ─────────────────────────────
 
@@ -114,16 +114,13 @@ export const aiApi = {
     post<CompletionResponse>('/ai/complete', { prompt, ...options }),
 
   /** 获取可用模型列表 */
-  getModels: () =>
-    get<ModelInfo[]>('/ai/models'),
+  getModels: () => get<ModelInfo[]>('/ai/models'),
 
   /** 获取 AI 配置 */
-  getConfig: () =>
-    get<Record<string, unknown>>('/ai/config'),
+  getConfig: () => get<Record<string, unknown>>('/ai/config'),
 
   /** 生成完整智能洞察 */
-  generateInsight: (data: InsightRequest) =>
-    post<InsightResponse>('/ai/insight', data),
+  generateInsight: (data: InsightRequest) => post<InsightResponse>('/ai/insight', data),
 
   /** 趋势摘要 */
   generateTrend: (data: Record<string, unknown>) =>
@@ -142,12 +139,18 @@ export const aiApi = {
     post<AnomalyDetectionResponse>('/ai/anomaly/detect', data),
 
   /** 异常解读 */
-  interpretAnomalies: (data: { anomalies: AnomalyResult[]; metric_name: string; context?: string }) =>
-    post<AnomalyInterpretation>('/ai/anomaly/interpret', data),
+  interpretAnomalies: (data: {
+    anomalies: AnomalyResult[];
+    metric_name: string;
+    context?: string;
+  }) => post<AnomalyInterpretation>('/ai/anomaly/interpret', data),
+
+  /** NL2SQL 自然语言转查询 */
+  nl2sql: (data: { question: string; project_id: number; context?: string }) =>
+    post<{ sql: string; explanation: string; tables_used: string[] }>('/ai/nl2sql', data),
 
   /** 监控配置 */
-  setupMonitor: (data: Record<string, unknown>) =>
-    post('/ai/anomaly/monitor', data),
+  setupMonitor: (data: Record<string, unknown>) => post('/ai/anomaly/monitor', data),
 };
 
 /**

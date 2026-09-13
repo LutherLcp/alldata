@@ -1,11 +1,30 @@
+import { noticeApi } from '@/services-new/v4';
+import { useGlobalStore } from '@/stores/global';
+import {
+  BellOutlined,
+  CheckOutlined,
+  MailOutlined,
+  ReloadOutlined,
+  RobotOutlined,
+} from '@ant-design/icons';
+import {
+  Badge,
+  Button,
+  Card,
+  Form,
+  Input,
+  Space,
+  Switch,
+  Table,
+  Tabs,
+  Tag,
+  Typography,
+  message,
+} from 'antd';
 /**
  * 消息通知中心页
  */
-import { useEffect, useState, useCallback } from 'react';
-import { Card, Table, Button, Space, Tag, Tabs, message, Badge, Typography, Switch, Form, Input } from 'antd';
-import { BellOutlined, ReloadOutlined, CheckOutlined, MailOutlined, RobotOutlined } from '@ant-design/icons';
-import { useGlobalStore } from '@/stores/global';
-import { noticeApi } from '@/services-new/v4';
+import { useCallback, useEffect, useState } from 'react';
 
 const { Text, Title } = Typography;
 
@@ -103,7 +122,9 @@ export default function NotificationPage() {
                     dataIndex: 'type',
                     width: 120,
                     render: (type: string) => (
-                      <Tag color={TYPE_MAP[type]?.color || 'default'}>{TYPE_MAP[type]?.text || type}</Tag>
+                      <Tag color={TYPE_MAP[type]?.color || 'default'}>
+                        {TYPE_MAP[type]?.text || type}
+                      </Tag>
                     ),
                   },
                   {
@@ -163,7 +184,16 @@ function ChannelConfigCard() {
           email_recipients: 'admin@company.com,devops@company.com',
         }}
       >
-        <Card title={<Space><RobotOutlined style={{ color: '#00d6b9' }} /><span>飞书机器人 (Feishu Bot)</span></Space>} size="small" style={{ marginBottom: 16 }}>
+        <Card
+          title={
+            <Space>
+              <RobotOutlined style={{ color: '#00d6b9' }} />
+              <span>飞书机器人 (Feishu Bot)</span>
+            </Space>
+          }
+          size="small"
+          style={{ marginBottom: 16 }}
+        >
           <Form.Item name="feishu_enabled" label="启用飞书群消息推送" valuePropName="checked">
             <Switch />
           </Form.Item>
@@ -172,7 +202,16 @@ function ChannelConfigCard() {
           </Form.Item>
         </Card>
 
-        <Card title={<Space><MailOutlined style={{ color: '#1890ff' }} /><span>邮件通知服务 (SMTP)</span></Space>} size="small" style={{ marginBottom: 16 }}>
+        <Card
+          title={
+            <Space>
+              <MailOutlined style={{ color: '#1890ff' }} />
+              <span>邮件通知服务 (SMTP)</span>
+            </Space>
+          }
+          size="small"
+          style={{ marginBottom: 16 }}
+        >
           <Form.Item name="email_enabled" label="启用邮件告警通知" valuePropName="checked">
             <Switch />
           </Form.Item>
@@ -184,7 +223,10 @@ function ChannelConfigCard() {
           </Form.Item>
         </Card>
 
-        <Button type="primary" onClick={() => message.success('渠道配置保存成功 (已应用 Mock 演示模式)')}>
+        <Button
+          type="primary"
+          onClick={() => message.success('渠道配置保存成功 (已应用 Mock 演示模式)')}
+        >
           保存配置
         </Button>
       </Form>

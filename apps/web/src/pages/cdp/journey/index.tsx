@@ -1,10 +1,10 @@
+import { NodeIndexOutlined, ReloadOutlined } from '@ant-design/icons';
+import { Button, Card, Col, Row, Select, Space, Statistic, Table, Tag, Typography } from 'antd';
+import * as echarts from 'echarts';
 /**
  * 客户旅程分析页 — 桑基图 (Sankey Flow Chart) 与流失节点分析
  */
 import { useEffect, useRef } from 'react';
-import { Card, Row, Col, Statistic, Select, Space, Button, Table, Tag, Typography } from 'antd';
-import { NodeIndexOutlined, ReloadOutlined } from '@ant-design/icons';
-import * as echarts from 'echarts';
 
 const { Text } = Typography;
 
@@ -16,7 +16,11 @@ export default function CustomerJourneyPage() {
     const chart = echarts.init(chartRef.current);
 
     const option: echarts.EChartsOption = {
-      title: { text: '全域用户转化与路径跳转桑基图 (Sankey Diagram)', subtext: '展示用户从首页入口至最终支付/流失的完整动态路线', left: 'center' },
+      title: {
+        text: '全域用户转化与路径跳转桑基图 (Sankey Diagram)',
+        subtext: '展示用户从首页入口至最终支付/流失的完整动态路线',
+        left: 'center',
+      },
       tooltip: { trigger: 'item', triggerOn: 'mousemove' },
       series: [
         {
@@ -66,7 +70,14 @@ export default function CustomerJourneyPage() {
       }
       extra={
         <Space>
-          <Select defaultValue="all" options={[{ value: 'all', label: '全部来源渠道' }, { value: 'app', label: 'App 端' }, { value: 'web', label: 'Web 官网' }]} />
+          <Select
+            defaultValue="all"
+            options={[
+              { value: 'all', label: '全部来源渠道' },
+              { value: 'app', label: 'App 端' },
+              { value: 'web', label: 'Web 官网' },
+            ]}
+          />
           <Button icon={<ReloadOutlined />}>刷新路径</Button>
         </Space>
       }
@@ -74,22 +85,43 @@ export default function CustomerJourneyPage() {
       <Row gutter={[16, 16]}>
         <Col span={6}>
           <Card size="small">
-            <Statistic title="旅程起点触达用户" value={10500} suffix="人" precision={0} valueStyle={{ color: '#1890ff' }} />
+            <Statistic
+              title="旅程起点触达用户"
+              value={10500}
+              suffix="人"
+              precision={0}
+              valueStyle={{ color: '#1890ff' }}
+            />
           </Card>
         </Col>
         <Col span={6}>
           <Card size="small">
-            <Statistic title="全链路终点转化率" value={17.62} suffix="%" precision={2} valueStyle={{ color: '#52c41a' }} />
+            <Statistic
+              title="全链路终点转化率"
+              value={17.62}
+              suffix="%"
+              precision={2}
+              valueStyle={{ color: '#52c41a' }}
+            />
           </Card>
         </Col>
         <Col span={6}>
           <Card size="small">
-            <Statistic title="中途关键流失节点" value="商品详情页" valueStyle={{ color: '#ff4d4f', fontSize: 18 }} />
+            <Statistic
+              title="中途关键流失节点"
+              value="商品详情页"
+              valueStyle={{ color: '#ff4d4f', fontSize: 18 }}
+            />
           </Card>
         </Col>
         <Col span={6}>
           <Card size="small">
-            <Statistic title="平均旅程步长" value={3.4} suffix="步" valueStyle={{ color: '#722ed1' }} />
+            <Statistic
+              title="平均旅程步长"
+              value={3.4}
+              suffix="步"
+              valueStyle={{ color: '#722ed1' }}
+            />
           </Card>
         </Col>
 
@@ -101,19 +133,51 @@ export default function CustomerJourneyPage() {
           <Card title="Top 核心跳转路径分布列表" size="small">
             <Table
               dataSource={[
-                { rank: 1, path: '首页 -> 搜索 -> 详情页 -> 加购 -> 支付', count: 1850, ratio: '17.6%', dropoff: '12.2%' },
-                { rank: 2, path: '首页 -> 详情页 -> 离场', count: 2100, ratio: '20.0%', dropoff: '100%' },
-                { rank: 3, path: '首页 -> 搜索 -> 详情页 -> 加购 -> 离场', count: 1300, ratio: '12.3%', dropoff: '100%' },
+                {
+                  rank: 1,
+                  path: '首页 -> 搜索 -> 详情页 -> 加购 -> 支付',
+                  count: 1850,
+                  ratio: '17.6%',
+                  dropoff: '12.2%',
+                },
+                {
+                  rank: 2,
+                  path: '首页 -> 详情页 -> 离场',
+                  count: 2100,
+                  ratio: '20.0%',
+                  dropoff: '100%',
+                },
+                {
+                  rank: 3,
+                  path: '首页 -> 搜索 -> 详情页 -> 加购 -> 离场',
+                  count: 1300,
+                  ratio: '12.3%',
+                  dropoff: '100%',
+                },
               ]}
               rowKey="rank"
               size="small"
               pagination={false}
               columns={[
                 { title: '排名', dataIndex: 'rank', width: 80 },
-                { title: '用户全景跳转路径', dataIndex: 'path', render: (p: string) => <Text style={{ fontWeight: 'bold' }}>{p}</Text> },
-                { title: '涉及用户数', dataIndex: 'count', width: 150, render: (v: number) => `${v} 人` },
+                {
+                  title: '用户全景跳转路径',
+                  dataIndex: 'path',
+                  render: (p: string) => <Text style={{ fontWeight: 'bold' }}>{p}</Text>,
+                },
+                {
+                  title: '涉及用户数',
+                  dataIndex: 'count',
+                  width: 150,
+                  render: (v: number) => `${v} 人`,
+                },
                 { title: '占总用户比例', dataIndex: 'ratio', width: 150 },
-                { title: '节点流失率', dataIndex: 'dropoff', width: 150, render: (d: string) => <Tag color={d === '100%' ? 'error' : 'warning'}>{d}</Tag> },
+                {
+                  title: '节点流失率',
+                  dataIndex: 'dropoff',
+                  width: 150,
+                  render: (d: string) => <Tag color={d === '100%' ? 'error' : 'warning'}>{d}</Tag>,
+                },
               ]}
             />
           </Card>

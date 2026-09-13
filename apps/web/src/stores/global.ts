@@ -1,9 +1,9 @@
+import type { ProjectSimple } from '@alldata/shared';
 /**
- * 全局状态管理
+ * 全局 UI 状态管理 (Zustand 客户端纯 UI 状态)
  */
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { ProjectSimple } from '@alldata/shared';
 
 interface GlobalState {
   currentProject: ProjectSimple | null;
@@ -11,11 +11,13 @@ interface GlobalState {
   theme: 'light' | 'dark';
   language: string;
   sidebarCollapsed: boolean;
+  globalTimezone: string;
 
   setCurrentProject: (project: ProjectSimple) => void;
   setProjects: (projects: ProjectSimple[]) => void;
   setTheme: (theme: 'light' | 'dark') => void;
   setLanguage: (lang: string) => void;
+  setGlobalTimezone: (tz: string) => void;
   toggleSidebar: () => void;
 }
 
@@ -27,11 +29,13 @@ export const useGlobalStore = create<GlobalState>()(
       theme: 'light',
       language: 'zh_CN',
       sidebarCollapsed: false,
+      globalTimezone: 'UTC+8',
 
       setCurrentProject: (project) => set({ currentProject: project }),
       setProjects: (projects) => set({ projects }),
       setTheme: (theme) => set({ theme }),
       setLanguage: (language) => set({ language }),
+      setGlobalTimezone: (globalTimezone) => set({ globalTimezone }),
       toggleSidebar: () => set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
     }),
     {
@@ -41,6 +45,7 @@ export const useGlobalStore = create<GlobalState>()(
         theme: state.theme,
         language: state.language,
         sidebarCollapsed: state.sidebarCollapsed,
+        globalTimezone: state.globalTimezone,
       }),
     },
   ),

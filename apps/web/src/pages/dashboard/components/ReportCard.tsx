@@ -1,11 +1,16 @@
+import {
+  BarChartOutlined,
+  DeleteOutlined,
+  EditOutlined,
+  LineChartOutlined,
+  MoreOutlined,
+  PieChartOutlined,
+  TableOutlined,
+} from '@ant-design/icons';
 /**
  * 报表卡片组件 — 在看板详情中渲染单个报表
  */
-import { Card, Tag, Typography, Dropdown, Button } from 'antd';
-import {
-  BarChartOutlined, LineChartOutlined, PieChartOutlined,
-  TableOutlined, MoreOutlined, DeleteOutlined, EditOutlined,
-} from '@ant-design/icons';
+import { Button, Card, Dropdown, Tag, Typography } from 'antd';
 
 const { Text } = Typography;
 
@@ -34,8 +39,12 @@ export default function ReportCard({ report, editMode, onRemove }: ReportCardPro
       title={
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           {icon}
-          <Text ellipsis style={{ maxWidth: 200 }}>{report.name}</Text>
-          <Tag color="blue" style={{ marginLeft: 'auto' }}>{report.type}</Tag>
+          <Text ellipsis style={{ maxWidth: 200 }}>
+            {report.name}
+          </Text>
+          <Tag color="blue" style={{ marginLeft: 'auto' }}>
+            {report.type}
+          </Tag>
         </div>
       }
       extra={
@@ -44,7 +53,13 @@ export default function ReportCard({ report, editMode, onRemove }: ReportCardPro
             menu={{
               items: [
                 { key: 'edit', label: '编辑', icon: <EditOutlined /> },
-                { key: 'delete', label: '移除', icon: <DeleteOutlined />, danger: true, onClick: onRemove },
+                {
+                  key: 'delete',
+                  label: '移除',
+                  icon: <DeleteOutlined />,
+                  danger: true,
+                  onClick: onRemove,
+                },
               ],
             }}
             trigger={['click']}
@@ -55,10 +70,18 @@ export default function ReportCard({ report, editMode, onRemove }: ReportCardPro
       }
     >
       {/* 报表内容区域 — V2.3 将实现真实图表渲染 */}
-      <div style={{
-        flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: '#fafafa', borderRadius: 4, color: '#bbb', fontSize: 14,
-      }}>
+      <div
+        style={{
+          flex: 1,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: '#fafafa',
+          borderRadius: 4,
+          color: '#bbb',
+          fontSize: 14,
+        }}
+      >
         {report.query_config && Object.keys(report.query_config).length > 0
           ? '图表渲染区'
           : '暂无数据'}

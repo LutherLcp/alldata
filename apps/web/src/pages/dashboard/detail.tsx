@@ -1,16 +1,32 @@
+import {
+  ArrowLeftOutlined,
+  CloseOutlined,
+  DashboardOutlined,
+  EditOutlined,
+  PlusOutlined,
+  SaveOutlined,
+  ShareAltOutlined,
+} from '@ant-design/icons';
+import {
+  Breadcrumb,
+  Button,
+  Empty,
+  Modal,
+  Space,
+  Spin,
+  Tag,
+  Tooltip,
+  Typography,
+  message,
+} from 'antd';
 /**
  * 看板详情页 — 报表渲染 + react-grid-layout 拖拽布局
  */
-import { useEffect, useState, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { Spin, Button, Space, Typography, Tag, Modal, message, Empty, Breadcrumb, Tooltip } from 'antd';
-import {
-  ArrowLeftOutlined, EditOutlined, SaveOutlined, CloseOutlined,
-  PlusOutlined, ShareAltOutlined, DashboardOutlined,
-} from '@ant-design/icons';
-import { Responsive, WidthProvider, Layout, Layouts } from 'react-grid-layout';
+import { useCallback, useEffect, useState } from 'react';
+import { type Layout, type Layouts, Responsive, WidthProvider } from 'react-grid-layout';
+import { useNavigate, useParams } from 'react-router-dom';
 import 'react-grid-layout/css/styles.css';
-import { dashboardApi, DashboardItem, ReportItem } from '@/services-new/dashboard';
+import { type DashboardItem, type ReportItem, dashboardApi } from '@/services-new/dashboard';
 import ReportCard from './components/ReportCard';
 import ReportEditor from './components/ReportEditor';
 
@@ -53,7 +69,9 @@ export default function DashboardDetailPage() {
     }
   }, [dashboardId]);
 
-  useEffect(() => { loadDashboard(); }, [loadDashboard]);
+  useEffect(() => {
+    loadDashboard();
+  }, [loadDashboard]);
 
   // 生成默认布局
   function generateDefaultLayouts(reports: ReportItem[]): Layouts {
@@ -99,7 +117,11 @@ export default function DashboardDetailPage() {
   };
 
   if (loading) {
-    return <div style={{ textAlign: 'center', padding: 100 }}><Spin size="large" /></div>;
+    return (
+      <div style={{ textAlign: 'center', padding: 100 }}>
+        <Spin size="large" />
+      </div>
+    );
   }
 
   if (!dashboard) {
@@ -109,12 +131,29 @@ export default function DashboardDetailPage() {
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       {/* ─── 顶部操作栏 ─── */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: 16,
+        }}
+      >
         <div>
-          <Breadcrumb items={[
-            { title: <><DashboardOutlined /> 看板</>, onClick: () => navigate('/dashboard'), className: 'cursor-pointer' },
-            { title: dashboard.name },
-          ]} />
+          <Breadcrumb
+            items={[
+              {
+                title: (
+                  <>
+                    <DashboardOutlined /> 看板
+                  </>
+                ),
+                onClick: () => navigate('/dashboard'),
+                className: 'cursor-pointer',
+              },
+              { title: dashboard.name },
+            ]}
+          />
           <Title level={4} style={{ margin: '8px 0 0' }}>
             {dashboard.name}
             <Tag color={dashboard.status === 1 ? 'green' : 'default'} style={{ marginLeft: 8 }}>
@@ -124,20 +163,36 @@ export default function DashboardDetailPage() {
           {dashboard.description && <Text type="secondary">{dashboard.description}</Text>}
         </div>
         <Space>
-          <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/dashboard')}>返回</Button>
+          <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/dashboard')}>
+            返回
+          </Button>
           <Tooltip title="分享链接">
-            <Button icon={<ShareAltOutlined />} onClick={async () => {
-              const link = await dashboardApi.createSoftLink({ dashboard_id: dashboard.id, name: '分享链接' });
-              message.success(`分享链接已创建: ${(link as any)?.token}`);
-            }}>分享</Button>
+            <Button
+              icon={<ShareAltOutlined />}
+              onClick={async () => {
+                const link = await dashboardApi.createSoftLink({
+                  dashboard_id: dashboard.id,
+                  name: '分享链接',
+                });
+                message.success(`分享链接已创建: ${(link as any)?.token}`);
+              }}
+            >
+              分享
+            </Button>
           </Tooltip>
           {editMode ? (
             <>
-              <Button type="primary" icon={<SaveOutlined />} onClick={handleSaveLayout}>保存布局</Button>
-              <Button icon={<CloseOutlined />} onClick={() => setEditMode(false)}>取消</Button>
+              <Button type="primary" icon={<SaveOutlined />} onClick={handleSaveLayout}>
+                保存布局
+              </Button>
+              <Button icon={<CloseOutlined />} onClick={() => setEditMode(false)}>
+                取消
+              </Button>
             </>
           ) : (
-            <Button icon={<EditOutlined />} onClick={() => setEditMode(true)}>编辑布局</Button>
+            <Button icon={<EditOutlined />} onClick={() => setEditMode(true)}>
+              编辑布局
+            </Button>
           )}
         </Space>
       </div>
@@ -168,7 +223,9 @@ export default function DashboardDetailPage() {
           </ReactGridLayout>
         ) : (
           <Empty description="暂无报表，点击编辑添加报表" style={{ marginTop: 100 }}>
-            <Button type="primary" icon={<PlusOutlined />} onClick={() => setEditorOpen(true)}>添加报表</Button>
+            <Button type="primary" icon={<PlusOutlined />} onClick={() => setEditorOpen(true)}>
+              添加报表
+            </Button>
           </Empty>
         )}
       </div>

@@ -1,7 +1,7 @@
 /**
  * 指标管理 API
  */
-import { get, post, put, del } from './request';
+import { del, get, post, put } from './request';
 
 export const metricApi = {
   list: (projectId: number) => get('/metrics', { project_id: projectId }),

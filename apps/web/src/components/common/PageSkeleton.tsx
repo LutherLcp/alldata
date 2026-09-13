@@ -1,7 +1,7 @@
 /**
  * 全局页面骨架屏 — 消除页面切页与路由加载时的闪烁 (Layout Shift)
  */
-import { Skeleton, Card, Row, Col, Space } from 'antd';
+import { Card, Col, Row, Skeleton, Space } from 'antd';
 
 export function TablePageSkeleton() {
   return (

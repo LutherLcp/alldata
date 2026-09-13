@@ -1,9 +1,33 @@
+import {
+  DeleteOutlined,
+  PartitionOutlined,
+  PlayCircleOutlined,
+  PlusOutlined,
+  ReloadOutlined,
+  RightOutlined,
+} from '@ant-design/icons';
+import {
+  Button,
+  Card,
+  Col,
+  Drawer,
+  Form,
+  Input,
+  Modal,
+  Popconfirm,
+  Row,
+  Select,
+  Space,
+  Statistic,
+  Table,
+  Tag,
+  Typography,
+  message,
+} from 'antd';
 /**
  * 智能营销自动化 Flow 画布与调度管理中心页
  */
-import { useEffect, useState, useCallback } from 'react';
-import { Card, Table, Button, Space, Modal, Form, Input, Select, Tag, Drawer, Statistic, Row, Col, Typography, message, Popconfirm } from 'antd';
-import { PartitionOutlined, PlusOutlined, ReloadOutlined, PlayCircleOutlined, DeleteOutlined, RightOutlined } from '@ant-design/icons';
+import { useCallback, useEffect, useState } from 'react';
 
 const { Text } = Typography;
 
@@ -82,8 +106,17 @@ export default function MarketingFlowPage() {
       }
       extra={
         <Space>
-          <Button icon={<ReloadOutlined />} onClick={loadData}>刷新</Button>
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => { form.resetFields(); setModalOpen(true); }}>
+          <Button icon={<ReloadOutlined />} onClick={loadData}>
+            刷新
+          </Button>
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => {
+              form.resetFields();
+              setModalOpen(true);
+            }}
+          >
             新建营销 Flow 画布
           </Button>
         </Space>
@@ -96,11 +129,40 @@ export default function MarketingFlowPage() {
         size="small"
         pagination={{ pageSize: 10 }}
         columns={[
-          { title: 'Flow 工作流名称', dataIndex: 'name', width: 260, render: (t: string, r: any) => <a onClick={() => handleOpenCanvas(r)}>{t}</a> },
-          { title: '状态', dataIndex: 'status', width: 90, render: (s: number) => <Tag color={s === 2 ? 'success' : 'default'}>{s === 2 ? '运行中' : '草稿'}</Tag> },
-          { title: '累计触达人数', dataIndex: 'triggered_count', width: 140, render: (c: number) => <Tag color="blue">{c.toLocaleString()} 人</Tag> },
-          { title: '转化人数', dataIndex: 'conversion_count', width: 120, render: (c: number) => `${c} 人` },
-          { title: '转化率 (CR)', dataIndex: 'conversion_rate', width: 120, render: (r: number) => <Text style={{ fontWeight: 'bold', color: '#52c41a' }}>{r}%</Text> },
+          {
+            title: 'Flow 工作流名称',
+            dataIndex: 'name',
+            width: 260,
+            render: (t: string, r: any) => <a onClick={() => handleOpenCanvas(r)}>{t}</a>,
+          },
+          {
+            title: '状态',
+            dataIndex: 'status',
+            width: 90,
+            render: (s: number) => (
+              <Tag color={s === 2 ? 'success' : 'default'}>{s === 2 ? '运行中' : '草稿'}</Tag>
+            ),
+          },
+          {
+            title: '累计触达人数',
+            dataIndex: 'triggered_count',
+            width: 140,
+            render: (c: number) => <Tag color="blue">{c.toLocaleString()} 人</Tag>,
+          },
+          {
+            title: '转化人数',
+            dataIndex: 'conversion_count',
+            width: 120,
+            render: (c: number) => `${c} 人`,
+          },
+          {
+            title: '转化率 (CR)',
+            dataIndex: 'conversion_rate',
+            width: 120,
+            render: (r: number) => (
+              <Text style={{ fontWeight: 'bold', color: '#52c41a' }}>{r}%</Text>
+            ),
+          },
           { title: '创建时间', dataIndex: 'created_at', width: 180 },
           {
             title: '操作',
@@ -108,11 +170,18 @@ export default function MarketingFlowPage() {
             width: 180,
             render: (_: any, r: any) => (
               <Space>
-                <Button type="link" size="small" icon={<PartitionOutlined />} onClick={() => handleOpenCanvas(r)}>
+                <Button
+                  type="link"
+                  size="small"
+                  icon={<PartitionOutlined />}
+                  onClick={() => handleOpenCanvas(r)}
+                >
                   设计画布
                 </Button>
                 <Popconfirm title="确认删除该工作流?" onConfirm={() => message.success('已删除')}>
-                  <Button type="link" size="small" danger icon={<DeleteOutlined />}>删除</Button>
+                  <Button type="link" size="small" danger icon={<DeleteOutlined />}>
+                    删除
+                  </Button>
                 </Popconfirm>
               </Space>
             ),
@@ -120,9 +189,19 @@ export default function MarketingFlowPage() {
         ]}
       />
 
-      <Modal title="新建智能营销 Flow 画布" open={modalOpen} onOk={handleSave} onCancel={() => setModalOpen(false)} destroyOnClose>
+      <Modal
+        title="新建智能营销 Flow 画布"
+        open={modalOpen}
+        onOk={handleSave}
+        onCancel={() => setModalOpen(false)}
+        destroyOnClose
+      >
         <Form form={form} layout="vertical">
-          <Form.Item name="name" label="工作流名称" rules={[{ required: true, message: '请输入 Flow 名称' }]}>
+          <Form.Item
+            name="name"
+            label="工作流名称"
+            rules={[{ required: true, message: '请输入 Flow 名称' }]}
+          >
             <Input placeholder="例: 流失预警人群自动发放冲刺券 Flow" />
           </Form.Item>
           <Form.Item name="description" label="描述说明">
@@ -147,7 +226,13 @@ export default function MarketingFlowPage() {
         onClose={() => setDrawerOpen(false)}
         extra={
           <Space>
-            <Button icon={<PlayCircleOutlined />} type="primary" onClick={() => message.success('模拟全流程自动化测试成功！已触发飞书消息并更新分析日志')}>
+            <Button
+              icon={<PlayCircleOutlined />}
+              type="primary"
+              onClick={() =>
+                message.success('模拟全流程自动化测试成功！已触发飞书消息并更新分析日志')
+              }
+            >
               模拟运行测试
             </Button>
           </Space>
@@ -156,22 +241,77 @@ export default function MarketingFlowPage() {
         {selectedFlow && (
           <div>
             <Row gutter={16} style={{ marginBottom: 20 }}>
-              <Col span={8}><Card size="small"><Statistic title="当前触达总人数" value={selectedFlow.triggered_count} suffix="人" /></Card></Col>
-              <Col span={8}><Card size="small"><Statistic title="最终转化人数" value={selectedFlow.conversion_count} suffix="人" valueStyle={{ color: '#52c41a' }} /></Card></Col>
-              <Col span={8}><Card size="small"><Statistic title="整体营销 ROI 转化率" value={selectedFlow.conversion_rate} suffix="%" valueStyle={{ color: '#722ed1' }} /></Card></Col>
+              <Col span={8}>
+                <Card size="small">
+                  <Statistic
+                    title="当前触达总人数"
+                    value={selectedFlow.triggered_count}
+                    suffix="人"
+                  />
+                </Card>
+              </Col>
+              <Col span={8}>
+                <Card size="small">
+                  <Statistic
+                    title="最终转化人数"
+                    value={selectedFlow.conversion_count}
+                    suffix="人"
+                    valueStyle={{ color: '#52c41a' }}
+                  />
+                </Card>
+              </Col>
+              <Col span={8}>
+                <Card size="small">
+                  <Statistic
+                    title="整体营销 ROI 转化率"
+                    value={selectedFlow.conversion_rate}
+                    suffix="%"
+                    valueStyle={{ color: '#722ed1' }}
+                  />
+                </Card>
+              </Col>
             </Row>
 
-            <Card title="Flow 节点连线控制树 (Flow Engine Graph)" style={{ minHeight: 350, backgroundColor: '#f8f9fa' }}>
+            <Card
+              title="Flow 节点连线控制树 (Flow Engine Graph)"
+              style={{ minHeight: 350, backgroundColor: '#f8f9fa' }}
+            >
               <Space size="large" align="center" style={{ flexWrap: 'wrap', padding: '20px 0' }}>
                 {selectedFlow.nodes.map((n: any, idx: number) => (
                   <Space key={n.id}>
-                    <Card size="small" style={{ width: 220, border: n.type === 'trigger' ? '2px solid #1890ff' : n.type === 'condition' ? '2px solid #faad14' : '2px solid #52c41a' }}>
-                      <Tag color={n.type === 'trigger' ? 'blue' : n.type === 'condition' ? 'warning' : 'success'} style={{ marginBottom: 8 }}>
-                        {n.type === 'trigger' ? '触发节点' : n.type === 'condition' ? '条件分支' : '触达动作'}
+                    <Card
+                      size="small"
+                      style={{
+                        width: 220,
+                        border:
+                          n.type === 'trigger'
+                            ? '2px solid #1890ff'
+                            : n.type === 'condition'
+                              ? '2px solid #faad14'
+                              : '2px solid #52c41a',
+                      }}
+                    >
+                      <Tag
+                        color={
+                          n.type === 'trigger'
+                            ? 'blue'
+                            : n.type === 'condition'
+                              ? 'warning'
+                              : 'success'
+                        }
+                        style={{ marginBottom: 8 }}
+                      >
+                        {n.type === 'trigger'
+                          ? '触发节点'
+                          : n.type === 'condition'
+                            ? '条件分支'
+                            : '触达动作'}
                       </Tag>
                       <div style={{ fontWeight: 'bold' }}>{n.label}</div>
                     </Card>
-                    {idx < selectedFlow.nodes.length - 1 && <RightOutlined style={{ fontSize: 24, color: '#bfbfbf' }} />}
+                    {idx < selectedFlow.nodes.length - 1 && (
+                      <RightOutlined style={{ fontSize: 24, color: '#bfbfbf' }} />
+                    )}
                   </Space>
                 ))}
               </Space>

@@ -1,11 +1,23 @@
+import request from '@/services-new/request';
+import type { AttributionModelType, ChannelROI } from '@alldata/shared';
+import { InfoCircleOutlined, RocketOutlined } from '@ant-design/icons';
+import {
+  Card,
+  Col,
+  Progress,
+  Row,
+  Segmented,
+  Space,
+  Statistic,
+  Table,
+  Tag,
+  Tooltip,
+  Typography,
+} from 'antd';
 /**
  * 全渠道多触点归因 (Multi-Touch Attribution - MTA) 分析看板
  */
 import { useEffect, useState } from 'react';
-import { Card, Row, Col, Table, Tag, Progress, Statistic, Segmented, Space, Typography, Tooltip } from 'antd';
-import { RocketOutlined, InfoCircleOutlined } from '@ant-design/icons';
-import request from '@/services-new/request';
-import type { AttributionModelType, ChannelROI } from '@alldata/shared';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -63,7 +75,9 @@ export default function MTADashboard() {
       dataIndex: 'attributed_revenue',
       key: 'attributed_revenue',
       sorter: (a: ChannelROI, b: ChannelROI) => a.attributed_revenue - b.attributed_revenue,
-      render: (val: number) => <Text style={{ color: '#52c41a', fontWeight: 'bold' }}>¥ {val.toLocaleString()}</Text>,
+      render: (val: number) => (
+        <Text style={{ color: '#52c41a', fontWeight: 'bold' }}>¥ {val.toLocaleString()}</Text>
+      ),
     },
     {
       title: '渠道消耗 (Cost)',
@@ -77,7 +91,10 @@ export default function MTADashboard() {
       key: 'roas',
       sorter: (a: ChannelROI, b: ChannelROI) => a.roas - b.roas,
       render: (val: number) => (
-        <Tag color={val >= 3 ? 'green' : val >= 1.5 ? 'blue' : 'volcano'} style={{ fontWeight: 'bold' }}>
+        <Tag
+          color={val >= 3 ? 'green' : val >= 1.5 ? 'blue' : 'volcano'}
+          style={{ fontWeight: 'bold' }}
+        >
           {val}x
         </Tag>
       ),
@@ -94,9 +111,19 @@ export default function MTADashboard() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       {/* 头部控制栏 */}
       <Card size="small" style={{ borderRadius: 12 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: 16,
+          }}
+        >
           <div>
-            <Title level={4} style={{ margin: 0 }}>全渠道多触点归因 (MTA) & ROI 看板</Title>
+            <Title level={4} style={{ margin: 0 }}>
+              全渠道多触点归因 (MTA) & ROI 看板
+            </Title>
             <Paragraph type="secondary" style={{ margin: 0, fontSize: 13 }}>
               打破单点归因偏见，科学评估首次触点、末次触点、线性平摊与时间衰减对最终 GMV 的贡献
             </Paragraph>
@@ -201,11 +228,16 @@ export default function MTADashboard() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               {Object.entries(mmmSuggestions).map(([channel, percent]) => (
                 <div key={channel}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <div
+                    style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}
+                  >
                     <Text strong>{channel}</Text>
                     <Text type="secondary">{percent}% 推荐预算</Text>
                   </div>
-                  <Progress percent={percent} strokeColor={{ '0%': '#108ee9', '100%': '#87d068' }} />
+                  <Progress
+                    percent={percent}
+                    strokeColor={{ '0%': '#108ee9', '100%': '#87d068' }}
+                  />
                 </div>
               ))}
             </div>

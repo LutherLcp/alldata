@@ -1,40 +1,40 @@
+import { ProjectSwitcher } from '@/components/common/ProjectSwitcher';
+import { useAuthStore } from '@/stores/auth';
+import {
+  AimOutlined,
+  AlertOutlined,
+  BellOutlined,
+  BuildOutlined,
+  CalendarOutlined,
+  DashboardOutlined,
+  DatabaseOutlined,
+  DollarOutlined,
+  DownloadOutlined,
+  ExperimentOutlined,
+  FundOutlined,
+  GlobalOutlined,
+  IdcardOutlined,
+  LineChartOutlined,
+  LogoutOutlined,
+  MenuFoldOutlined,
+  MenuUnfoldOutlined,
+  NodeIndexOutlined,
+  PartitionOutlined,
+  RobotOutlined,
+  RocketOutlined,
+  SecurityScanOutlined,
+  SettingOutlined,
+  TagOutlined,
+  TeamOutlined,
+  UserOutlined,
+} from '@ant-design/icons';
+import { Layout as AntLayout, Avatar, Dropdown, Menu, theme } from 'antd';
 /**
  * 全局 Layout — Header + Sider + 二级功能聚合 Menu + Content
  */
 import React, { useState } from 'react';
-import { Layout as AntLayout, Menu, Avatar, Dropdown, theme } from 'antd';
-import {
-  DashboardOutlined,
-  LineChartOutlined,
-  TagOutlined,
-  FundOutlined,
-  DatabaseOutlined,
-  AlertOutlined,
-  SettingOutlined,
-  DollarOutlined,
-  TeamOutlined,
-  CalendarOutlined,
-  DownloadOutlined,
-  BellOutlined,
-  NodeIndexOutlined,
-  IdcardOutlined,
-  PartitionOutlined,
-  ExperimentOutlined,
-  RobotOutlined,
-  RocketOutlined,
-  AimOutlined,
-  SecurityScanOutlined,
-  BuildOutlined,
-  MenuFoldOutlined,
-  MenuUnfoldOutlined,
-  UserOutlined,
-  LogoutOutlined,
-  GlobalOutlined,
-} from '@ant-design/icons';
-import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useAuthStore } from '@/stores/auth';
-import { ProjectSwitcher } from '@/components/common/ProjectSwitcher';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 const { Header, Sider, Content } = AntLayout;
 
@@ -154,9 +154,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   // 展开父级分组
   const parentGroup = rawMenuItems.find((grp) =>
-    grp.children?.some((child) => child.key === selectedKey)
+    grp.children?.some((child) => child.key === selectedKey),
   );
-  const [openKeys, setOpenKeys] = useState<string[]>(parentGroup ? [parentGroup.key] : ['grp_analytics']);
+  const [openKeys, setOpenKeys] = useState<string[]>(
+    parentGroup ? [parentGroup.key] : ['grp_analytics'],
+  );
 
   // 递归解析 i18n 文本
   const formattedItems = rawMenuItems.map((grp) => ({
@@ -180,7 +182,16 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         width={230}
         style={{ borderRight: `1px solid ${token.colorBorderSecondary}` }}
       >
-        <div style={{ height: 64, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: collapsed ? 16 : 20 }}>
+        <div
+          style={{
+            height: 64,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontWeight: 700,
+            fontSize: collapsed ? 16 : 20,
+          }}
+        >
           {collapsed ? 'AD' : 'AllData 全域运营'}
         </div>
         <Menu
@@ -194,14 +205,16 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         />
       </Sider>
       <AntLayout>
-        <Header style={{
-          padding: '0 24px',
-          background: token.colorBgContainer,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          borderBottom: `1px solid ${token.colorBorderSecondary}`,
-        }}>
+        <Header
+          style={{
+            padding: '0 24px',
+            background: token.colorBgContainer,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            borderBottom: `1px solid ${token.colorBorderSecondary}`,
+          }}
+        >
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
             {React.createElement(collapsed ? MenuUnfoldOutlined : MenuFoldOutlined, {
               onClick: () => setCollapsed(!collapsed),
@@ -219,7 +232,15 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             </Dropdown>
           </div>
         </Header>
-        <Content style={{ margin: 16, padding: 24, background: token.colorBgContainer, borderRadius: token.borderRadiusLG, overflow: 'auto' }}>
+        <Content
+          style={{
+            margin: 16,
+            padding: 24,
+            background: token.colorBgContainer,
+            borderRadius: token.borderRadiusLG,
+            overflow: 'auto',
+          }}
+        >
           {children}
         </Content>
       </AntLayout>
