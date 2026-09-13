@@ -1,3 +1,6 @@
+import { ApiError, sendSuccess } from '@/common/utils/response';
+import { requireAuth } from '@/plugins/auth';
+import { loginSchema, refreshTokenSchema } from '@alldata/shared';
 /**
  * 认证模块 — 路由定义
  * POST /login   — 登录
@@ -5,10 +8,7 @@
  * POST /refresh — 刷新 Token
  * GET  /me      — 获取当前用户信息
  */
-import { FastifyInstance } from 'fastify';
-import { loginSchema, refreshTokenSchema } from '@alldata/shared';
-import { requireAuth } from '@/plugins/auth';
-import { sendSuccess, ApiError } from '@/common/utils/response';
+import type { FastifyInstance } from 'fastify';
 import { AuthService } from './service';
 
 export async function authRoutes(app: FastifyInstance) {

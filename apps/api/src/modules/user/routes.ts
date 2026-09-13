@@ -1,3 +1,5 @@
+import { ApiError, sendPaginated, sendSuccess } from '@/common/utils/response';
+import { requireAuth } from '@/plugins/auth';
 /**
  * 用户查询路由
  * GET  /api/users          — 用户列表（分页 + 搜索）
@@ -5,9 +7,7 @@
  * GET  /api/users/:id/timeline — 用户行为时间线
  * PUT  /api/users/:id/status   — 更新用户状态
  */
-import { FastifyInstance } from 'fastify';
-import { requireAuth } from '@/plugins/auth';
-import { sendSuccess, sendPaginated, ApiError } from '@/common/utils/response';
+import type { FastifyInstance } from 'fastify';
 import { UserService } from './service';
 
 export async function userRoutes(app: FastifyInstance) {

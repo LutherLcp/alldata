@@ -3,7 +3,7 @@
  */
 import { ApiError, sendSuccess } from '@/common/utils/response';
 import { requireAuth } from '@/plugins/auth';
-import { FastifyInstance } from 'fastify';
+import type { FastifyInstance } from 'fastify';
 import { KocrmService } from './service';
 
 export async function kocrmRoutes(app: FastifyInstance) {

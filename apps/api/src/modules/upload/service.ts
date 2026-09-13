@@ -1,9 +1,8 @@
+import { getPresignedUrl, removeObject, uploadObject } from '@/common/utils/minio';
 /**
  * 文件上传服务 — MinIO
  */
-import { FastifyInstance } from 'fastify';
-import { uploadObject, getPresignedUrl, removeObject } from '@/common/utils/minio';
-import { Readable } from 'stream';
+import type { FastifyInstance } from 'fastify';
 
 export class UploadService {
   constructor(private app: FastifyInstance) {}

@@ -1,7 +1,7 @@
 /**
  * 用户查询服务 — 用户列表/详情/行为时间线
  */
-import { FastifyInstance } from 'fastify';
+import type { FastifyInstance } from 'fastify';
 
 export class UserService {
   private prisma;
@@ -82,14 +82,30 @@ export class UserService {
   }
 
   /** 用户行为时间线（基于事件日志模拟） */
-  async getUserTimeline(id: number, projectId: number, options: { startDate?: string; endDate?: string; limit?: number }) {
+  async getUserTimeline(
+    id: number,
+    projectId: number,
+    options: { startDate?: string; endDate?: string; limit?: number },
+  ) {
     const { startDate, endDate, limit = 50 } = options;
     // 这里返回模拟的用户行为时间线数据
     // 实际项目中可从 ClickHouse 查询事件日志
     const events = [
-      { timestamp: new Date().toISOString(), event: 'login', properties: { ip: '192.168.1.1', device: 'web' } },
-      { timestamp: new Date(Date.now() - 3600000).toISOString(), event: 'page_view', properties: { url: '/dashboard', duration: 120 } },
-      { timestamp: new Date(Date.now() - 7200000).toISOString(), event: 'click_button', properties: { button: 'export', page: '/analysis' } },
+      {
+        timestamp: new Date().toISOString(),
+        event: 'login',
+        properties: { ip: '192.168.1.1', device: 'web' },
+      },
+      {
+        timestamp: new Date(Date.now() - 3600000).toISOString(),
+        event: 'page_view',
+        properties: { url: '/dashboard', duration: 120 },
+      },
+      {
+        timestamp: new Date(Date.now() - 7200000).toISOString(),
+        event: 'click_button',
+        properties: { button: 'export', page: '/analysis' },
+      },
     ];
     return events.slice(0, limit);
   }

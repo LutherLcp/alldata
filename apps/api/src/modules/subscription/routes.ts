@@ -1,15 +1,16 @@
+import { ApiError, sendSuccess } from '@/common/utils/response';
+import { requireAuth } from '@/plugins/auth';
 /**
  * 推送订阅路由
  */
-import { FastifyInstance } from 'fastify';
-import { requireAuth } from '@/plugins/auth';
-import { sendSuccess, ApiError } from '@/common/utils/response';
+import type { FastifyInstance } from 'fastify';
 import { SubscriptionService } from './service';
 
 export async function subscriptionRoutes(app: FastifyInstance) {
   const svc = new SubscriptionService(app);
   const uid = (r: any) => Number(r.user.userId);
-  const pid = (r: any) => Number((r.headers as any)['project-id']) || Number((r.query as any).project_id);
+  const pid = (r: any) =>
+    Number((r.headers as any)['project-id']) || Number((r.query as any).project_id);
 
   // ─── Subscription ───
   app.get('/subscriptions', { preHandler: requireAuth }, async (req, reply) => {
@@ -20,13 +21,18 @@ export async function subscriptionRoutes(app: FastifyInstance) {
 
   app.post('/subscriptions', { preHandler: requireAuth }, async (req, reply) => {
     const body = req.body as any;
-    if (!body.project_id || !body.name || !body.schedule_cron) return ApiError.badRequest(reply, '缺少必填字段');
+    if (!body.project_id || !body.name || !body.schedule_cron)
+      return ApiError.badRequest(reply, '缺少必填字段');
     return sendSuccess(reply, await svc.createSubscription(body, uid(req)), '创建成功', 201);
   });
 
   app.put('/subscriptions/:id', { preHandler: requireAuth }, async (req, reply) => {
     const { id } = req.params as { id: string };
-    return sendSuccess(reply, await svc.updateSubscription(Number(id), req.body as any), '更新成功');
+    return sendSuccess(
+      reply,
+      await svc.updateSubscription(Number(id), req.body as any),
+      '更新成功',
+    );
   });
 
   app.delete('/subscriptions/:id', { preHandler: requireAuth }, async (req, reply) => {
@@ -49,7 +55,8 @@ export async function subscriptionRoutes(app: FastifyInstance) {
 
   app.post('/push-configs', { preHandler: requireAuth }, async (req, reply) => {
     const body = req.body as any;
-    if (!body.project_id || !body.name || !body.push_type) return ApiError.badRequest(reply, '缺少必填字段');
+    if (!body.project_id || !body.name || !body.push_type)
+      return ApiError.badRequest(reply, '缺少必填字段');
     return sendSuccess(reply, await svc.createPushConfig(body, uid(req)), '创建成功', 201);
   });
 

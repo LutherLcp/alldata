@@ -1,7 +1,7 @@
 /**
  * KoCRM 管理服务 — Account + Creator CRUD
  */
-import { FastifyInstance } from 'fastify';
+import type { FastifyInstance } from 'fastify';
 
 export class KocrmService {
   private prisma;
@@ -36,7 +36,7 @@ export class KocrmService {
       account_id?: string;
       status?: number;
       meta?: any;
-    }
+    },
   ) {
     return this.prisma.kocrmAccount.update({ where: { id }, data });
   }
@@ -83,7 +83,7 @@ export class KocrmService {
       status?: number;
       tags?: string[];
       meta?: any;
-    }
+    },
   ) {
     return this.prisma.kocrmCreator.update({ where: { id }, data });
   }

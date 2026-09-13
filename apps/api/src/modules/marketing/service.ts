@@ -1,8 +1,8 @@
+import type { MarketingFlow } from '@alldata/shared/types';
 /**
  * 营销自动化 Flow 业务服务
  */
-import { FastifyInstance } from 'fastify';
-import { MarketingFlow } from '@alldata/shared/types';
+import type { FastifyInstance } from 'fastify';
 import { MarketingFlowParser } from './parser';
 
 export class MarketingService {
@@ -23,7 +23,12 @@ export class MarketingService {
         nodes: [
           { id: 'n1', type: 'trigger', label: '触发: 用户离场 > 14天', config: { days: 14 } },
           { id: 'n2', type: 'condition', label: '判断: LTV得分 >= 80', config: { min_ltv: 80 } },
-          { id: 'n3', type: 'action', label: '触达: 发送飞书机器人关怀卡片', config: { channel: 'feishu' } },
+          {
+            id: 'n3',
+            type: 'action',
+            label: '触达: 发送飞书机器人关怀卡片',
+            config: { channel: 'feishu' },
+          },
         ],
         edges: [
           { source: 'n1', target: 'n2' },

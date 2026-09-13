@@ -1,7 +1,7 @@
 /**
  * 财务管理服务 — Supplier + ShareRatio + Reconciliation CRUD
  */
-import { FastifyInstance } from 'fastify';
+import type { FastifyInstance } from 'fastify';
 
 export class FinanceService {
   private prisma;
@@ -30,7 +30,7 @@ export class FinanceService {
       contact?: string;
       phone?: string;
       status?: number;
-    }
+    },
   ) {
     return this.prisma.financeSupplier.update({ where: { id }, data });
   }
@@ -56,7 +56,7 @@ export class FinanceService {
   }
   async updateShareRatio(
     id: number,
-    data: { platform?: string; ratio?: number; effective_date?: string; status?: number }
+    data: { platform?: string; ratio?: number; effective_date?: string; status?: number },
   ) {
     const updateData: any = { ...data };
     if (data.effective_date) updateData.effective_date = new Date(data.effective_date);
@@ -93,7 +93,7 @@ export class FinanceService {
       currency?: string;
       status?: number;
       meta?: any;
-    }
+    },
   ) {
     return this.prisma.financeReconciliation.update({ where: { id }, data });
   }

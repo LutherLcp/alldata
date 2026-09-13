@@ -1,9 +1,9 @@
+import { ApiError, sendSuccess } from '@/common/utils/response';
+import { requireAuth } from '@/plugins/auth';
 /**
  * 看板模块路由
  */
-import { FastifyInstance } from 'fastify';
-import { requireAuth } from '@/plugins/auth';
-import { sendSuccess, ApiError } from '@/common/utils/response';
+import type { FastifyInstance } from 'fastify';
 import { DashboardService } from './service';
 
 export async function dashboardRoutes(app: FastifyInstance) {
@@ -12,7 +12,8 @@ export async function dashboardRoutes(app: FastifyInstance) {
 
   // ─── 文件夹 ──────────────────────────────
   app.get('/folders', { preHandler: requireAuth }, async (req, reply) => {
-    const projectId = Number((req.headers as any)['project-id']) || Number((req.query as any).project_id);
+    const projectId =
+      Number((req.headers as any)['project-id']) || Number((req.query as any).project_id);
     if (!projectId) return ApiError.badRequest(reply, '缺少 project_id');
     const tree = await svc.getFolderTree(projectId);
     return sendSuccess(reply, tree);
@@ -38,8 +39,11 @@ export async function dashboardRoutes(app: FastifyInstance) {
 
   // ─── 看板 ────────────────────────────────
   app.get('/', { preHandler: requireAuth }, async (req, reply) => {
-    const projectId = Number((req.headers as any)['project-id']) || Number((req.query as any).project_id);
-    const folderId = (req.query as any).folder_id ? Number((req.query as any).folder_id) : undefined;
+    const projectId =
+      Number((req.headers as any)['project-id']) || Number((req.query as any).project_id);
+    const folderId = (req.query as any).folder_id
+      ? Number((req.query as any).folder_id)
+      : undefined;
     if (!projectId) return ApiError.badRequest(reply, '缺少 project_id');
     const list = await svc.listDashboards(projectId, folderId);
     return sendSuccess(reply, list);
@@ -92,7 +96,12 @@ export async function dashboardRoutes(app: FastifyInstance) {
   // ─── 软链 ────────────────────────────────
   app.post('/soft-links', { preHandler: requireAuth }, async (req, reply) => {
     const { dashboard_id, name, expire_at } = req.body as any;
-    const link = await svc.createSoftLink(dashboard_id, uid(req), name, expire_at ? new Date(expire_at) : undefined);
+    const link = await svc.createSoftLink(
+      dashboard_id,
+      uid(req),
+      name,
+      expire_at ? new Date(expire_at) : undefined,
+    );
     return sendSuccess(reply, link, '创建成功', 201);
   });
 
@@ -100,7 +109,8 @@ export async function dashboardRoutes(app: FastifyInstance) {
     const { token } = req.params as { token: string };
     const link = await svc.getSoftLink(token);
     if (!link) return ApiError.notFound(reply, '链接不存在或已失效');
-    if (link.expire_at && link.expire_at < new Date()) return ApiError.unauthorized(reply, '链接已过期');
+    if (link.expire_at && link.expire_at < new Date())
+      return ApiError.unauthorized(reply, '链接已过期');
     return sendSuccess(reply, link);
   });
 

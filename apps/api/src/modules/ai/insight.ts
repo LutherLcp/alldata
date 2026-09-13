@@ -2,18 +2,18 @@
  * AI 模块 — 智能分析摘要服务（InsightService）
  * 基于分析结果自动生成文字洞察：趋势识别、异常发现、关键发现、行动建议
  */
-import { FastifyInstance } from 'fastify';
-import { AIService } from './service';
+import type { FastifyInstance } from 'fastify';
 import { promptEngine } from './prompt-engine';
+import { AIService } from './service';
 import type {
-  InsightRequest,
-  InsightResponse,
-  TimeSeriesData,
   AnalysisResult,
   AnomalyPoint,
+  InsightRequest,
+  InsightResponse,
   KeyFinding,
   Recommendation,
   StatisticalSummary,
+  TimeSeriesData,
 } from './types';
 
 // ─── 统计工具函数（自实现，无外部依赖） ─────────────────────────
@@ -53,7 +53,18 @@ function calcPercentile(sorted: number[], p: number): number {
 /** 计算统计摘要 */
 function calcStatisticalSummary(values: number[]): StatisticalSummary {
   if (values.length === 0) {
-    return { count: 0, mean: 0, median: 0, std_dev: 0, min: 0, max: 0, change_rate: 0, q1: 0, q3: 0, iqr: 0 };
+    return {
+      count: 0,
+      mean: 0,
+      median: 0,
+      std_dev: 0,
+      min: 0,
+      max: 0,
+      change_rate: 0,
+      q1: 0,
+      q3: 0,
+      iqr: 0,
+    };
   }
 
   const sorted = [...values].sort((a, b) => a - b);
@@ -69,7 +80,8 @@ function calcStatisticalSummary(values: number[]): StatisticalSummary {
   // 变化率：首尾值对比
   const first = values[0];
   const last = values[values.length - 1];
-  const change_rate = first !== 0 ? Math.round(((last - first) / Math.abs(first)) * 10000) / 100 : 0;
+  const change_rate =
+    first !== 0 ? Math.round(((last - first) / Math.abs(first)) * 10000) / 100 : 0;
 
   return { count: values.length, mean, median, std_dev, min, max, change_rate, q1, q3, iqr };
 }
@@ -157,7 +169,9 @@ function mergeAnomalies(a: AnomalyPoint[], b: AnomalyPoint[]): AnomalyPoint[] {
 
 /** 从事件分析结果提取时序数据 */
 function extractEventTimeSeries(data: Record<string, unknown>): TimeSeriesData | null {
-  const series = data['series'] as Array<{ metric: string; alias: string; data: Array<{ date: string; value: number }> }> | undefined;
+  const series = data['series'] as
+    | Array<{ metric: string; alias: string; data: Array<{ date: string; value: number }> }>
+    | undefined;
   if (!series || series.length === 0) return null;
   const first = series[0];
   return {
@@ -169,7 +183,9 @@ function extractEventTimeSeries(data: Record<string, unknown>): TimeSeriesData |
 
 /** 从漏斗分析结果提取描述 */
 function extractFunnelSummary(data: Record<string, unknown>): string {
-  const steps = data['steps'] as Array<{ step: number; event: string; count: number; rate: number }> | undefined;
+  const steps = data['steps'] as
+    | Array<{ step: number; event: string; count: number; rate: number }>
+    | undefined;
   const totalConversion = data['total_conversion'] as number | undefined;
   if (!steps || steps.length === 0) return '无漏斗数据';
 
@@ -195,16 +211,23 @@ function extractFunnelSummary(data: Record<string, unknown>): string {
 
 /** 从留存分析结果提取描述 */
 function extractRetentionSummary(data: Record<string, unknown>): string {
-  const matrix = data['matrix'] as Array<{ date: string; base_users: number; retention_rates: number[] }> | undefined;
+  const matrix = data['matrix'] as
+    | Array<{ date: string; base_users: number; retention_rates: number[] }>
+    | undefined;
   if (!matrix || matrix.length === 0) return '无留存数据';
 
   const lines = matrix.map((row) => {
-    const rates = row.retention_rates.slice(0, 4).map((r, i) => `Day${i}:${r}%`).join(' ');
+    const rates = row.retention_rates
+      .slice(0, 4)
+      .map((r, i) => `Day${i}:${r}%`)
+      .join(' ');
     return `${row.date}（${row.base_users}人）：${rates}`;
   });
 
   // 找出平均 Day1、Day7 留存
-  const day1Rates = matrix.filter((r) => r.retention_rates.length > 1).map((r) => r.retention_rates[1]);
+  const day1Rates = matrix
+    .filter((r) => r.retention_rates.length > 1)
+    .map((r) => r.retention_rates[1]);
   if (day1Rates.length > 0) {
     const avgDay1 = Math.round(calcMean(day1Rates));
     lines.push(`平均次日留存：${avgDay1}%`);
@@ -434,7 +457,9 @@ export class InsightService {
       });
 
       const parsed = this.parseLLMJson(completion.content);
-      const recs: Recommendation[] = Array.isArray(parsed) ? parsed : (parsed.recommendations ?? []);
+      const recs: Recommendation[] = Array.isArray(parsed)
+        ? parsed
+        : (parsed.recommendations ?? []);
       return recs.slice(0, 3).map((r: Partial<Recommendation>) => ({
         title: r.title ?? '未知建议',
         description: r.description ?? '',
@@ -547,7 +572,7 @@ export class InsightService {
         }
       }
     } else if (data.type === 'funnel') {
-      const steps = data.data['steps'] as Array<{ count: number; rate: number }> | undefined;
+      const steps = data.data.steps as Array<{ count: number; rate: number }> | undefined;
       if (steps && steps.length >= 2) {
         const lastRate = steps[steps.length - 1].rate;
         findings.push({

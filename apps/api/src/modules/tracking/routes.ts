@@ -1,15 +1,16 @@
+import { ApiError, sendSuccess } from '@/common/utils/response';
+import { requireAuth } from '@/plugins/auth';
 /**
  * 埋点管理路由
  */
-import { FastifyInstance } from 'fastify';
-import { requireAuth } from '@/plugins/auth';
-import { sendSuccess, sendPaginated, ApiError } from '@/common/utils/response';
+import type { FastifyInstance } from 'fastify';
 import { TrackingService } from './service';
 
 export async function trackingRoutes(app: FastifyInstance) {
   const svc = new TrackingService(app);
   const uid = (r: any) => Number(r.user.userId);
-  const pid = (r: any) => Number((r.headers as any)['project-id']) || Number((r.query as any).project_id);
+  const pid = (r: any) =>
+    Number((r.headers as any)['project-id']) || Number((r.query as any).project_id);
 
   // ─── Story ────────────────────────────────
   app.get('/stories', { preHandler: requireAuth }, async (req, reply) => {

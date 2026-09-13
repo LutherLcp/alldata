@@ -1,7 +1,7 @@
 /**
  * 版本日历服务 — CRUD
  */
-import { FastifyInstance } from 'fastify';
+import type { FastifyInstance } from 'fastify';
 
 export class CalendarService {
   private prisma;
@@ -28,15 +28,18 @@ export class CalendarService {
     return this.prisma.versionCalendar.findUnique({ where: { id } });
   }
 
-  async create(data: {
-    project_id: number;
-    title: string;
-    description?: string;
-    start_date: string;
-    end_date?: string;
-    type: string;
-    status?: number;
-  }, userId: number) {
+  async create(
+    data: {
+      project_id: number;
+      title: string;
+      description?: string;
+      start_date: string;
+      end_date?: string;
+      type: string;
+      status?: number;
+    },
+    userId: number,
+  ) {
     return this.prisma.versionCalendar.create({
       data: {
         project_id: data.project_id,
@@ -51,14 +54,17 @@ export class CalendarService {
     });
   }
 
-  async update(id: number, data: {
-    title?: string;
-    description?: string;
-    start_date?: string;
-    end_date?: string;
-    type?: string;
-    status?: number;
-  }) {
+  async update(
+    id: number,
+    data: {
+      title?: string;
+      description?: string;
+      start_date?: string;
+      end_date?: string;
+      type?: string;
+      status?: number;
+    },
+  ) {
     const updateData: any = { ...data };
     if (data.start_date) updateData.start_date = new Date(data.start_date);
     if (data.end_date) updateData.end_date = new Date(data.end_date);

@@ -1,9 +1,9 @@
+import { getRedisClient } from '@/common/utils/redis';
 /**
  * 分析引擎 V2 — 6 种分析类型
  * event(事件分析) / funnel(漏斗) / retention(留存) / distribution(分布) / path(路径) / attribute(归因)
  */
-import { FastifyInstance } from 'fastify';
-import { getRedisClient } from '@/common/utils/redis';
+import type { FastifyInstance } from 'fastify';
 
 export interface AnalysisQuery {
   type?: string; // event | funnel | retention | distribution | path | attribute
@@ -40,12 +40,23 @@ export class AnalysisService {
 
     let result: any;
     switch (type) {
-      case 'funnel': result = this.buildFunnelResult(query); break;
-      case 'retention': result = this.buildRetentionResult(query); break;
-      case 'distribution': result = this.buildDistributionResult(query); break;
-      case 'path': result = this.buildPathResult(query); break;
-      case 'attribute': result = this.buildAttributeResult(query); break;
-      default: result = this.buildEventResult(query);
+      case 'funnel':
+        result = this.buildFunnelResult(query);
+        break;
+      case 'retention':
+        result = this.buildRetentionResult(query);
+        break;
+      case 'distribution':
+        result = this.buildDistributionResult(query);
+        break;
+      case 'path':
+        result = this.buildPathResult(query);
+        break;
+      case 'attribute':
+        result = this.buildAttributeResult(query);
+        break;
+      default:
+        result = this.buildEventResult(query);
     }
 
     await redis.set(cacheKey, JSON.stringify(result), 'EX', 300);
@@ -61,10 +72,18 @@ export class AnalysisService {
   private buildEventResult(query: AnalysisQuery) {
     const days = this.getDateRange(query.time_range.start, query.time_range.end);
     const series = query.metrics.map((m) => ({
-      metric: m.type, alias: m.alias || m.type,
+      metric: m.type,
+      alias: m.alias || m.type,
       data: days.map((date) => ({ date, value: Math.floor(Math.random() * 1000) + 100 })),
     }));
-    return { query_id: crypto.randomUUID(), type: 'event', columns: ['date', ...query.metrics.map(m => m.alias || m.type)], rows: days.length, series, elapsed_ms: this.randMs() };
+    return {
+      query_id: crypto.randomUUID(),
+      type: 'event',
+      columns: ['date', ...query.metrics.map((m) => m.alias || m.type)],
+      rows: days.length,
+      series,
+      elapsed_ms: this.randMs(),
+    };
   }
 
   // ─── 漏斗分析 ─────────────────────────
@@ -74,12 +93,25 @@ export class AnalysisService {
     const steps = events.map((name, i) => {
       const count = i === 0 ? base : Math.floor(base * (0.4 + Math.random() * 0.4));
       base = count;
-      return { step: i + 1, event: name, count, rate: i === 0 ? 100 : Math.round((count / (events.length > 1 ? base : count)) * 100) };
+      return {
+        step: i + 1,
+        event: name,
+        count,
+        rate: i === 0 ? 100 : Math.round((count / (events.length > 1 ? base : count)) * 100),
+      };
     });
     // 修正转化率
     const total = steps[0].count;
-    steps.forEach((s, i) => { s.rate = i === 0 ? 100 : Math.round((s.count / total) * 100); });
-    return { query_id: crypto.randomUUID(), type: 'funnel', steps, total_conversion: steps[steps.length - 1].rate, elapsed_ms: this.randMs() };
+    steps.forEach((s, i) => {
+      s.rate = i === 0 ? 100 : Math.round((s.count / total) * 100);
+    });
+    return {
+      query_id: crypto.randomUUID(),
+      type: 'funnel',
+      steps,
+      total_conversion: steps[steps.length - 1].rate,
+      elapsed_ms: this.randMs(),
+    };
   }
 
   // ─── 留存分析 ─────────────────────────
@@ -89,7 +121,7 @@ export class AnalysisService {
       const base = Math.floor(Math.random() * 1000) + 500;
       const row = [100]; // Day 0 = 100%
       for (let j = 1; j <= Math.min(6, days.length - 1 - i); j++) {
-        row.push(Math.round(100 * Math.pow(0.7 + Math.random() * 0.2, j)));
+        row.push(Math.round(100 * (0.7 + Math.random() * 0.2) ** j));
       }
       return { date, base_users: base, retention_rates: row };
     });
@@ -98,20 +130,55 @@ export class AnalysisService {
 
   // ─── 分布分析 ─────────────────────────
   private buildDistributionResult(query: AnalysisQuery) {
-    const buckets = ['0-10', '10-20', '20-30', '30-40', '40-50', '50-60', '60-70', '70-80', '80-90', '90-100'];
+    const buckets = [
+      '0-10',
+      '10-20',
+      '20-30',
+      '30-40',
+      '40-50',
+      '50-60',
+      '60-70',
+      '70-80',
+      '80-90',
+      '90-100',
+    ];
     const values = buckets.map((b) => Math.floor(Math.random() * 500) + 50);
-    return { query_id: crypto.randomUUID(), type: 'distribution', buckets, values, total: values.reduce((a, b) => a + b, 0), elapsed_ms: this.randMs() };
+    return {
+      query_id: crypto.randomUUID(),
+      type: 'distribution',
+      buckets,
+      values,
+      total: values.reduce((a, b) => a + b, 0),
+      elapsed_ms: this.randMs(),
+    };
   }
 
   // ─── 路径分析 ─────────────────────────
   private buildPathResult(query: AnalysisQuery) {
-    const pages = ['/home', '/product', '/cart', '/checkout', '/payment', '/success', '/search', '/profile'];
+    const pages = [
+      '/home',
+      '/product',
+      '/cart',
+      '/checkout',
+      '/payment',
+      '/success',
+      '/search',
+      '/profile',
+    ];
     const nodes = pages.map((p, i) => ({ id: String(i), name: p }));
     const links: Array<{ source: string; target: string; value: number }> = [];
     for (let i = 0; i < pages.length - 1; i++) {
-      links.push({ source: String(i), target: String(i + 1), value: Math.floor(Math.random() * 1000) + 100 });
+      links.push({
+        source: String(i),
+        target: String(i + 1),
+        value: Math.floor(Math.random() * 1000) + 100,
+      });
       if (i < pages.length - 2 && Math.random() > 0.5) {
-        links.push({ source: String(i), target: String(i + 2), value: Math.floor(Math.random() * 300) + 50 });
+        links.push({
+          source: String(i),
+          target: String(i + 2),
+          value: Math.floor(Math.random() * 300) + 50,
+        });
       }
     }
     return { query_id: crypto.randomUUID(), type: 'path', nodes, links, elapsed_ms: this.randMs() };
@@ -127,8 +194,15 @@ export class AnalysisService {
       roi: Math.round((Math.random() * 5 + 0.5) * 100) / 100,
     }));
     const total = attributes.reduce((a, b) => a + b.contribution, 0);
-    attributes.forEach((a) => { a.contribution = Math.round((a.contribution / total) * 100); });
-    return { query_id: crypto.randomUUID(), type: 'attribute', attributes, elapsed_ms: this.randMs() };
+    attributes.forEach((a) => {
+      a.contribution = Math.round((a.contribution / total) * 100);
+    });
+    return {
+      query_id: crypto.randomUUID(),
+      type: 'attribute',
+      attributes,
+      elapsed_ms: this.randMs(),
+    };
   }
 
   // ─── 工具方法 ─────────────────────────
@@ -140,5 +214,7 @@ export class AnalysisService {
     return days;
   }
 
-  private randMs() { return Math.floor(Math.random() * 500) + 50; }
+  private randMs() {
+    return Math.floor(Math.random() * 500) + 50;
+  }
 }

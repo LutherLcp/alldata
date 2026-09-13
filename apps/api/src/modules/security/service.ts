@@ -1,18 +1,60 @@
 /**
  * 数据血缘图谱与 GDPR 隐私安全服务
  */
-import type { DataLineageNode, DataLineageEdge, DataMaskingRule } from '@alldata/shared';
+import type { DataLineageEdge, DataLineageNode } from '@alldata/shared';
 
 // 获取项目全量数据血缘拓扑结构
-export async function getProjectDataLineage(projectId: number): Promise<{ nodes: DataLineageNode[]; edges: DataLineageEdge[] }> {
+export async function getProjectDataLineage(
+  projectId: number,
+): Promise<{ nodes: DataLineageNode[]; edges: DataLineageEdge[] }> {
   const nodes: DataLineageNode[] = [
-    { id: 'node_sdk_js', label: 'Web/小程序 JS SDK', type: 'sdk', status: 'healthy', record_count: 100000 },
-    { id: 'node_sdk_ios', label: 'iOS/Android SDK', type: 'sdk', status: 'healthy', record_count: 45000 },
-    { id: 'node_raw_events', label: 'ClickHouse 原始事件表 (tracking_events)', type: 'raw_table', status: 'healthy', record_count: 145000 },
-    { id: 'node_mv_min', label: '物化视图 (mv_events_min_agg)', type: 'materialized_view', status: 'healthy', record_count: 1200 },
-    { id: 'node_mart_user', label: 'CDP 用户宽表 (user_profile_mart)', type: 'data_mart', status: 'healthy', record_count: 5000 },
-    { id: 'node_rep_dash', label: '核心转化大盘看板 (Dashboard)', type: 'dashboard_report', status: 'healthy' },
-    { id: 'node_rep_mta', label: 'MTA 全渠道归因报表', type: 'dashboard_report', status: 'healthy' },
+    {
+      id: 'node_sdk_js',
+      label: 'Web/小程序 JS SDK',
+      type: 'sdk',
+      status: 'healthy',
+      record_count: 100000,
+    },
+    {
+      id: 'node_sdk_ios',
+      label: 'iOS/Android SDK',
+      type: 'sdk',
+      status: 'healthy',
+      record_count: 45000,
+    },
+    {
+      id: 'node_raw_events',
+      label: 'ClickHouse 原始事件表 (tracking_events)',
+      type: 'raw_table',
+      status: 'healthy',
+      record_count: 145000,
+    },
+    {
+      id: 'node_mv_min',
+      label: '物化视图 (mv_events_min_agg)',
+      type: 'materialized_view',
+      status: 'healthy',
+      record_count: 1200,
+    },
+    {
+      id: 'node_mart_user',
+      label: 'CDP 用户宽表 (user_profile_mart)',
+      type: 'data_mart',
+      status: 'healthy',
+      record_count: 5000,
+    },
+    {
+      id: 'node_rep_dash',
+      label: '核心转化大盘看板 (Dashboard)',
+      type: 'dashboard_report',
+      status: 'healthy',
+    },
+    {
+      id: 'node_rep_mta',
+      label: 'MTA 全渠道归因报表',
+      type: 'dashboard_report',
+      status: 'healthy',
+    },
   ];
 
   const edges: DataLineageEdge[] = [
@@ -28,7 +70,10 @@ export async function getProjectDataLineage(projectId: number): Promise<{ nodes:
 }
 
 // 动态敏感数据脱敏工具 (如 138****1234, a***b@gmail.com)
-export function maskSensitiveData(text: string, type: 'phone' | 'email' | 'id_card' | 'name'): string {
+export function maskSensitiveData(
+  text: string,
+  type: 'phone' | 'email' | 'id_card' | 'name',
+): string {
   if (!text) return text;
   switch (type) {
     case 'phone':

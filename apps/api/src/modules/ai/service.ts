@@ -2,7 +2,7 @@
  * AI 模块 — 统一 LLM 调用层（核心）
  * 支持多 Provider 切换，流式响应，错误重试，用量统计
  */
-import { FastifyInstance } from 'fastify';
+import type { FastifyInstance } from 'fastify';
 import { loadLLMConfig, validateLLMConfig } from './config';
 import type {
   ChatMessage,
@@ -158,7 +158,7 @@ export class AIService {
       const elapsed = Date.now() - startTime;
       this.recordUsage(
         usage ?? { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
-        elapsed
+        elapsed,
       );
       callback.onEnd(usage);
     } catch (err) {
@@ -172,7 +172,7 @@ export class AIService {
 
   /** 流式响应 — AsyncGenerator 方式 */
   async *streamGenerator(
-    request: CompletionRequest
+    request: CompletionRequest,
   ): AsyncGenerator<string, TokenUsage | undefined> {
     const startTime = Date.now();
     const model = request.model ?? this.config.model;
@@ -230,7 +230,7 @@ export class AIService {
       const elapsed = Date.now() - startTime;
       this.recordUsage(
         usage ?? { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
-        elapsed
+        elapsed,
       );
     }
 
@@ -278,7 +278,7 @@ export class AIService {
 
         if (attempt < MAX_RETRIES - 1) {
           // 指数退避
-          const delay = RETRY_BASE_DELAY * Math.pow(2, attempt);
+          const delay = RETRY_BASE_DELAY * 2 ** attempt;
           await new Promise((resolve) => setTimeout(resolve, delay));
         }
       }

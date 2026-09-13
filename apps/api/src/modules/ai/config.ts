@@ -2,7 +2,7 @@
  * AI 模块 — LLM 配置管理
  * 从环境变量读取配置，提供默认值和验证
  */
-import { LLMConfig, LLMProvider, ModelInfo } from './types';
+import { type LLMConfig, LLMProvider, type ModelInfo } from './types';
 
 /** 默认 LLM 配置（OpenAI gpt-4o） */
 const DEFAULT_CONFIG: LLMConfig = {
@@ -25,12 +25,48 @@ const PROVIDER_BASE_URL: Record<LLMProvider, string> = {
 
 /** 可用模型列表 */
 export const AVAILABLE_MODELS: ModelInfo[] = [
-  { id: 'gpt-4o', name: 'GPT-4o', provider: LLMProvider.OPENAI, max_tokens: 128000, description: 'OpenAI 旗舰多模态模型' },
-  { id: 'gpt-4o-mini', name: 'GPT-4o Mini', provider: LLMProvider.OPENAI, max_tokens: 128000, description: 'OpenAI 轻量高效模型' },
-  { id: 'qwen-turbo', name: '通义千问 Turbo', provider: LLMProvider.TONGYI, max_tokens: 131072, description: '阿里通义千问 Turbo' },
-  { id: 'qwen-plus', name: '通义千问 Plus', provider: LLMProvider.TONGYI, max_tokens: 131072, description: '阿里通义千问 Plus' },
-  { id: 'ernie-4.0-8k', name: '文心一言 4.0', provider: LLMProvider.WENXIN, max_tokens: 8192, description: '百度文心一言 4.0' },
-  { id: 'ernie-3.5-8k', name: '文心一言 3.5', provider: LLMProvider.WENXIN, max_tokens: 8192, description: '百度文心一言 3.5' },
+  {
+    id: 'gpt-4o',
+    name: 'GPT-4o',
+    provider: LLMProvider.OPENAI,
+    max_tokens: 128000,
+    description: 'OpenAI 旗舰多模态模型',
+  },
+  {
+    id: 'gpt-4o-mini',
+    name: 'GPT-4o Mini',
+    provider: LLMProvider.OPENAI,
+    max_tokens: 128000,
+    description: 'OpenAI 轻量高效模型',
+  },
+  {
+    id: 'qwen-turbo',
+    name: '通义千问 Turbo',
+    provider: LLMProvider.TONGYI,
+    max_tokens: 131072,
+    description: '阿里通义千问 Turbo',
+  },
+  {
+    id: 'qwen-plus',
+    name: '通义千问 Plus',
+    provider: LLMProvider.TONGYI,
+    max_tokens: 131072,
+    description: '阿里通义千问 Plus',
+  },
+  {
+    id: 'ernie-4.0-8k',
+    name: '文心一言 4.0',
+    provider: LLMProvider.WENXIN,
+    max_tokens: 8192,
+    description: '百度文心一言 4.0',
+  },
+  {
+    id: 'ernie-3.5-8k',
+    name: '文心一言 3.5',
+    provider: LLMProvider.WENXIN,
+    max_tokens: 8192,
+    description: '百度文心一言 3.5',
+  },
 ];
 
 /** 解析 Provider 枚举 */
@@ -53,9 +89,11 @@ export function loadLLMConfig(): LLMConfig {
     apiKey: process.env.LLM_API_KEY || DEFAULT_CONFIG.apiKey,
     baseUrl,
     model: process.env.LLM_MODEL || DEFAULT_CONFIG.model,
-    maxTokens: parseInt(process.env.LLM_MAX_TOKENS ?? String(DEFAULT_CONFIG.maxTokens), 10),
-    temperature: parseFloat(process.env.LLM_TEMPERATURE ?? String(DEFAULT_CONFIG.temperature)),
-    timeout: parseInt(process.env.LLM_TIMEOUT ?? String(DEFAULT_CONFIG.timeout), 10),
+    maxTokens: Number.parseInt(process.env.LLM_MAX_TOKENS ?? String(DEFAULT_CONFIG.maxTokens), 10),
+    temperature: Number.parseFloat(
+      process.env.LLM_TEMPERATURE ?? String(DEFAULT_CONFIG.temperature),
+    ),
+    timeout: Number.parseInt(process.env.LLM_TIMEOUT ?? String(DEFAULT_CONFIG.timeout), 10),
   };
 
   return config;

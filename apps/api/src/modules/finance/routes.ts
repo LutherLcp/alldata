@@ -3,7 +3,7 @@
  */
 import { ApiError, sendSuccess } from '@/common/utils/response';
 import { requireAuth } from '@/plugins/auth';
-import { FastifyInstance } from 'fastify';
+import type { FastifyInstance } from 'fastify';
 import { FinanceService } from './service';
 
 export async function financeRoutes(app: FastifyInstance) {
@@ -69,7 +69,7 @@ export async function financeRoutes(app: FastifyInstance) {
     return sendSuccess(
       reply,
       await svc.updateReconciliation(Number(id), req.body as any),
-      '更新成功'
+      '更新成功',
     );
   });
   app.delete('/reconciliations/:id', { preHandler: requireAuth }, async (req, reply) => {

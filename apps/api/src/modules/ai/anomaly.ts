@@ -3,18 +3,18 @@
  * 基于统计方法（Z-Score / IQR / 移动平均）的时序异常检测
  * 结合 LLM 辅助异常解读，联动预警模块
  */
-import { FastifyInstance } from 'fastify';
+import type { FastifyInstance } from 'fastify';
 import { AIService } from './service';
 import type {
+  AnomalyCategory,
   AnomalyDetectionRequest,
   AnomalyDetectionResponse,
-  AnomalyResult,
-  AnomalyInterpretation,
   AnomalyInterpretRequest,
-  AnomalyCategory,
+  AnomalyInterpretation,
+  AnomalyPoint,
+  AnomalyResult,
   MonitorConfig,
   MonitorResult,
-  AnomalyPoint,
 } from './types';
 
 // ─── 统计工具函数（纯计算，无外部依赖） ─────────────────
@@ -250,9 +250,7 @@ export class AnomalyDetector {
    * LLM 辅助异常解读
    * 将异常点和数据上下文传给 LLM，生成原因分析和建议
    */
-  async interpretAnomalies(
-    request: AnomalyInterpretRequest,
-  ): Promise<AnomalyInterpretation> {
+  async interpretAnomalies(request: AnomalyInterpretRequest): Promise<AnomalyInterpretation> {
     const { anomalies, metric_name, context } = request;
 
     if (!anomalies || anomalies.length === 0) {
@@ -303,7 +301,10 @@ export class AnomalyDetector {
     try {
       const result = await this.aiService.complete({
         messages: [
-          { role: 'system', content: '你是 AllData 平台的 AI 异常分析助手，请以 JSON 格式返回分析结果。' },
+          {
+            role: 'system',
+            content: '你是 AllData 平台的 AI 异常分析助手，请以 JSON 格式返回分析结果。',
+          },
           { role: 'user', content: prompt },
         ],
         temperature: 0.3,
@@ -315,7 +316,9 @@ export class AnomalyDetector {
         id: crypto.randomUUID(),
         possible_causes: (parsed.possible_causes as string[]) ?? [],
         recommendations: (parsed.recommendations as string[]) ?? [],
-        severity_assessment: (parsed.severity_assessment as AnomalyInterpretation['severity_assessment']) ?? this.assessOverallSeverity(anomalies),
+        severity_assessment:
+          (parsed.severity_assessment as AnomalyInterpretation['severity_assessment']) ??
+          this.assessOverallSeverity(anomalies),
         detailed_analysis: (parsed.detailed_analysis as string) ?? '分析完成',
         created_at: new Date().toISOString(),
       };
@@ -415,7 +418,10 @@ export class AnomalyDetector {
     const afterDeviation = Math.abs(currentValue - afterMean);
     if (beforeDeviation > 0 && afterDeviation > 0) {
       // 前后都偏离，但后窗口回归 → 尖峰
-      if (after.length > 0 && Math.abs(afterMean - beforeMean) / (Math.abs(beforeMean) || 1) < 0.3) {
+      if (
+        after.length > 0 &&
+        Math.abs(afterMean - beforeMean) / (Math.abs(beforeMean) || 1) < 0.3
+      ) {
         return 'spike';
       }
     }
@@ -509,7 +515,9 @@ export class AnomalyDetector {
   }
 
   /** 评估整体严重度 */
-  private assessOverallSeverity(anomalies: AnomalyResult[]): 'low' | 'medium' | 'high' | 'critical' {
+  private assessOverallSeverity(
+    anomalies: AnomalyResult[],
+  ): 'low' | 'medium' | 'high' | 'critical' {
     if (anomalies.length === 0) return 'low';
     const order = { low: 0, medium: 1, high: 2, critical: 3 };
     let max: 'low' | 'medium' | 'high' | 'critical' = 'low';

@@ -1,7 +1,7 @@
 /**
  * 站内信服务 — CRUD + 未读计数
  */
-import { FastifyInstance } from 'fastify';
+import type { FastifyInstance } from 'fastify';
 
 export class NoticeService {
   private prisma;
@@ -90,10 +90,17 @@ export class NoticeService {
   }
 
   /** 创建通知 */
-  async createNotice(data: {
-    project_id: number; title: string; content: string;
-    type?: string; status?: number; publish_at?: Date;
-  }, userId: number) {
+  async createNotice(
+    data: {
+      project_id: number;
+      title: string;
+      content: string;
+      type?: string;
+      status?: number;
+      publish_at?: Date;
+    },
+    userId: number,
+  ) {
     return this.prisma.notice.create({
       data: {
         project_id: data.project_id,

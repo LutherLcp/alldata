@@ -1,8 +1,8 @@
+import type { CohortGroup, CustomerJourneyPath, User360Profile } from '@alldata/shared/types';
 /**
  * CDP 核心业务服务 — 360画像 + Cohort人群分群 + 客户旅程分析
  */
-import { FastifyInstance } from 'fastify';
-import { User360Profile, CustomerJourneyPath, CohortGroup } from '@alldata/shared/types';
+import type { FastifyInstance } from 'fastify';
 import { CDPClickHouseEngine } from './clickhouse';
 
 export class CDPService {
@@ -32,10 +32,30 @@ export class CDPService {
       total_orders: Math.floor(Math.random() * 15) + 3,
       total_spend: Math.floor(Math.random() * 5000) + 800,
       recent_events: [
-        { event_name: 'view_product_detail', display_name: '浏览商品详情页', timestamp: new Date(Date.now() - 5 * 60000).toISOString(), properties: { product_id: 'P10023', price: 299 } },
-        { event_name: 'add_to_cart', display_name: '加入购物车', timestamp: new Date(Date.now() - 30 * 60000).toISOString(), properties: { product_id: 'P10023', quantity: 1 } },
-        { event_name: 'submit_order', display_name: '提交订单', timestamp: new Date(Date.now() - 120 * 60000).toISOString(), properties: { order_id: 'ORD_20260801_99', total_amount: 299 } },
-        { event_name: 'app_launch', display_name: '打开App', timestamp: new Date(Date.now() - 240 * 60000).toISOString(), properties: { channel: 'AppStore' } },
+        {
+          event_name: 'view_product_detail',
+          display_name: '浏览商品详情页',
+          timestamp: new Date(Date.now() - 5 * 60000).toISOString(),
+          properties: { product_id: 'P10023', price: 299 },
+        },
+        {
+          event_name: 'add_to_cart',
+          display_name: '加入购物车',
+          timestamp: new Date(Date.now() - 30 * 60000).toISOString(),
+          properties: { product_id: 'P10023', quantity: 1 },
+        },
+        {
+          event_name: 'submit_order',
+          display_name: '提交订单',
+          timestamp: new Date(Date.now() - 120 * 60000).toISOString(),
+          properties: { order_id: 'ORD_20260801_99', total_amount: 299 },
+        },
+        {
+          event_name: 'app_launch',
+          display_name: '打开App',
+          timestamp: new Date(Date.now() - 240 * 60000).toISOString(),
+          properties: { channel: 'AppStore' },
+        },
       ],
     };
   }
@@ -82,7 +102,11 @@ export class CDPService {
   }
 
   /** 创建 Cohort 人群分群 */
-  async createCohort(projectId: number, data: { name: string; description?: string; rules: any[] }, userId: number) {
+  async createCohort(
+    projectId: number,
+    data: { name: string; description?: string; rules: any[] },
+    userId: number,
+  ) {
     const userCount = Math.floor(Math.random() * 5000) + 200;
     return {
       id: Date.now(),
@@ -101,14 +125,20 @@ export class CDPService {
   }
 
   /** 预估 Cohort 覆盖人数 */
-  async estimateCohortSize(projectId: number, rules: any[]): Promise<{ count: number; sql: string }> {
+  async estimateCohortSize(
+    projectId: number,
+    rules: any[],
+  ): Promise<{ count: number; sql: string }> {
     const sql = CDPClickHouseEngine.buildCohortSQL(projectId, rules);
     const count = Math.floor(Math.random() * 8000) + 500;
     return { count, sql };
   }
 
   /** 获取 客户旅程 桑基图与路径流向 (V9.5) */
-  async getCustomerJourneyPath(projectId: number, dateRange: { start: string; end: string }): Promise<CustomerJourneyPath> {
+  async getCustomerJourneyPath(
+    projectId: number,
+    dateRange: { start: string; end: string },
+  ): Promise<CustomerJourneyPath> {
     return {
       nodes: [
         { name: '首页入口 (Home)', category: 'entry', value: 12000 },

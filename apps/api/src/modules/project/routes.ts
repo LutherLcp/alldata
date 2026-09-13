@@ -1,10 +1,10 @@
+import { ApiError, sendPaginated, sendSuccess } from '@/common/utils/response';
+import { requireAuth } from '@/plugins/auth';
+import { projectCreateSchema, projectUpdateSchema } from '@alldata/shared';
 /**
  * 项目管理模块 — 路由定义
  */
-import { FastifyInstance } from 'fastify';
-import { projectCreateSchema, projectUpdateSchema } from '@alldata/shared';
-import { requireAuth } from '@/plugins/auth';
-import { sendSuccess, sendPaginated, ApiError } from '@/common/utils/response';
+import type { FastifyInstance } from 'fastify';
 import { ProjectService } from './service';
 
 export async function projectRoutes(app: FastifyInstance) {

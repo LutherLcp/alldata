@@ -1,8 +1,8 @@
+import type { ABExperiment, FeatureFlag } from '@alldata/shared/types';
 /**
  * A/B 实验与 Feature Flags 业务服务
  */
-import { FastifyInstance } from 'fastify';
-import { FeatureFlag, ABExperiment } from '@alldata/shared/types';
+import type { FastifyInstance } from 'fastify';
 import { ABTestEvaluator } from './evaluator';
 
 export class ABTestService {
@@ -52,8 +52,23 @@ export class ABTestService {
         target_metric: 'checkout_click_rate',
         status: 2,
         variants: [
-          { name: '对照组 A (Control)', weight: 50, sample_count: 5000, conversion_count: 450, conversion_rate: 9.0, is_winner: false },
-          { name: '实验组 B (Red Highlighting)', weight: 50, sample_count: 5000, conversion_count: 680, conversion_rate: 13.6, is_winner: true, p_value: pVal },
+          {
+            name: '对照组 A (Control)',
+            weight: 50,
+            sample_count: 5000,
+            conversion_count: 450,
+            conversion_rate: 9.0,
+            is_winner: false,
+          },
+          {
+            name: '实验组 B (Red Highlighting)',
+            weight: 50,
+            sample_count: 5000,
+            conversion_count: 680,
+            conversion_rate: 13.6,
+            is_winner: true,
+            p_value: pVal,
+          },
         ],
         winning_variant: '实验组 B (Red Highlighting)',
         p_value: pVal,

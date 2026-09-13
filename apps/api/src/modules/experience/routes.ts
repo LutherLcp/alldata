@@ -1,7 +1,7 @@
 /**
  * AI Copilot 与 Session Replay 体验重放路由注册模块
  */
-import { FastifyInstance } from 'fastify';
+import type { FastifyInstance } from 'fastify';
 import { ExperienceService } from './service';
 
 export async function experienceRoutes(app: FastifyInstance) {

@@ -1,10 +1,10 @@
+import { sendSuccess } from '@/common/utils/response';
+import { requireAuth } from '@/plugins/auth';
+import type { SDKBuildOptions } from '@alldata/shared';
 /**
  * SDK 编译工厂与开发者插件生态 Fastify 路由
  */
-import { FastifyInstance } from 'fastify';
-import { requireAuth } from '@/plugins/auth';
-import { sendSuccess, ApiError } from '@/common/utils/response';
-import { sdkBuildOptionsSchema, SDKBuildOptions } from '@alldata/shared';
+import type { FastifyInstance } from 'fastify';
 import { generateSDKBundle, getMarketplacePlugins } from './service';
 
 export async function marketplaceRoutes(app: FastifyInstance) {

@@ -1,7 +1,7 @@
 /**
  * CDP 路由注册模块
  */
-import { FastifyInstance } from 'fastify';
+import type { FastifyInstance } from 'fastify';
 import { CDPService } from './service';
 
 export async function cdpRoutes(app: FastifyInstance) {
@@ -18,7 +18,11 @@ export async function cdpRoutes(app: FastifyInstance) {
 
   // 客户旅程 桑基图与路径树
   app.get('/journey/path', async (req, reply) => {
-    const { project_id, start, end } = req.query as { project_id?: string; start?: string; end?: string };
+    const { project_id, start, end } = req.query as {
+      project_id?: string;
+      start?: string;
+      end?: string;
+    };
     const pid = project_id ? Number(project_id) : 1;
     const dateRange = {
       start: start || '2026-07-01',

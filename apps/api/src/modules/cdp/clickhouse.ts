@@ -4,11 +4,20 @@
 export class CDPClickHouseEngine {
   /** 构建 Cohort 人群交集过滤查询 SQL */
   static buildCohortSQL(projectId: number, rules: any[]): string {
-    const conditions = rules.map((r) => {
-      const op = r.operator === 'eq' ? '=' : r.operator === 'gt' ? '>' : r.operator === 'lt' ? '<' : 'LIKE';
-      const val = typeof r.value === 'string' ? `'${r.value}'` : r.value;
-      return `${r.property} ${op} ${val}`;
-    }).join(' AND ');
+    const conditions = rules
+      .map((r) => {
+        const op =
+          r.operator === 'eq'
+            ? '='
+            : r.operator === 'gt'
+              ? '>'
+              : r.operator === 'lt'
+                ? '<'
+                : 'LIKE';
+        const val = typeof r.value === 'string' ? `'${r.value}'` : r.value;
+        return `${r.property} ${op} ${val}`;
+      })
+      .join(' AND ');
 
     return `SELECT DISTINCT user_id FROM events WHERE project_id = ${projectId} ${conditions ? `AND (${conditions})` : ''}`;
   }

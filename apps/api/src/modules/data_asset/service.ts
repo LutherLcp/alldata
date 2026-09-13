@@ -1,7 +1,7 @@
 /**
  * 数据资产服务 — 数据表/数据集/属性/分类 CRUD
  */
-import { FastifyInstance } from 'fastify';
+import type { FastifyInstance } from 'fastify';
 
 export class DataAssetService {
   private prisma;
@@ -29,13 +29,20 @@ export class DataAssetService {
   }
 
   async createTable(data: {
-    project_id: number; name: string; display_name?: string;
-    description?: string; type: string; created_by: number;
+    project_id: number;
+    name: string;
+    display_name?: string;
+    description?: string;
+    type: string;
+    created_by: number;
   }) {
     return this.prisma.dataTable.create({ data });
   }
 
-  async updateTable(id: number, data: { display_name?: string; description?: string; status?: number }) {
+  async updateTable(
+    id: number,
+    data: { display_name?: string; description?: string; status?: number },
+  ) {
     return this.prisma.dataTable.update({ where: { id }, data });
   }
 
@@ -52,8 +59,13 @@ export class DataAssetService {
   }
 
   async createColumn(data: {
-    datatable_id: number; name: string; display_name?: string;
-    data_type: string; is_dimension?: boolean; description?: string; sort_order?: number;
+    datatable_id: number;
+    name: string;
+    display_name?: string;
+    data_type: string;
+    is_dimension?: boolean;
+    description?: string;
+    sort_order?: number;
   }) {
     return this.prisma.dataTableColumn.create({ data });
   }
@@ -74,8 +86,13 @@ export class DataAssetService {
   }
 
   async createDataset(data: {
-    project_id: number; name: string; display_name?: string;
-    description?: string; type: string; sql_content?: string; config?: any;
+    project_id: number;
+    name: string;
+    display_name?: string;
+    description?: string;
+    type: string;
+    sql_content?: string;
+    config?: any;
     created_by: number;
   }) {
     return this.prisma.dataset.create({
@@ -83,10 +100,17 @@ export class DataAssetService {
     });
   }
 
-  async updateDataset(id: number, data: {
-    name?: string; display_name?: string; description?: string;
-    sql_content?: string; config?: any; status?: number;
-  }) {
+  async updateDataset(
+    id: number,
+    data: {
+      name?: string;
+      display_name?: string;
+      description?: string;
+      sql_content?: string;
+      config?: any;
+      status?: number;
+    },
+  ) {
     return this.prisma.dataset.update({ where: { id }, data });
   }
 
@@ -102,17 +126,30 @@ export class DataAssetService {
   }
 
   async createAttribute(data: {
-    project_id: number; name: string; display_name?: string;
-    data_type: string; entity_type?: string; is_dimension?: boolean;
-    category_id?: number; description?: string; created_by: number;
+    project_id: number;
+    name: string;
+    display_name?: string;
+    data_type: string;
+    entity_type?: string;
+    is_dimension?: boolean;
+    category_id?: number;
+    description?: string;
+    created_by: number;
   }) {
     return this.prisma.attribute.create({ data });
   }
 
-  async updateAttribute(id: number, data: {
-    display_name?: string; data_type?: string; is_dimension?: boolean;
-    category_id?: number; status?: number; description?: string;
-  }) {
+  async updateAttribute(
+    id: number,
+    data: {
+      display_name?: string;
+      data_type?: string;
+      is_dimension?: boolean;
+      category_id?: number;
+      status?: number;
+      description?: string;
+    },
+  ) {
     return this.prisma.attribute.update({ where: { id }, data });
   }
 
@@ -131,8 +168,12 @@ export class DataAssetService {
   }
 
   async createCategory(data: {
-    project_id: number; parent_id?: number; name: string;
-    type: string; level?: number; sort_order?: number;
+    project_id: number;
+    parent_id?: number;
+    name: string;
+    type: string;
+    level?: number;
+    sort_order?: number;
   }) {
     return this.prisma.category.create({ data });
   }

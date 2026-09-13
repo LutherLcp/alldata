@@ -1,10 +1,10 @@
+import { getRedisClient } from '@/common/utils/redis';
+import type { LoginRequest, LoginResponse, UserInfo } from '@alldata/shared';
+import bcrypt from 'bcryptjs';
 /**
  * 认证服务 — 登录/登出/刷新 Token/用户信息
  */
-import { FastifyInstance } from 'fastify';
-import bcrypt from 'bcryptjs';
-import type { LoginRequest, LoginResponse, UserInfo } from '@alldata/shared';
-import { getRedisClient } from '@/common/utils/redis';
+import type { FastifyInstance } from 'fastify';
 
 const JWT_EXPIRES_IN = '7d';
 const REFRESH_TOKEN_EXPIRES_IN = '30d'; // 天
@@ -68,7 +68,9 @@ export class AuthService {
         email: user.email ?? undefined,
         avatar: user.avatar ?? undefined,
         lang: user.lang,
-        projects: userProjects.map((up: { project: { id: number; code: string; name: string } }) => up.project),
+        projects: userProjects.map(
+          (up: { project: { id: number; code: string; name: string } }) => up.project,
+        ),
       },
       expire_at: expireAt,
     };
@@ -126,7 +128,9 @@ export class AuthService {
           email: user.email ?? undefined,
           avatar: user.avatar ?? undefined,
           lang: user.lang,
-          projects: userProjects.map((up: { project: { id: number; code: string; name: string } }) => up.project),
+          projects: userProjects.map(
+            (up: { project: { id: number; code: string; name: string } }) => up.project,
+          ),
         },
         expire_at: Math.floor(Date.now() / 1000) + 7 * 24 * 3600,
       };
@@ -167,7 +171,9 @@ export class AuthService {
       avatar: user.avatar ?? undefined,
       lang: user.lang,
       permissions: [...new Set(allPermissions)] as string[],
-      projects: user.project_roles.map((upr: { project: { id: number; code: string; name: string } }) => upr.project),
+      projects: user.project_roles.map(
+        (upr: { project: { id: number; code: string; name: string } }) => upr.project,
+      ),
     };
   }
 }

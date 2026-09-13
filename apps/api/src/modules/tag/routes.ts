@@ -1,15 +1,16 @@
+import { ApiError, sendSuccess } from '@/common/utils/response';
+import { requireAuth } from '@/plugins/auth';
 /**
  * 标签管理路由
  */
-import { FastifyInstance } from 'fastify';
-import { requireAuth } from '@/plugins/auth';
-import { sendSuccess, ApiError } from '@/common/utils/response';
+import type { FastifyInstance } from 'fastify';
 import { TagService } from './service';
 
 export async function tagRoutes(app: FastifyInstance) {
   const svc = new TagService(app);
   const uid = (r: any) => Number(r.user.userId);
-  const pid = (r: any) => Number((r.headers as any)['project-id']) || Number((r.query as any).project_id);
+  const pid = (r: any) =>
+    Number((r.headers as any)['project-id']) || Number((r.query as any).project_id);
 
   app.get('/', { preHandler: requireAuth }, async (req, reply) => {
     const projectId = pid(req);
@@ -27,7 +28,8 @@ export async function tagRoutes(app: FastifyInstance) {
 
   app.post('/', { preHandler: requireAuth }, async (req, reply) => {
     const body = req.body as any;
-    if (!body.project_id || !body.name || !body.tag_type) return ApiError.badRequest(reply, '缺少必填字段');
+    if (!body.project_id || !body.name || !body.tag_type)
+      return ApiError.badRequest(reply, '缺少必填字段');
     const tag = await svc.createTag(body, uid(req));
     return sendSuccess(reply, tag, '创建成功', 201);
   });

@@ -1,7 +1,7 @@
 /**
  * 埋点管理服务 — Story + EventDefinition + EventProperty CRUD
  */
-import { FastifyInstance } from 'fastify';
+import type { FastifyInstance } from 'fastify';
 
 export class TrackingService {
   private prisma;
@@ -26,7 +26,10 @@ export class TrackingService {
     });
   }
 
-  async createStory(data: { project_id: number; name: string; docs_url?: string; description?: string }, userId: number) {
+  async createStory(
+    data: { project_id: number; name: string; docs_url?: string; description?: string },
+    userId: number,
+  ) {
     const { project_id, name, docs_url } = data;
     return this.prisma.story.create({ data: { project_id, name, docs_url, created_by: userId } });
   }
@@ -58,16 +61,28 @@ export class TrackingService {
   }
 
   async createEvent(data: {
-    project_id: number; story_id?: number; name: string;
-    display_name?: string; description?: string; event_type?: string;
+    project_id: number;
+    story_id?: number;
+    name: string;
+    display_name?: string;
+    description?: string;
+    event_type?: string;
   }) {
     const { project_id, story_id, name, display_name, description } = data;
-    return this.prisma.eventDefinition.create({ data: { project_id, story_id, name, display_name, description } });
+    return this.prisma.eventDefinition.create({
+      data: { project_id, story_id, name, display_name, description },
+    });
   }
 
-  async updateEvent(id: number, data: {
-    display_name?: string; description?: string; status?: number; story_id?: number;
-  }) {
+  async updateEvent(
+    id: number,
+    data: {
+      display_name?: string;
+      description?: string;
+      status?: number;
+      story_id?: number;
+    },
+  ) {
     return this.prisma.eventDefinition.update({ where: { id }, data });
   }
 
@@ -77,16 +92,25 @@ export class TrackingService {
 
   // ─── EventProperty ──────────────────────────
   async createProperty(data: {
-    event_id: number; name: string; data_type: string;
-    is_required?: boolean; description?: string; sort_order?: number;
+    event_id: number;
+    name: string;
+    data_type: string;
+    is_required?: boolean;
+    description?: string;
+    sort_order?: number;
   }) {
     return this.prisma.eventProperty.create({ data });
   }
 
-  async updateProperty(id: number, data: {
-    data_type?: string; is_required?: boolean;
-    description?: string; sort_order?: number;
-  }) {
+  async updateProperty(
+    id: number,
+    data: {
+      data_type?: string;
+      is_required?: boolean;
+      description?: string;
+      sort_order?: number;
+    },
+  ) {
     return this.prisma.eventProperty.update({ where: { id }, data });
   }
 

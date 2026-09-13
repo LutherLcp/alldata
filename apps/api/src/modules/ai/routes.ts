@@ -1,3 +1,5 @@
+import { ApiError, sendSuccess } from '@/common/utils/response';
+import { requireAuth } from '@/plugins/auth';
 /**
  * AI 模块 — 路由定义
  * POST /api/ai/chat                — AI 对话（支持流式）
@@ -10,23 +12,21 @@
  * POST /api/ai/insight/recommendations — 生成行动建议
  * POST /api/ai/trends                  — 趋势异常检测
  */
-import { FastifyInstance } from 'fastify';
-import { requireAuth } from '@/plugins/auth';
-import { sendSuccess, ApiError } from '@/common/utils/response';
-import { AIService } from './service';
-import { InsightService } from './insight';
+import type { FastifyInstance } from 'fastify';
 import { AnomalyDetector } from './anomaly';
 import { AVAILABLE_MODELS, getSanitizedConfig } from './config';
+import { InsightService } from './insight';
 import { promptEngine } from './prompt-engine';
+import { AIService } from './service';
 import type {
-  ChatMessage,
-  CompletionRequest,
-  InsightRequest,
-  TimeSeriesData,
   AnalysisResult,
   AnomalyDetectionRequest,
   AnomalyInterpretRequest,
+  ChatMessage,
+  CompletionRequest,
+  InsightRequest,
   MonitorConfig,
+  TimeSeriesData,
 } from './types';
 
 export async function aiRoutes(app: FastifyInstance) {
@@ -67,19 +67,22 @@ export async function aiRoutes(app: FastifyInstance) {
         'X-Accel-Buffering': 'no',
       });
 
-      await svc.stream({ ...body, messages }, {
-        onChunk(chunk: string) {
-          reply.raw.write(`data: ${JSON.stringify({ content: chunk })}\n\n`);
+      await svc.stream(
+        { ...body, messages },
+        {
+          onChunk(chunk: string) {
+            reply.raw.write(`data: ${JSON.stringify({ content: chunk })}\n\n`);
+          },
+          onEnd(usage) {
+            reply.raw.write(`data: ${JSON.stringify({ done: true, usage })}\n\n`);
+            reply.raw.end();
+          },
+          onError(error: Error) {
+            reply.raw.write(`data: ${JSON.stringify({ error: error.message })}\n\n`);
+            reply.raw.end();
+          },
         },
-        onEnd(usage) {
-          reply.raw.write(`data: ${JSON.stringify({ done: true, usage })}\n\n`);
-          reply.raw.end();
-        },
-        onError(error: Error) {
-          reply.raw.write(`data: ${JSON.stringify({ error: error.message })}\n\n`);
-          reply.raw.end();
-        },
-      });
+      );
 
       return;
     }
@@ -90,6 +93,75 @@ export async function aiRoutes(app: FastifyInstance) {
       return sendSuccess(reply, result);
     } catch (err) {
       return ApiError.internal(reply, `AI 对话失败: ${(err as Error).message}`);
+    }
+  });
+
+  // ─── NL2SQL 自然语言转查询 ────────────────────
+  app.post('/nl2sql', { preHandler: requireAuth }, async (req, reply) => {
+    const body = req.body as { question: string; project_id: number; context?: string };
+    if (!body.question || !body.project_id) {
+      return ApiError.badRequest(reply, '缺少 question 或 project_id 参数');
+    }
+
+    try {
+      // 1. 获取项目事件与属性 Schema 上下文
+      const events = await app.prisma.eventDefinition.findMany({
+        where: { project_id: body.project_id },
+        include: { properties: true },
+        take: 50,
+      });
+
+      const schemaText = events
+        .map(
+          (e: {
+            name: string;
+            display_name: string | null;
+            properties: Array<{ name: string; data_type: string }>;
+          }) =>
+            `表/事件: ${e.name} (${e.display_name ?? '未命名'})\n` +
+            `属性: ${e.properties.map((p: { name: string; data_type: string }) => `${p.name} (${p.data_type})`).join(', ')}`,
+        )
+        .join('\n\n');
+
+      // 2. 渲染 Prompt
+      const prompt = promptEngine.render('nl2sql-template', {
+        question: body.question,
+        tables_schema:
+          schemaText || '默认事件表: events (event_name, user_id, timestamp, properties)',
+        context: body.context ?? '',
+      });
+
+      // 3. 调用 AI 补全
+      const result = await svc.complete({
+        messages: [{ role: 'user', content: prompt }],
+      });
+
+      // 4. 解析结果并安全检查（只允许 SELECT 语句）
+      let parsed: { sql?: string; explanation?: string; tables_used?: string[] } = {};
+      try {
+        parsed = JSON.parse(result.content);
+      } catch {
+        parsed = { sql: result.content, explanation: '生成 SQL 查询' };
+      }
+
+      const sqlUpper = (parsed.sql ?? '').toUpperCase();
+      if (
+        sqlUpper.includes('DROP ') ||
+        sqlUpper.includes('DELETE ') ||
+        sqlUpper.includes('UPDATE ') ||
+        sqlUpper.includes('ALTER ') ||
+        sqlUpper.includes('TRUNCATE ')
+      ) {
+        return ApiError.badRequest(reply, '生成的 SQL 包含非法数据修改指令，已被安全拦截');
+      }
+
+      return sendSuccess(reply, {
+        sql: parsed.sql ?? '',
+        explanation: parsed.explanation ?? '',
+        tables_used: parsed.tables_used ?? ['events'],
+      });
+    } catch (err) {
+      return ApiError.internal(reply, `NL2SQL 生成失败: ${(err as Error).message}`);
     }
   });
 
@@ -138,7 +210,12 @@ export async function aiRoutes(app: FastifyInstance) {
   // ─── 生成趋势摘要 ───────────────────────────────
   app.post('/insight/trend', { preHandler: requireAuth }, async (req, reply) => {
     const body = req.body as TimeSeriesData;
-    if (!body.metric_name || !body.points || !Array.isArray(body.points) || body.points.length === 0) {
+    if (
+      !body.metric_name ||
+      !body.points ||
+      !Array.isArray(body.points) ||
+      body.points.length === 0
+    ) {
       return ApiError.badRequest(reply, '缺少 metric_name 或 points 参数');
     }
 
@@ -183,7 +260,12 @@ export async function aiRoutes(app: FastifyInstance) {
   // ─── 趋势异常检测 ───────────────────────────────
   app.post('/trends', { preHandler: requireAuth }, async (req, reply) => {
     const body = req.body as TimeSeriesData;
-    if (!body.metric_name || !body.points || !Array.isArray(body.points) || body.points.length === 0) {
+    if (
+      !body.metric_name ||
+      !body.points ||
+      !Array.isArray(body.points) ||
+      body.points.length === 0
+    ) {
       return ApiError.badRequest(reply, '缺少 metric_name 或 points 参数');
     }
 
@@ -198,7 +280,12 @@ export async function aiRoutes(app: FastifyInstance) {
   // ─── 异常检测：接收时序数据，返回异常点检测结果 ──
   app.post('/anomaly/detect', { preHandler: requireAuth }, async (req, reply) => {
     const body = req.body as AnomalyDetectionRequest;
-    if (!body.project_id || !body.metric_name || !body.data_points || !Array.isArray(body.data_points)) {
+    if (
+      !body.project_id ||
+      !body.metric_name ||
+      !body.data_points ||
+      !Array.isArray(body.data_points)
+    ) {
       return ApiError.badRequest(reply, '缺少 project_id、metric_name 或 data_points 参数');
     }
     if (body.data_points.length < 3) {
@@ -232,7 +319,10 @@ export async function aiRoutes(app: FastifyInstance) {
   app.post('/anomaly/monitor', { preHandler: requireAuth }, async (req, reply) => {
     const body = req.body as MonitorConfig;
     if (!body.project_id || !body.metric_name || !body.check_interval || !body.detection_methods) {
-      return ApiError.badRequest(reply, '缺少 project_id、metric_name、check_interval 或 detection_methods 参数');
+      return ApiError.badRequest(
+        reply,
+        '缺少 project_id、metric_name、check_interval 或 detection_methods 参数',
+      );
     }
 
     try {

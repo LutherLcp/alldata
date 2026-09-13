@@ -7,12 +7,12 @@
  * 4. 时间衰减 (Time Decay) - 越接近转化时间的触点权重越高 (按半衰期 Exponential Decay)
  * 5. W 形模型 (W-Shaped) - 首次触点 (40%) + 转化前末次触点 (40%) + 中间所有触点平摊 (20%)
  */
-import type { AttributionModelType, Touchpoint, ChannelROI } from '@alldata/shared';
+import type { AttributionModelType, Touchpoint } from '@alldata/shared';
 
 export interface UserTouchPath {
   userId: string;
   touchpoints: Touchpoint[]; // 按时间正序排列
-  conversionValue: number;   // 转化金额/价值
+  conversionValue: number; // 转化金额/价值
   isConverted: boolean;
 }
 
@@ -76,7 +76,7 @@ export function evaluateAttribution(
         const weights = path.touchpoints.map((tp) => {
           const t = new Date(tp.touch_time).getTime();
           const daysDiff = (lastTime - t) / (1000 * 3600 * 24);
-          const w = Math.pow(0.5, daysDiff / halfLifeDays);
+          const w = 0.5 ** (daysDiff / halfLifeDays);
           totalWeight += w;
           return w;
         });

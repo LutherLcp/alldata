@@ -1,7 +1,7 @@
 /**
  * 营销 Flow 路由注册模块
  */
-import { FastifyInstance } from 'fastify';
+import type { FastifyInstance } from 'fastify';
 import { MarketingService } from './service';
 
 export async function marketingRoutes(app: FastifyInstance) {

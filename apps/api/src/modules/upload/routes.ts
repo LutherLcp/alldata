@@ -1,9 +1,9 @@
+import { ApiError, sendSuccess } from '@/common/utils/response';
+import { requireAuth } from '@/plugins/auth';
 /**
  * 文件上传路由
  */
-import { FastifyInstance } from 'fastify';
-import { requireAuth } from '@/plugins/auth';
-import { sendSuccess, ApiError } from '@/common/utils/response';
+import type { FastifyInstance } from 'fastify';
 import { UploadService } from './service';
 
 export async function uploadRoutes(app: FastifyInstance) {

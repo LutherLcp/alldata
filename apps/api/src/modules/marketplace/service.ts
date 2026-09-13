@@ -1,13 +1,25 @@
 /**
  * SDK 动态编译工厂与插件生态服务
  */
-import type { SDKBuildOptions, AppPlugin, WebhookSubscription } from '@alldata/shared';
+import type { AppPlugin, SDKBuildOptions } from '@alldata/shared';
 
 // 动态生成极轻量打包 SDK 代码源码
-export function generateSDKBundle(opts: SDKBuildOptions): { code: string; bundleSizeKB: number; fileName: string } {
-  const { platform, enable_auto_pv, enable_auto_click, enable_encrypt, enable_beacon, batch_interval_ms, batch_max_size } = opts;
+export function generateSDKBundle(opts: SDKBuildOptions): {
+  code: string;
+  bundleSizeKB: number;
+  fileName: string;
+} {
+  const {
+    platform,
+    enable_auto_pv,
+    enable_auto_click,
+    enable_encrypt,
+    enable_beacon,
+    batch_interval_ms,
+    batch_max_size,
+  } = opts;
 
-  let code = `/**
+  const code = `/**
  * AllData Ultra-Lightweight Track SDK v15.0 (${platform})
  * Generated: ${new Date().toISOString()}
  */

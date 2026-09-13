@@ -1,8 +1,8 @@
+import type { CopilotQueryResult, HeatmapData, SessionRecording } from '@alldata/shared/types';
 /**
  * AI Data Copilot 与 Session Replay 体验重放服务
  */
-import { FastifyInstance } from 'fastify';
-import { CopilotQueryResult, SessionRecording, HeatmapData } from '@alldata/shared/types';
+import type { FastifyInstance } from 'fastify';
 
 export class ExperienceService {
   private prisma;
@@ -16,7 +16,8 @@ export class ExperienceService {
     return {
       prompt,
       sql: generatedSql,
-      explanation: `已为您分析近 7 天用户 PV/UV 趋势。发现 7月28日 出现流量峰值，主要由 App 主界面大促 Banner 带来。`,
+      explanation:
+        '已为您分析近 7 天用户 PV/UV 趋势。发现 7月28日 出现流量峰值，主要由 App 主界面大促 Banner 带来。',
       chart_type: 'line',
       columns: ['day', 'uv', 'pv'],
       rows: [
@@ -46,7 +47,11 @@ export class ExperienceService {
         recorded_at: new Date(Date.now() - 3600000).toISOString(),
         events: [
           { type: 1, timestamp: Date.now() - 140000, data: { href: '/home' } },
-          { type: 2, timestamp: Date.now() - 90000, data: { x: 340, y: 520, target: 'button#buy' } },
+          {
+            type: 2,
+            timestamp: Date.now() - 90000,
+            data: { x: 340, y: 520, target: 'button#buy' },
+          },
           { type: 3, timestamp: Date.now() - 20000, data: { error: 'Network 500 API Exception' } },
         ],
       },

@@ -2,7 +2,7 @@
  * MTA 全渠道多触点归因与 ROI 计算服务
  */
 import type { AttributionModelType, ChannelROI } from '@alldata/shared';
-import { evaluateAttribution, UserTouchPath } from './evaluator';
+import { type UserTouchPath, evaluateAttribution } from './evaluator';
 
 const CHANNEL_NAMES: Record<string, string> = {
   douyin: '抖音短视频广告',

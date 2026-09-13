@@ -1,3 +1,5 @@
+import { ApiError, sendSuccess } from '@/common/utils/response';
+import { requireAuth } from '@/plugins/auth';
 /**
  * 版本日历路由
  * GET    /api/calendar           — 列表
@@ -6,15 +8,14 @@
  * PUT    /api/calendar/:id       — 更新
  * DELETE /api/calendar/:id       — 删除
  */
-import { FastifyInstance } from 'fastify';
-import { requireAuth } from '@/plugins/auth';
-import { sendSuccess, ApiError } from '@/common/utils/response';
+import type { FastifyInstance } from 'fastify';
 import { CalendarService } from './service';
 
 export async function calendarRoutes(app: FastifyInstance) {
   const svc = new CalendarService(app);
   const uid = (r: any) => Number(r.user.userId);
-  const pid = (r: any) => Number((r.headers as any)['project-id']) || Number((r.query as any).project_id);
+  const pid = (r: any) =>
+    Number((r.headers as any)['project-id']) || Number((r.query as any).project_id);
 
   app.get('/', { preHandler: requireAuth }, async (req, reply) => {
     const projectId = pid(req);

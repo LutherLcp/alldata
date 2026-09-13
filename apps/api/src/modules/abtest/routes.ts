@@ -1,7 +1,7 @@
 /**
  * A/B 实验 & Feature Flags 路由注册模块
  */
-import { FastifyInstance } from 'fastify';
+import type { FastifyInstance } from 'fastify';
 import { ABTestService } from './service';
 
 export async function abtestRoutes(app: FastifyInstance) {

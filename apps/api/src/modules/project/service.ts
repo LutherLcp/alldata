@@ -1,8 +1,8 @@
+import type { Project, ProjectConfig } from '@alldata/shared';
 /**
  * 项目管理服务
  */
-import { FastifyInstance } from 'fastify';
-import type { Project, ProjectConfig } from '@alldata/shared';
+import type { FastifyInstance } from 'fastify';
 
 interface ListOptions {
   page: number;
@@ -34,7 +34,16 @@ export class ProjectService {
     const [list, total] = await Promise.all([
       this.prisma.project.findMany({
         where,
-        select: { id: true, code: true, name: true, description: true, status: true, config: true, created_at: true, updated_at: true },
+        select: {
+          id: true,
+          code: true,
+          name: true,
+          description: true,
+          status: true,
+          config: true,
+          created_at: true,
+          updated_at: true,
+        },
         skip: (page - 1) * pageSize,
         take: pageSize,
         orderBy: { created_at: 'desc' },
@@ -49,12 +58,25 @@ export class ProjectService {
   async getById(id: number): Promise<Project | null> {
     return this.prisma.project.findUnique({
       where: { id },
-      select: { id: true, code: true, name: true, description: true, status: true, config: true, created_by: true, created_at: true, updated_at: true },
+      select: {
+        id: true,
+        code: true,
+        name: true,
+        description: true,
+        status: true,
+        config: true,
+        created_by: true,
+        created_at: true,
+        updated_at: true,
+      },
     }) as Promise<Project | null>;
   }
 
   /** 创建项目 */
-  async create(data: { code: string; name: string; description?: string; config?: ProjectConfig }, userId: number) {
+  async create(
+    data: { code: string; name: string; description?: string; config?: ProjectConfig },
+    userId: number,
+  ) {
     const project = await this.prisma.project.create({
       data: {
         code: data.code,
@@ -66,7 +88,12 @@ export class ProjectService {
         roles: {
           create: [
             { name: 'admin', description: '项目管理员', permissions: ['*'], is_system: true },
-            { name: 'member', description: '项目成员', permissions: ['dashboard:view', 'analysis:view'], is_system: true },
+            {
+              name: 'member',
+              description: '项目成员',
+              permissions: ['dashboard:view', 'analysis:view'],
+              is_system: true,
+            },
           ],
         },
       },

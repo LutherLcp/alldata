@@ -1,7 +1,7 @@
 /**
  * 看板服务 — 文件夹/看板/报表/软链 CRUD
  */
-import { FastifyInstance } from 'fastify';
+import type { FastifyInstance } from 'fastify';
 
 export class DashboardService {
   private prisma;
@@ -34,7 +34,10 @@ export class DashboardService {
     return roots;
   }
 
-  async createFolder(data: { project_id: number; parent_id?: number; name: string; type?: number }, userId: number) {
+  async createFolder(
+    data: { project_id: number; parent_id?: number; name: string; type?: number },
+    userId: number,
+  ) {
     return this.prisma.dashboardFolder.create({
       data: { ...data, created_by: userId },
     });
@@ -71,19 +74,35 @@ export class DashboardService {
     });
   }
 
-  async createDashboard(data: {
-    project_id: number; folder_id?: number; name: string;
-    description?: string; type?: number; layout?: any; config?: any;
-  }, userId: number) {
+  async createDashboard(
+    data: {
+      project_id: number;
+      folder_id?: number;
+      name: string;
+      description?: string;
+      type?: number;
+      layout?: any;
+      config?: any;
+    },
+    userId: number,
+  ) {
     return this.prisma.dashboard.create({
       data: { ...data, created_by: userId, updated_by: userId },
     });
   }
 
-  async updateDashboard(id: number, data: {
-    name?: string; description?: string; layout?: any;
-    config?: any; common_filters?: any; folder_id?: number;
-  }, userId: number) {
+  async updateDashboard(
+    id: number,
+    data: {
+      name?: string;
+      description?: string;
+      layout?: any;
+      config?: any;
+      common_filters?: any;
+      folder_id?: number;
+    },
+    userId: number,
+  ) {
     return this.prisma.dashboard.update({
       where: { id },
       data: { ...data, updated_by: userId },
@@ -99,20 +118,36 @@ export class DashboardService {
 
   // ─── 报表 ──────────────────────────────────────────
 
-  async createReport(data: {
-    project_id: number; dashboard_id?: number; name: string;
-    type: string; chart_type?: string; query_config?: any;
-    chart_config?: any; sql_content?: string; position?: any;
-  }, userId: number) {
+  async createReport(
+    data: {
+      project_id: number;
+      dashboard_id?: number;
+      name: string;
+      type: string;
+      chart_type?: string;
+      query_config?: any;
+      chart_config?: any;
+      sql_content?: string;
+      position?: any;
+    },
+    userId: number,
+  ) {
     return this.prisma.report.create({
       data: { ...data, created_by: userId },
     });
   }
 
-  async updateReport(id: number, data: {
-    name?: string; chart_type?: string; query_config?: any;
-    chart_config?: any; sql_content?: string; position?: any;
-  }) {
+  async updateReport(
+    id: number,
+    data: {
+      name?: string;
+      chart_type?: string;
+      query_config?: any;
+      chart_config?: any;
+      sql_content?: string;
+      position?: any;
+    },
+  ) {
     return this.prisma.report.update({ where: { id }, data });
   }
 

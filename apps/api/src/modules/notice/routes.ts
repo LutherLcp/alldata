@@ -1,15 +1,16 @@
+import { ApiError, sendPaginated, sendSuccess } from '@/common/utils/response';
+import { requireAuth } from '@/plugins/auth';
 /**
  * 站内信路由
  */
-import { FastifyInstance } from 'fastify';
-import { requireAuth } from '@/plugins/auth';
-import { sendSuccess, sendPaginated, ApiError } from '@/common/utils/response';
+import type { FastifyInstance } from 'fastify';
 import { NoticeService } from './service';
 
 export async function noticeRoutes(app: FastifyInstance) {
   const svc = new NoticeService(app);
   const uid = (r: any) => Number(r.user.userId);
-  const pid = (r: any) => Number((r.headers as any)['project-id']) || Number((r.query as any).project_id);
+  const pid = (r: any) =>
+    Number((r.headers as any)['project-id']) || Number((r.query as any).project_id);
 
   // 通知列表
   app.get('/', { preHandler: requireAuth }, async (req, reply) => {

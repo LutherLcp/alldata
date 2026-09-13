@@ -1,3 +1,5 @@
+import { ApiError, sendSuccess } from '@/common/utils/response';
+import { requireAuth } from '@/plugins/auth';
 /**
  * 数据资产路由
  * 数据表:   GET/POST/PUT/DELETE /api/assets/tables
@@ -5,15 +7,14 @@
  * 属性:     GET/POST/PUT/DELETE /api/assets/attributes
  * 分类:     GET/POST/DELETE      /api/assets/categories
  */
-import { FastifyInstance } from 'fastify';
-import { requireAuth } from '@/plugins/auth';
-import { sendSuccess, ApiError } from '@/common/utils/response';
+import type { FastifyInstance } from 'fastify';
 import { DataAssetService } from './service';
 
 export async function dataAssetRoutes(app: FastifyInstance) {
   const svc = new DataAssetService(app);
   const uid = (r: any) => Number(r.user.userId);
-  const pid = (r: any) => Number((r.headers as any)['project-id']) || Number((r.query as any).project_id);
+  const pid = (r: any) =>
+    Number((r.headers as any)['project-id']) || Number((r.query as any).project_id);
 
   // ─── 数据表 ──────────────────────────────
   app.get('/tables', { preHandler: requireAuth }, async (req, reply) => {
@@ -114,7 +115,10 @@ export async function dataAssetRoutes(app: FastifyInstance) {
     const projectId = pid(req);
     if (!projectId) return ApiError.badRequest(reply, '缺少 project_id');
     const q = req.query as any;
-    const list = await svc.listAttributes(projectId, q.category_id ? Number(q.category_id) : undefined);
+    const list = await svc.listAttributes(
+      projectId,
+      q.category_id ? Number(q.category_id) : undefined,
+    );
     return sendSuccess(reply, list);
   });
 
