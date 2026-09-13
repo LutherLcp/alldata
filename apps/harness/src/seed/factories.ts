@@ -1,20 +1,35 @@
+import type {
+  AnalysisResult,
+  Category,
+  ChartDataSeries,
+  Dashboard,
+  DashboardFolder,
+  DataTable,
+  DownloadTask,
+  EventDefinition,
+  LoginResponse,
+  Metric,
+  Notice,
+  Project,
+  Report,
+  Story,
+  User,
+  UserInfo,
+  UserTag,
+  VersionCalendar,
+  Warning,
+} from '@alldata/shared';
 /**
  * Harness — 种子数据工厂（完整版）
  * 基于 @faker-js/faker 生成真实感的测试数据，覆盖 V1-V5
  */
 import { faker } from '@faker-js/faker/locale/zh_CN';
-import type {
-  User, Project, Dashboard, DashboardFolder, Report, Story,
-  EventDefinition, UserTag, Metric, Warning,
-  Notice, DownloadTask, VersionCalendar,
-  Category, DataTable,
-  ChartDataSeries, AnalysisResult,
-  UserInfo, LoginResponse,
-} from '@alldata/shared';
 
 let idCounter = 1;
 const nextId = () => idCounter++;
-export const resetIdCounter = () => { idCounter = 1; };
+export const resetIdCounter = () => {
+  idCounter = 1;
+};
 
 // ============================================================
 // 用户与项目
@@ -171,7 +186,7 @@ export function createTimeSeriesData(days = 30, seriesCount = 3): ChartDataSerie
   return series;
 }
 
-export function createAnalysisResult(type: string = 'event'): AnalysisResult {
+export function createAnalysisResult(type = 'event'): AnalysisResult {
   const days = 30;
   const chartData = createTimeSeriesData(days, type === 'funnel' ? 1 : 3);
 
@@ -212,7 +227,9 @@ export function createFunnelData(steps = 5): AnalysisResult {
       { key: 'rate', label: '转化率', data_type: 'number' },
     ],
     rows,
-    chart_data: [{ name: '漏斗', data: rows.map((r) => ({ x: r.step as string, y: r.value as number })) }],
+    chart_data: [
+      { name: '漏斗', data: rows.map((r) => ({ x: r.step as string, y: r.value as number })) },
+    ],
   };
 }
 
@@ -233,7 +250,9 @@ export function createRetentionData(days = 14): AnalysisResult {
     columns: [
       { key: 'date', label: '日期', data_type: 'date' },
       ...Array.from({ length: days + 1 }, (_, i) => ({
-        key: `day_${i}`, label: `Day ${i}`, data_type: 'number' as const,
+        key: `day_${i}`,
+        label: `Day ${i}`,
+        data_type: 'number' as const,
       })),
     ],
     rows,
@@ -261,8 +280,16 @@ export function createStory(overrides: Partial<Story> = {}): Story {
 
 export function createEvent(overrides: Partial<EventDefinition> = {}): EventDefinition {
   const eventNames = [
-    'page_view', 'button_click', 'form_submit', 'purchase', 'sign_up',
-    'login', 'share', 'add_to_cart', 'search', 'download',
+    'page_view',
+    'button_click',
+    'form_submit',
+    'purchase',
+    'sign_up',
+    'login',
+    'share',
+    'add_to_cart',
+    'search',
+    'download',
   ];
   return {
     id: nextId(),
@@ -272,8 +299,22 @@ export function createEvent(overrides: Partial<EventDefinition> = {}): EventDefi
     description: faker.lorem.sentence(),
     status: 1,
     properties: [
-      { id: nextId(), event_id: 0, name: 'page', data_type: 'string', is_required: true, sort_order: 0 },
-      { id: nextId(), event_id: 0, name: 'duration', data_type: 'number', is_required: false, sort_order: 1 },
+      {
+        id: nextId(),
+        event_id: 0,
+        name: 'page',
+        data_type: 'string',
+        is_required: true,
+        sort_order: 0,
+      },
+      {
+        id: nextId(),
+        event_id: 0,
+        name: 'duration',
+        data_type: 'number',
+        is_required: false,
+        sort_order: 1,
+      },
     ],
     created_at: faker.date.past().toISOString(),
     ...overrides,
@@ -349,10 +390,42 @@ export function createDataTable(overrides: Partial<DataTable> = {}): DataTable {
     status: 1,
     row_count: faker.number.int({ min: 10000, max: 100000000 }),
     columns: [
-      { id: nextId(), datatable_id: 0, name: 'user_id', display_name: '用户ID', data_type: 'string', is_dimension: true, sort_order: 0 },
-      { id: nextId(), datatable_id: 0, name: 'event_time', display_name: '事件时间', data_type: 'date', is_dimension: false, sort_order: 1 },
-      { id: nextId(), datatable_id: 0, name: 'event_name', display_name: '事件名', data_type: 'string', is_dimension: true, sort_order: 2 },
-      { id: nextId(), datatable_id: 0, name: 'duration', display_name: '时长', data_type: 'number', is_dimension: false, sort_order: 3 },
+      {
+        id: nextId(),
+        datatable_id: 0,
+        name: 'user_id',
+        display_name: '用户ID',
+        data_type: 'string',
+        is_dimension: true,
+        sort_order: 0,
+      },
+      {
+        id: nextId(),
+        datatable_id: 0,
+        name: 'event_time',
+        display_name: '事件时间',
+        data_type: 'date',
+        is_dimension: false,
+        sort_order: 1,
+      },
+      {
+        id: nextId(),
+        datatable_id: 0,
+        name: 'event_name',
+        display_name: '事件名',
+        data_type: 'string',
+        is_dimension: true,
+        sort_order: 2,
+      },
+      {
+        id: nextId(),
+        datatable_id: 0,
+        name: 'duration',
+        display_name: '时长',
+        data_type: 'number',
+        is_dimension: false,
+        sort_order: 3,
+      },
     ],
     created_by: 1,
     created_at: faker.date.past().toISOString(),
@@ -371,11 +444,13 @@ export function createWarning(overrides: Partial<Warning> = {}): Warning {
     project_id: 1,
     name: faker.word.adjective() + '数据预警',
     status: 1,
-    monitor_rules: [{
-      metric: { event_name: 'page_view', agg_type: 'count' },
-      condition: { operator: 'lt', threshold: faker.number.int({ min: 100, max: 10000 }) },
-      date_range: { start: '2026-06-01', end: '2026-06-30' },
-    }],
+    monitor_rules: [
+      {
+        metric: { event_name: 'page_view', agg_type: 'count' },
+        condition: { operator: 'lt', threshold: faker.number.int({ min: 100, max: 10000 }) },
+        date_range: { start: '2026-06-01', end: '2026-06-30' },
+      },
+    ],
     notify_config: { channels: ['in_app', 'email'] },
     check_cron: '*/5 * * * *',
     created_by: 1,
@@ -460,30 +535,34 @@ export interface SeedDataSet {
 export function generateFullSeedData(): SeedDataSet {
   resetIdCounter();
 
-  const users = Array.from({ length: 10 }, () => createUser());
-  const projects = Array.from({ length: 3 }, () => createProject());
+  const users = [
+    createUser({ id: 1, username: 'admin', email: 'admin@alldata.dev' }),
+    ...Array.from({ length: 9 }, () => createUser()),
+  ];
+  const projects = [
+    createProject({ id: 1, code: 'alldata', name: '全域数据运营平台' }),
+    ...Array.from({ length: 2 }, () => createProject()),
+  ];
 
   // 为第一个项目生成完整数据
   const projectId = projects[0].id;
   const folders = Array.from({ length: 5 }, () => createFolder({ project_id: projectId }));
   const dashboards = folders.flatMap((f) =>
     Array.from({ length: faker.number.int({ min: 1, max: 4 }) }, () =>
-      createDashboard({ project_id: projectId, folder_id: f.id })
-    )
+      createDashboard({ project_id: projectId, folder_id: f.id }),
+    ),
   );
   const reports = dashboards.flatMap((d) =>
     Array.from({ length: faker.number.int({ min: 2, max: 6 }) }, (_, i) => {
       const r = createReport(d.id, { project_id: projectId });
       r.position = { i: String(r.id), x: (i % 2) * 6, y: Math.floor(i / 2) * 4, w: 6, h: 4 };
       return r;
-    })
+    }),
   );
 
   // 更新 dashboard layout
   dashboards.forEach((d) => {
-    d.layout = reports
-      .filter((r) => r.dashboard_id === d.id)
-      .map((r) => r.position);
+    d.layout = reports.filter((r) => r.dashboard_id === d.id).map((r) => r.position);
   });
 
   const stories = Array.from({ length: 8 }, () => createStory({ project_id: projectId }));
@@ -502,9 +581,21 @@ export function generateFullSeedData(): SeedDataSet {
   const calendars = Array.from({ length: 6 }, () => createCalendar({ project_id: projectId }));
 
   return {
-    users, projects, folders, dashboards, reports,
-    stories, events, tags, metrics, categories,
-    dataTables, warnings, notices, downloads, calendars,
+    users,
+    projects,
+    folders,
+    dashboards,
+    reports,
+    stories,
+    events,
+    tags,
+    metrics,
+    categories,
+    dataTables,
+    warnings,
+    notices,
+    downloads,
+    calendars,
   };
 }
 

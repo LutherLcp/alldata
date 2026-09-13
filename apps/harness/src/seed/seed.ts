@@ -5,9 +5,9 @@
  *   pnpm seed           → 输出到控制台
  *   pnpm seed:json      → 输出 JSON 文件到 fixtures/
  */
-import { writeFileSync, mkdirSync, existsSync } from 'fs';
-import { resolve, dirname } from 'path';
-import { fileURLToPath } from 'url';
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { generateFullSeedData } from './factories.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));

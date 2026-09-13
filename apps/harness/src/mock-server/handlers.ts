@@ -1,13 +1,15 @@
+import { ERROR_CODES } from '@alldata/shared';
 /**
  * Harness — MSW Mock Handlers
  * 覆盖 V1-V5 全量 API
  */
 import { http, HttpResponse, delay } from 'msw';
-import { API_ROUTES, ERROR_CODES } from '@alldata/shared';
 import {
-  generateFullSeedData, createAnalysisResult,
-  createFunnelData, createRetentionData,
-  createUser, createDashboard, createReport,
+  createAnalysisResult,
+  createDashboard,
+  createFunnelData,
+  createRetentionData,
+  generateFullSeedData,
 } from '../seed/factories.js';
 import type { SeedDataSet } from '../seed/factories.js';
 
@@ -61,7 +63,7 @@ export const handlers = [
   // ---- 认证 ----
   http.post('*/api/v1/login', async ({ request }) => {
     await delay(300);
-    const body = await request.json() as Record<string, string>;
+    const body = (await request.json()) as Record<string, string>;
     if (!body.username || !body.password) {
       return error(400, '用户名或密码不能为空');
     }
@@ -103,8 +105,8 @@ export const handlers = [
 
   // 兼容 /api/auth/login 路由
   http.post('*/api/auth/login', async ({ request }) => {
-    await delay(300);
-    const body = await request.json() as { username: string; password: string };
+    await delay(100);
+    const body = (await request.json().catch(() => ({}))) as { username: string; password: string };
     if (body.username === 'admin' && body.password === 'admin123') {
       const user = mockData.users[0];
       return ok({
@@ -121,16 +123,19 @@ export const handlers = [
         expire_at: Date.now() + 7 * 24 * 3600 * 1000,
       });
     }
-    return error(401, '用户名或密码错误');
+    return HttpResponse.json(
+      { code: 401, message: '用户名或密码错误', data: null },
+      { status: 401 },
+    );
   }),
 
   http.post('*/api/auth/logout', async () => {
-    await delay(100);
-    return ok(null);
+    await delay(50);
+    return HttpResponse.json({ code: 200, message: '登出成功', data: null });
   }),
 
   http.get('*/api/auth/me', async () => {
-    await delay(200);
+    await delay(100);
     const user = mockData.users[0];
     return ok({
       id: user.id,
@@ -138,24 +143,42 @@ export const handlers = [
       email: user.email,
       avatar: user.avatar,
       lang: user.lang,
+      projects: mockData.projects.map((p) => ({ id: p.id, code: p.code, name: p.name })),
+    });
+  }),
+
+  http.post('*/api/auth/refresh', async ({ request }) => {
+    await delay(50);
+    const body = (await request.json().catch(() => ({}))) as any;
+    if (!body?.refresh_token) {
+      return HttpResponse.json(
+        { code: 401, message: 'refresh_token 不能为空', data: null },
+        { status: 401 },
+      );
+    }
+    return ok({
+      token: 'mock-new-access-token-' + Date.now(),
+      refresh_token: 'mock-new-refresh-token-' + Date.now(),
+      expire_at: Date.now() + 7 * 24 * 3600 * 1000,
     });
   }),
 
   // ---- 项目 ----
   http.get('*/api/project/v1/list', async () => {
-    await delay(200);
+    await delay(100);
     return ok(mockData.projects.map((p) => ({ id: p.id, code: p.code, name: p.name })));
   }),
 
   http.get('*/api/project/:id', async ({ params }) => {
-    await delay(200);
+    await delay(100);
     const project = mockData.projects.find((p) => p.id === Number(params.id));
-    if (!project) return error(404, '项目不存在');
+    if (!project)
+      return HttpResponse.json({ code: 404, message: '项目不存在', data: null }, { status: 404 });
     return ok(project);
   }),
 
   http.get('*/api/projects', async ({ request }) => {
-    await delay(200);
+    await delay(100);
     const url = new URL(request.url);
     const p = Number(url.searchParams.get('page') || 1);
     const ps = Number(url.searchParams.get('page_size') || 20);
@@ -163,17 +186,29 @@ export const handlers = [
   }),
 
   http.get('*/api/projects/:id', async ({ params }) => {
-    await delay(200);
-    const project = mockData.projects.find((p) => p.id === Number(params.id));
-    if (!project) return error(404, '项目不存在');
+    await delay(100);
+    const pid = Number(params.id);
+    const project = mockData.projects.find((p) => p.id === pid);
+    if (!project || pid >= 9000) {
+      return HttpResponse.json({ code: 404, message: '项目不存在', data: null }, { status: 404 });
+    }
     return ok(project);
   }),
 
   http.post('*/api/projects', async ({ request }) => {
-    await delay(300);
-    const body = await request.json() as { code: string; name: string };
-    const newProject = createDashboard({ name: body.name });
-    return ok(newProject);
+    await delay(100);
+    const body = (await request.json()) as { code: string; name: string };
+    const newProject = {
+      id: mockData.projects.length + 1,
+      code: body.code,
+      name: body.name,
+      description: '',
+      status: 1,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    mockData.projects.push(newProject as any);
+    return HttpResponse.json({ code: 201, message: 'created', data: newProject }, { status: 201 });
   }),
 
   // ---- 看板 ----
@@ -181,10 +216,16 @@ export const handlers = [
     await delay(300);
     const tree = mockData.folders.map((f) => ({
       ...f,
-      dashboards: mockData.dashboards.filter((d) => d.folder_id === f.id).map((d) => ({
-        id: d.id, name: d.name, type: d.type, status: d.status,
-        created_by: d.created_by, updated_at: d.updated_at,
-      })),
+      dashboards: mockData.dashboards
+        .filter((d) => d.folder_id === f.id)
+        .map((d) => ({
+          id: d.id,
+          name: d.name,
+          type: d.type,
+          status: d.status,
+          created_by: d.created_by,
+          updated_at: d.updated_at,
+        })),
     }));
     return ok(tree);
   }),
@@ -209,7 +250,7 @@ export const handlers = [
 
   http.post('*/api/dashboard', async ({ request }) => {
     await delay(300);
-    const body = await request.json() as Record<string, unknown>;
+    const body = (await request.json()) as Record<string, unknown>;
     const newDashboard = createDashboard({
       name: body.name as string,
       folder_id: body.folder_id as number,
@@ -221,10 +262,13 @@ export const handlers = [
 
   http.put('*/api/dashboard', async ({ request }) => {
     await delay(300);
-    const body = await request.json() as Record<string, unknown>;
+    const body = (await request.json()) as Record<string, unknown>;
     const idx = mockData.dashboards.findIndex((d) => d.id === body.id);
     if (idx === -1) return error(404, '看板不存在');
-    mockData.dashboards[idx] = { ...mockData.dashboards[idx], ...body } as typeof mockData.dashboards[0];
+    mockData.dashboards[idx] = {
+      ...mockData.dashboards[idx],
+      ...body,
+    } as (typeof mockData.dashboards)[0];
     return ok(mockData.dashboards[idx]);
   }),
 
@@ -239,15 +283,21 @@ export const handlers = [
   // ---- 分析查询 ----
   http.post('*/api/query', async ({ request }) => {
     await delay(faker_delay());
-    const body = await request.json() as Record<string, unknown>;
+    const body = (await request.json()) as Record<string, unknown>;
     const config = body.config as Record<string, string>;
     const type = config?.analysis_type || 'event';
 
-    let result;
+    let result: unknown;
     switch (type) {
-      case 'funnel': result = createFunnelData(); break;
-      case 'retention': result = createRetentionData(); break;
-      default: result = createAnalysisResult(type); break;
+      case 'funnel':
+        result = createFunnelData();
+        break;
+      case 'retention':
+        result = createRetentionData();
+        break;
+      default:
+        result = createAnalysisResult(type);
+        break;
     }
     return ok(result);
   }),
