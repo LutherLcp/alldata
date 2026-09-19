@@ -1,21 +1,24 @@
 version: '3.8'
 
+# 环境变量来源：根目录 .env（请先 cp .env.example .env）
+# 必填变量使用 ${VAR:?msg} 语法，缺失时 compose 会直接报错，避免误用默认密钥。
+
 services:
   # Database
   postgres:
     image: postgres:16-alpine
     container_name: alldata-postgres
     environment:
-      POSTGRES_DB: alldata
-      POSTGRES_USER: alldata
-      POSTGRES_PASSWORD: alldata123
+      POSTGRES_DB: ${POSTGRES_DB:-alldata}
+      POSTGRES_USER: ${POSTGRES_USER:-alldata}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required, see .env.example}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U alldata -d alldata"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-alldata} -d ${POSTGRES_DB:-alldata}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -48,8 +51,8 @@ services:
       - "9000:9000"
       - "9001:9001"
     environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin123
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD is required, see .env.example}
     volumes:
       - minio_data:/data
     healthcheck:
@@ -68,9 +71,9 @@ services:
       - "8123:8123"
       - "9002:9000"
     environment:
-      CLICKHOUSE_DB: alldata
-      CLICKHOUSE_USER: default
-      CLICKHOUSE_PASSWORD: ""
+      CLICKHOUSE_DB: ${CLICKHOUSE_DATABASE:-alldata}
+      CLICKHOUSE_USER: ${CLICKHOUSE_USER:-default}
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-}
       CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
     volumes:
       - clickhouse_data:/var/lib/clickhouse
@@ -92,25 +95,33 @@ services:
     ports:
       - "4000:4000"
     environment:
-      NODE_ENV: development
+      NODE_ENV: ${NODE_ENV:-development}
       PORT: 4000
       HOST: 0.0.0.0
-      DATABASE_URL: postgresql://alldata:alldata123@postgres:5432/alldata?schema=public
+      DATABASE_URL: postgresql://${POSTGRES_USER:-alldata}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/${POSTGRES_DB:-alldata}?schema=public
       REDIS_URL: redis://redis:6379
-      JWT_SECRET: your-super-secret-jwt-key-change-in-production-at-least-32-chars
-      JWT_EXPIRES_IN: 7d
-      REFRESH_TOKEN_SECRET: your-refresh-token-secret-change-in-production-at-least-32-chars
-      REFRESH_TOKEN_EXPIRES_IN: 30d
-      COOKIE_SECRET: your-cookie-secret-change-in-production-at-least-32-chars
-      CORS_ORIGIN: http://localhost:3000
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required, see .env.example}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      REFRESH_TOKEN_SECRET: ${REFRESH_TOKEN_SECRET:?REFRESH_TOKEN_SECRET is required, see .env.example}
+      REFRESH_TOKEN_EXPIRES_IN: ${REFRESH_TOKEN_EXPIRES_IN:-30d}
+      COOKIE_SECRET: ${COOKIE_SECRET:?COOKIE_SECRET is required, see .env.example}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
       MINIO_ENDPOINT: minio
       MINIO_PORT: 9000
-      MINIO_ACCESS_KEY: minioadmin
-      MINIO_SECRET_KEY: minioadmin123
-      MINIO_BUCKET: alldata
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD is required}
+      MINIO_BUCKET: ${MINIO_BUCKET:-alldata}
       MINIO_USE_SSL: "false"
       CLICKHOUSE_URL: http://clickhouse:8123
-      CLICKHOUSE_DATABASE: alldata
+      CLICKHOUSE_DATABASE: ${CLICKHOUSE_DATABASE:-alldata}
+      # AI / LLM（留空走 mock 降级）
+      LLM_PROVIDER: ${LLM_PROVIDER:-OPENAI}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_BASE_URL: ${LLM_BASE_URL:-}
+      LLM_MODEL: ${LLM_MODEL:-gpt-4o}
+      LLM_MAX_TOKENS: ${LLM_MAX_TOKENS:-4096}
+      LLM_TEMPERATURE: ${LLM_TEMPERATURE:-0.7}
+      LLM_TIMEOUT: ${LLM_TIMEOUT:-30000}
     depends_on:
       postgres:
         condition: service_healthy
@@ -130,8 +141,8 @@ services:
     ports:
       - "3000:3000"
     environment:
-      VITE_API_URL: http://localhost:4000/api
-      VITE_WS_URL: ws://localhost:4000
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:4000/api}
+      VITE_WS_URL: ${VITE_WS_URL:-ws://localhost:4000}
     depends_on:
       - api
     networks:
@@ -144,7 +155,7 @@ services:
       dockerfile: apps/api/Dockerfile
     container_name: alldata-migrate
     environment:
-      DATABASE_URL: postgresql://alldata:alldata123@postgres:5432/alldata?schema=public
+      DATABASE_URL: postgresql://${POSTGRES_USER:-alldata}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/${POSTGRES_DB:-alldata}?schema=public
     depends_on:
       postgres:
         condition: service_healthy

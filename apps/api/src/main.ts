@@ -40,10 +40,13 @@ const app = Fastify({
 // 审计日志插件
 await app.register(auditPlugin);
 
-// 基础插件 (允许 Cloudflare Pages 与本地跨域)
+// 基础插件：CORS 白名单（config.CORS_ORIGINS，逗号分隔）
 await app.register(cors, {
   origin: (origin, cb) => {
-    cb(null, true);
+    // 无 Origin 的请求（同源、curl、服务端调用）放行
+    if (!origin) return cb(null, true);
+    if (config.CORS_ORIGINS.includes(origin)) return cb(null, true);
+    cb(new Error(`Origin ${origin} not allowed by CORS`), false);
   },
   credentials: true,
 });

@@ -1,10 +1,20 @@
 import 'dotenv/config';
 
+/**
+ * CORS 白名单：支持逗号分隔的多个 Origin。
+ * 优先读取 CORS_ORIGINS，兼容旧变量 CORS_ORIGIN。
+ */
+const corsOrigins = (process.env.CORS_ORIGINS ?? process.env.CORS_ORIGIN ?? 'http://localhost:3000')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
 export const config = {
   NODE_ENV: process.env.NODE_ENV ?? 'development',
   PORT: Number.parseInt(process.env.PORT ?? '4000', 10),
   HOST: process.env.HOST ?? '0.0.0.0',
-  CORS_ORIGIN: process.env.CORS_ORIGIN ?? 'http://localhost:3000',
+  CORS_ORIGINS: corsOrigins,
+  CORS_ORIGIN: corsOrigins[0],
   JWT_SECRET: process.env.JWT_SECRET ?? 'dev-secret-change-in-production',
   COOKIE_SECRET: process.env.COOKIE_SECRET ?? 'dev-cookie-secret-change-in-production',
   DATABASE_URL:

@@ -85,7 +85,7 @@ api-go (Gin+GORM)  骨架,未承担流量
 | # | 问题 | 位置 | 影响 |
 |---|------|------|------|
 | S1 | CORS 对任意 Origin 放行且 `credentials: true` | `apps/api/src/main.ts` cors 注册处 | 任意网站可携带凭证调用 API,等同 CSRF 全面失守 |
-| S2 | JWT/MinIO/数据库密钥明文写入仓库 | `docker-compose.yml`、`.env` 已入库 | 密钥泄露;生产若沿用默认值则等同裸奔 |
+| S2 | JWT/MinIO/数据库默认密钥明文写入 `docker-compose.yml` 并入库(`.env` 本身已被 .gitignore 正确排除) | `docker-compose.yml` | 密钥泄露;生产若沿用默认值则等同裸奔 |
 | S3 | SQL 分析模块的注入防护依赖白名单声明(product-design 声称),未见独立审计测试 | `modules/analysis` | 自助 SQL 是数据分析平台最高危攻击面 |
 
 #### 🟠 P1 — 方向性决策悬而未决
@@ -100,7 +100,7 @@ api-go (Gin+GORM)  骨架,未承担流量
 
 | # | 问题 | 证据 |
 |---|------|------|
-| Q1 | 测试覆盖率与规划严重脱节 | 6 个测试文件 vs 计划书 80%/90% 目标;V7 之后的版本无测试记录 |
+| Q1 | **测试文件被 .gitignore 误排除** | `.gitignore` 中的 `*.test.ts` 规则导致 7 个测试文件中 **6 个从未入库**(仅 `utils.test.tsx` 因扩展名幸免)。23 个 harness 测试与 API 集成测试只存在于本地,全新 clone 后测试资产近乎为零,CI 的 unit-tests 作业实际空跑。已在 R0 修复 |
 | Q2 | 170 文件未提交(+7.8k 行) | Biome 格式化 + SCAN 流式清理等真实加固,停滞 6 周有丢失风险 |
 | Q3 | 前端目录命名债 | 当前 API 层目录叫 `services-new/`(暗示曾经的 services 迁移未收尾) |
 | Q4 | 零引用依赖 | `@ant-design/charts`、`@antv/g2` 在源码中 0 引用(需依赖审计确认更多) |
@@ -109,7 +109,7 @@ api-go (Gin+GORM)  骨架,未承担流量
 
 #### ⚪ P3 — 仓库卫生
 
-根目录混杂 AI 产物与临时文件:`dashboard_page.png`、`login_page.png`、`docs-combined(1).txt`、`docs-pack.zip`、`gemini_brain_*.zip`、`brain/`、`.qoder/`;`.env` 未被 gitignore 排除(已入库)。
+根目录混杂 AI 产物与临时文件:`dashboard_page.png`、`login_page.png`、`docs-combined(1).txt`(三者均已入库)、`docs-pack.zip`、`gemini_brain_*.zip`、`brain/`、`.qoder/`。(`.env` 已被 .gitignore 正确排除,此前判断有误,已修正。)
 
 ### 3.3 值得保留的资产
 
