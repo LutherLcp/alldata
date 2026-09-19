@@ -65,3 +65,6 @@ Thumbs.db
 # AI 工具产物（brain 导出 / 打包归档）
 brain/
 *.zip
+
+# 备份产物
+backups/
