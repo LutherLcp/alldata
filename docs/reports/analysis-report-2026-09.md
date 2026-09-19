@@ -44,11 +44,13 @@ AllData 定位为**全域数据运营平台**(一站式行为分析、看板、�
 
 | 层级 | 模块 | 成熟度判断 |
 |------|------|-----------|
-| 核心 | 看板/报表/6 类分析/埋点管理/标签/指标 | 有真实实现与测试记录(V2~V3 有验收),**相对最扎实** |
-| 核心 | 预警/订阅/推送/下载/站内信 | V4 验收过,基础可用 |
+| 核心 | 看板/报表/埋点管理/指标 | 有真实 Prisma 读写,**相对最扎实** |
+| 核心 | ~~6 类分析~~ | **2026-09 复核:原判断有误**。分析引擎全部返回 `Math.random()` 假数据,ClickHouse 客户端(client/query)在全代码库**零调用点**,平台核心能力实为空壳。已于 R1 接入真实查询(见下方 E7) |
+| 核心 | 预警/订阅/推送/下载/站内信 | V4 验收过,CRUD 可用;但「预警检查」动作是 `Math.random() > 0.5` 的模拟 |
+| 核心 | 标签 | CRUD 真实;**标签计算**为随机数,E1/R1 已改为显式报告未实现 |
 | 垂直 | 财务/KoCRM | 有 CRUD 与页面,骨架级(V5 验收为"骨架") |
 | 垂直 | MTA/MMM/数据血缘/脱敏/GDPR/市场/SDK 编译器 | V13~V15 两天内完成,**大概率是演示级** |
-| 智能 | AI(insight/anomaly/prompt-engine) | 有 mock 降级机制(V7.2),真实 LLM 接入状态未知 |
+| 智能 | AI(insight/anomaly/prompt-engine) | 有 mock 降级机制(V7.2);实测无 API Key 时返回 `[Mock]` 文本,真实 LLM 接入状态未知 |
 | 采集 | SDK/数据管道 | ClickHouse+Kafka 消费骨架存在,**无生产级采集 SDK,无 ID-Mapping** |
 
 ### 2.3 结论
@@ -121,6 +123,11 @@ api-go (Gin+GORM)  骨架,未承担流量
 | E4 | **api 测试套件针对废弃契约** | `tests/` 按 `/api/v1/*` 前缀与不存在的 `buildApp()` 工厂编写,且 `setup.ts` 强制全局连接数据库(P1001),注定无法通过 | 已隔离并重建基线 |
 | E5 | **默认 Node 版本低于要求** | 系统 shell 默认 `/usr/local/bin/node` 为 v18.15.0,低于 `engines` 要求的 ≥20,导致 biome 等工具按 Rosetta(x64)解析二进制而报 `Cannot find module '@biomejs/cli-darwin-x64/biome'` | 已加 `.nvmrc` |
 | E6 | **12 个零引用依赖** | `apps/web` 的 `@ant-design/charts`、`@antv/g2`、`@antv/x6`、`@antv/x6-react-components`、`@hookform/resolvers`、`react-hook-form`、`@tanstack/react-query-devtools`、`clsx`、`lodash-es`、`tailwind-merge`、`zod`、`@types/lodash-es` 在全代码库 0 引用;`vite.config.ts` 的 manualChunks 还为其中两个配置了永不产出的 chunk | 已移除 |
+| E7 | **分析引擎是模拟数据(最严重)** | 6 类分析(`analysis/service.ts`)全部返回 `Math.random()` 生成的数据;`chQuery`/`chExec`/`getClickHouseClient` 在全代码库**零调用点**——ClickHouse 从未被查询过。产品核心价值为假象 | R1 已接入真实查询 |
+| E8 | **多租户隔离形同虚设** | 15 个模块从 `project-id` 请求头取项目 ID,但**从不校验成员关系**;任意登录用户改一个 header 即可读写其他租户数据。`security` 与 `mta` 更在缺失 header 时**回退到 project 1**,而 GDPR 物理擦除接口走同一路径 | R1 已修复 |
+| E9 | **按 ID 操作无归属校验(IDOR)** | `GET/PUT/DELETE /:id` 类接口直接按主键读写,**不带 project_id 过滤**,可跨租户越权访问。tag 模块已按「路由守卫 + 服务层 project 过滤」双层修复,其余模块待办 | 部分修复 |
+| E10 | **其余模块内仍有模拟数据** | `warning.triggerCheck` 用 `Math.random() > 0.5` 决定是否触发告警;`tag.triggerRefresh` 用随机数伪造覆盖人数;`cdp`/`finance`/`download`/`mta` 服务同样含随机数 | tag 已改为显式报告未实现,其余待办 |
+| E11 | **订阅模块双重路由前缀** | 注册 prefix `/api/subscriptions` 而模块内路由又是 `/subscriptions`,实际路径为 `/api/subscriptions/subscriptions` | 待办(需同步前端)|
 
 ### 3.3 值得保留的资产
 
