@@ -37,8 +37,6 @@ Thumbs.db
 
 # Testing
 .nyc_output
-*.test.ts
-*.spec.ts
 
 # Database
 *.db
@@ -63,3 +61,7 @@ Thumbs.db
 .vercel
 .netlify
 .qoder
+
+# AI 工具产物（brain 导出 / 打包归档）
+brain/
+*.zip
