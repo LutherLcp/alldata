@@ -32,17 +32,28 @@ export async function closeClickHouse(): Promise<void> {
   }
 }
 
-/** 执行查询并返回结果 */
-export async function chQuery<T = Record<string, unknown>>(sql: string): Promise<T[]> {
+/**
+ * 执行查询并返回结果。
+ *
+ * 参数通过 ClickHouse 占位符（`{name:Type}`）传递，绝不要拼接进 SQL 字符串。
+ */
+export async function chQuery<T = Record<string, unknown>>(
+  sql: string,
+  params: Record<string, unknown> = {},
+): Promise<T[]> {
   const ch = getClickHouseClient();
-  const result = await ch.query({ query: sql, format: 'JSONEachRow' });
+  const result = await ch.query({
+    query: sql,
+    query_params: params,
+    format: 'JSONEachRow',
+  });
   return result.json<T>();
 }
 
 /** 执行命令（DDL/DML） */
-export async function chExec(sql: string): Promise<void> {
+export async function chExec(sql: string, params: Record<string, unknown> = {}): Promise<void> {
   const ch = getClickHouseClient();
-  await ch.command({ query: sql });
+  await ch.command({ query: sql, query_params: params });
 }
 
 /** 健康检查 */

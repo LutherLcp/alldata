@@ -1,220 +1,252 @@
-import { getRedisClient } from '@/common/utils/redis';
 /**
- * 分析引擎 V2 — 6 种分析类型
+ * 分析引擎 — 6 种分析类型
  * event(事件分析) / funnel(漏斗) / retention(留存) / distribution(分布) / path(路径) / attribute(归因)
+ *
+ * 查询经 `query-builder` 编译为参数化 ClickHouse SQL，由 `chQuery` 执行。
+ * 构建器负责注入安全与 project_id 强制隔离。
  */
-import type { FastifyInstance } from 'fastify';
+import { chQuery } from '@/common/utils/clickhouse';
+import { getRedisClient } from '@/common/utils/redis';
+import { type AnalysisInput, QueryBuildError, buildAnalysisQuery } from './query-builder';
 
-export interface AnalysisQuery {
-  type?: string; // event | funnel | retention | distribution | path | attribute
-  project_id: number;
-  event_name: string;
-  metrics: Array<{ type: 'count' | 'uv' | 'pv'; alias?: string }>;
-  dimensions?: string[];
-  filters?: Array<{ field: string; op: string; value: any }>;
-  time_range: { start: string; end: string; granularity?: string };
-  limit?: number;
-  // 漏斗专用
-  funnel_events?: string[];
-  // 留存专用
-  retention_event?: string;
-  // 归因专用
-  target_event?: string;
+export interface AnalysisQuery extends Omit<AnalysisInput, 'type'> {
+  type?: string;
 }
 
+const CACHE_TTL_SECONDS = 300;
+
 export class AnalysisService {
-  private prisma;
-
-  constructor(private app: FastifyInstance) {
-    this.prisma = app.prisma;
-  }
-
-  /** 执行分析查询（根据 type 分发） */
+  /**
+   * 执行分析查询（根据 type 分发）。
+   * project_id 必须由调用方从已校验的请求上下文注入，不可取自请求体。
+   */
   async runAnalysis(query: AnalysisQuery) {
-    const type = query.type || 'event';
-    const cacheKey = `analysis:${type}:${JSON.stringify(query)}`;
+    const type = (query.type || 'event') as AnalysisInput['type'];
+    const input: AnalysisInput = { ...query, type, project_id: query.project_id };
+
+    const cacheKey = `analysis:${input.project_id}:${type}:${JSON.stringify({
+      ...input,
+      project_id: undefined,
+    })}`;
     const redis = getRedisClient();
 
-    const cached = await redis.get(cacheKey);
-    if (cached) return JSON.parse(cached);
-
-    let result: any;
-    switch (type) {
-      case 'funnel':
-        result = this.buildFunnelResult(query);
-        break;
-      case 'retention':
-        result = this.buildRetentionResult(query);
-        break;
-      case 'distribution':
-        result = this.buildDistributionResult(query);
-        break;
-      case 'path':
-        result = this.buildPathResult(query);
-        break;
-      case 'attribute':
-        result = this.buildAttributeResult(query);
-        break;
-      default:
-        result = this.buildEventResult(query);
+    try {
+      const cached = await redis.get(cacheKey);
+      if (cached) return JSON.parse(cached);
+    } catch {
+      // 缓存不可用时不影响查询本身
     }
 
-    await redis.set(cacheKey, JSON.stringify(result), 'EX', 300);
+    const started = Date.now();
+    const { sql, params } = buildAnalysisQuery(input);
+    const rows = await chQuery<Record<string, unknown>>(sql, params);
+    const elapsed = Date.now() - started;
+
+    const result = this.transform(type, input, rows, elapsed);
+
+    try {
+      await redis.set(cacheKey, JSON.stringify(result), 'EX', CACHE_TTL_SECONDS);
+    } catch {
+      // 忽略缓存写入失败
+    }
     return result;
   }
 
-  /** 取消查询 */
+  /** 取消查询（当前为占位实现，ClickHouse 侧 KILL QUERY 待接入） */
   async cancelQuery(queryId: string) {
     return { cancelled: true, query_id: queryId };
   }
 
-  // ─── 事件分析 ─────────────────────────
-  private buildEventResult(query: AnalysisQuery) {
-    const days = this.getDateRange(query.time_range.start, query.time_range.end);
-    const series = query.metrics.map((m) => ({
-      metric: m.type,
-      alias: m.alias || m.type,
-      data: days.map((date) => ({ date, value: Math.floor(Math.random() * 1000) + 100 })),
+  // ─── 结果转换：ClickHouse 行 → 前端契约 ──────────────────
+
+  private transform(
+    type: string,
+    input: AnalysisInput,
+    rows: Record<string, unknown>[],
+    elapsed: number,
+  ): Record<string, unknown> {
+    const query_id = crypto.randomUUID();
+    switch (type) {
+      case 'funnel':
+        return this.toFunnel(rows, input, query_id, elapsed);
+      case 'retention':
+        return this.toRetention(rows, query_id, elapsed);
+      case 'distribution':
+        return this.toDistribution(rows, query_id, elapsed);
+      case 'path':
+        return this.toPath(rows, query_id, elapsed);
+      case 'attribute':
+        return this.toAttribution(rows, query_id, elapsed);
+      default:
+        return this.toEvent(rows, input, query_id, elapsed);
+    }
+  }
+
+  private toEvent(
+    rows: Record<string, unknown>[],
+    input: AnalysisInput,
+    query_id: string,
+    elapsed: number,
+  ) {
+    const metricAliases = (input.metrics?.length ? input.metrics : [{ type: 'count' }]).map(
+      (m) => m.alias || m.type || 'count',
+    );
+    const dims = this.dimensionAliases(input.dimensions);
+    const series = metricAliases.map((alias) => ({
+      metric: alias,
+      alias,
+      data: rows.map((row) => ({
+        date: this.toDateString(row.dt),
+        ...Object.fromEntries(dims.map((d) => [d, row[d]])),
+        value: Number(row[alias] ?? 0),
+      })),
     }));
     return {
-      query_id: crypto.randomUUID(),
+      query_id,
       type: 'event',
-      columns: ['date', ...query.metrics.map((m) => m.alias || m.type)],
-      rows: days.length,
+      columns: ['date', ...dims, ...metricAliases],
+      rows: rows.length,
       series,
-      elapsed_ms: this.randMs(),
+      elapsed_ms: elapsed,
     };
   }
 
-  // ─── 漏斗分析 ─────────────────────────
-  private buildFunnelResult(query: AnalysisQuery) {
-    const events = query.funnel_events || [query.event_name, 'step_2', 'step_3', 'step_4'];
-    let base = Math.floor(Math.random() * 5000) + 5000;
-    const steps = events.map((name, i) => {
-      const count = i === 0 ? base : Math.floor(base * (0.4 + Math.random() * 0.4));
-      base = count;
-      return {
-        step: i + 1,
-        event: name,
-        count,
-        rate: i === 0 ? 100 : Math.round((count / (events.length > 1 ? base : count)) * 100),
-      };
+  private toFunnel(
+    rows: Record<string, unknown>[],
+    input: AnalysisInput,
+    query_id: string,
+    elapsed: number,
+  ) {
+    const events = input.funnel_events ?? [];
+    // windowFunnel 返回达到的层级：level >= i 即表示到达第 i 步
+    const reached = events.map((_, i) => {
+      const stepIndex = i + 1;
+      return rows
+        .filter((r) => Number(r.level) >= stepIndex)
+        .reduce((sum, r) => sum + Number(r.users ?? 0), 0);
     });
-    // 修正转化率
-    const total = steps[0].count;
-    steps.forEach((s, i) => {
-      s.rate = i === 0 ? 100 : Math.round((s.count / total) * 100);
-    });
+    const total = reached[0] ?? 0;
+    const steps = events.map((event, i) => ({
+      step: i + 1,
+      event,
+      count: reached[i],
+      rate: total > 0 ? Number(((reached[i] / total) * 100).toFixed(2)) : 0,
+    }));
     return {
-      query_id: crypto.randomUUID(),
+      query_id,
       type: 'funnel',
       steps,
-      total_conversion: steps[steps.length - 1].rate,
-      elapsed_ms: this.randMs(),
+      total_conversion: steps.length ? steps[steps.length - 1].rate : 0,
+      elapsed_ms: elapsed,
     };
   }
 
-  // ─── 留存分析 ─────────────────────────
-  private buildRetentionResult(query: AnalysisQuery) {
-    const days = this.getDateRange(query.time_range.start, query.time_range.end).slice(0, 7);
-    const matrix = days.map((date, i) => {
-      const base = Math.floor(Math.random() * 1000) + 500;
-      const row = [100]; // Day 0 = 100%
-      for (let j = 1; j <= Math.min(6, days.length - 1 - i); j++) {
-        row.push(Math.round(100 * (0.7 + Math.random() * 0.2) ** j));
-      }
-      return { date, base_users: base, retention_rates: row };
-    });
-    return { query_id: crypto.randomUUID(), type: 'retention', matrix, elapsed_ms: this.randMs() };
+  private toRetention(rows: Record<string, unknown>[], query_id: string, elapsed: number) {
+    const byCohort = new Map<string, Map<number, number>>();
+    for (const row of rows) {
+      const cohort = this.toDateString(row.cohort_dt);
+      const offset = Number(row.day_offset ?? 0);
+      const users = Number(row.users ?? 0);
+      if (!byCohort.has(cohort)) byCohort.set(cohort, new Map());
+      byCohort.get(cohort)?.set(offset, users);
+    }
+
+    const matrix = [...byCohort.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, offsets]) => {
+        const base = offsets.get(0) ?? 0;
+        const maxOffset = Math.max(...offsets.keys());
+        const retention_rates: number[] = [];
+        for (let day = 0; day <= maxOffset; day++) {
+          const users = offsets.get(day) ?? 0;
+          retention_rates.push(base > 0 ? Number(((users / base) * 100).toFixed(2)) : 0);
+        }
+        return { date, base_users: base, retention_rates };
+      });
+
+    return { query_id, type: 'retention', matrix, elapsed_ms: elapsed };
   }
 
-  // ─── 分布分析 ─────────────────────────
-  private buildDistributionResult(query: AnalysisQuery) {
-    const buckets = [
-      '0-10',
-      '10-20',
-      '20-30',
-      '30-40',
-      '40-50',
-      '50-60',
-      '60-70',
-      '70-80',
-      '80-90',
-      '90-100',
-    ];
-    const values = buckets.map((b) => Math.floor(Math.random() * 500) + 50);
+  private toDistribution(rows: Record<string, unknown>[], query_id: string, elapsed: number) {
+    const buckets = rows.map((r) => String(r.dim_0 ?? r.device_type ?? '未知'));
+    const values = rows.map((r) => Number(r.users ?? 0));
     return {
-      query_id: crypto.randomUUID(),
+      query_id,
       type: 'distribution',
       buckets,
       values,
       total: values.reduce((a, b) => a + b, 0),
-      elapsed_ms: this.randMs(),
+      elapsed_ms: elapsed,
     };
   }
 
-  // ─── 路径分析 ─────────────────────────
-  private buildPathResult(query: AnalysisQuery) {
-    const pages = [
-      '/home',
-      '/product',
-      '/cart',
-      '/checkout',
-      '/payment',
-      '/success',
-      '/search',
-      '/profile',
-    ];
-    const nodes = pages.map((p, i) => ({ id: String(i), name: p }));
-    const links: Array<{ source: string; target: string; value: number }> = [];
-    for (let i = 0; i < pages.length - 1; i++) {
-      links.push({
-        source: String(i),
-        target: String(i + 1),
-        value: Math.floor(Math.random() * 1000) + 100,
-      });
-      if (i < pages.length - 2 && Math.random() > 0.5) {
-        links.push({
-          source: String(i),
-          target: String(i + 2),
-          value: Math.floor(Math.random() * 300) + 50,
-        });
+  /** 把 Top 路径字符串还原为前端需要的节点/连线图 */
+  private toPath(rows: Record<string, unknown>[], query_id: string, elapsed: number) {
+    const nodeIndex = new Map<string, string>();
+    const nodes: Array<{ id: string; name: string }> = [];
+    const linkWeights = new Map<string, number>();
+
+    const ensureNode = (name: string): string => {
+      const existing = nodeIndex.get(name);
+      if (existing) return existing;
+      const id = String(nodes.length);
+      nodeIndex.set(name, id);
+      nodes.push({ id, name });
+      return id;
+    };
+
+    for (const row of rows) {
+      const path = String(row.path ?? '');
+      if (!path) continue;
+      const users = Number(row.users ?? 0);
+      const steps = path.split(' > ');
+      for (let i = 0; i < steps.length - 1; i++) {
+        const source = ensureNode(steps[i]);
+        const target = ensureNode(steps[i + 1]);
+        const key = `${source}->${target}`;
+        linkWeights.set(key, (linkWeights.get(key) ?? 0) + users);
       }
     }
-    return { query_id: crypto.randomUUID(), type: 'path', nodes, links, elapsed_ms: this.randMs() };
-  }
 
-  // ─── 归因分析 ─────────────────────────
-  private buildAttributeResult(query: AnalysisQuery) {
-    const channels = ['organic', 'paid_search', 'social', 'email', 'referral', 'direct'];
-    const attributes = channels.map((ch) => ({
-      channel: ch,
-      conversions: Math.floor(Math.random() * 500) + 50,
-      contribution: Math.round(Math.random() * 30 + 5),
-      roi: Math.round((Math.random() * 5 + 0.5) * 100) / 100,
-    }));
-    const total = attributes.reduce((a, b) => a + b.contribution, 0);
-    attributes.forEach((a) => {
-      a.contribution = Math.round((a.contribution / total) * 100);
+    const links = [...linkWeights.entries()].map(([key, value]) => {
+      const [source, target] = key.split('->');
+      return { source, target, value };
     });
-    return {
-      query_id: crypto.randomUUID(),
-      type: 'attribute',
-      attributes,
-      elapsed_ms: this.randMs(),
-    };
+
+    return { query_id, type: 'path', nodes, links, elapsed_ms: elapsed };
   }
 
-  // ─── 工具方法 ─────────────────────────
-  private getDateRange(start: string, end: string): string[] {
-    const days: string[] = [];
-    for (let d = new Date(start); d <= new Date(end); d.setDate(d.getDate() + 1)) {
-      days.push(d.toISOString().split('T')[0]);
-    }
-    return days;
+  private toAttribution(rows: Record<string, unknown>[], query_id: string, elapsed: number) {
+    const conversions = rows.map((r) => Number(r.conversions ?? 0));
+    const total = conversions.reduce((a, b) => a + b, 0);
+    const attributes = rows.map((row, i) => ({
+      channel: String(row.channel || '未知'),
+      conversions: conversions[i],
+      users: Number(row.users ?? 0),
+      // 末次触点口径下的转化占比
+      contribution: total > 0 ? Number(((conversions[i] / total) * 100).toFixed(2)) : 0,
+    }));
+    return { query_id, type: 'attribute', attributes, elapsed_ms: elapsed };
   }
 
-  private randMs() {
-    return Math.floor(Math.random() * 500) + 50;
+  // ─── 工具方法 ─────────────────────────────────────────
+
+  /** ClickHouse 的 Date/DateTime 字段序列化可能为字符串或数字 */
+  private toDateString(value: unknown): string {
+    if (value == null) return '';
+    if (typeof value === 'string') return value.slice(0, 10);
+    if (value instanceof Date) return value.toISOString().slice(0, 10);
+    if (typeof value === 'number') return new Date(value).toISOString().slice(0, 10);
+    return String(value).slice(0, 10);
+  }
+
+  /** 维度输出别名：标量列用列名，属性维度用 dim_i（与构建器保持一致） */
+  private dimensionAliases(dimensions?: string[]): string[] {
+    return (dimensions ?? []).map((dim, i) => {
+      const scalar = ['event_name', 'device_type', 'os', 'browser', 'country', 'region'];
+      return scalar.includes(dim) ? dim : `dim_${i}`;
+    });
   }
 }
+
+export { QueryBuildError };
