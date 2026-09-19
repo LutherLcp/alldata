@@ -111,6 +111,16 @@ api-go (Gin+GORM)  骨架,未承担流量
 
 根目录混杂 AI 产物与临时文件:`dashboard_page.png`、`login_page.png`、`docs-combined(1).txt`(三者均已入库)、`docs-pack.zip`、`gemini_brain_*.zip`、`brain/`、`.qoder/`。(`.env` 已被 .gitignore 正确排除,此前判断有误,已修正。)
 
+#### 🔵 P0 — 工具链与环境(2026-09-13 R0 执行时新发现)
+
+| # | 问题 | 影响 | 状态 |
+|---|------|------|------|
+| E1 | **CI 从未运行过** | `ci.yml` 触发分支写为 `main`/`develop`,仓库实际只有 `master`;健康检查路径也写错为 `/api/v1/health`(实际 `/api/health`),引用了不存在的 `test:integration` 脚本与 Playwright 配置 | 已修复 |
+| E2 | **所有包的 lint 都是空跑** | `biome.json` 的 `files.include` 以仓库根为锚点,在子包目录执行 `biome lint ./src` 匹配 0 文件并静默退出 0,门禁形同虚设 | 已修复 |
+| E3 | **Biome 迁移只做了一半** | 仅 `api`/`web` 迁移,`harness`/`shared` 仍依赖 eslint + prettier,导致两套 lint 系统并存 | 已修复 |
+| E4 | **api 测试套件针对废弃契约** | `tests/` 按 `/api/v1/*` 前缀与不存在的 `buildApp()` 工厂编写,且 `setup.ts` 强制全局连接数据库(P1001),注定无法通过 | 已隔离并重建基线 |
+| E5 | **默认 Node 版本低于要求** | 系统 shell 默认 `/usr/local/bin/node` 为 v18.15.0,低于 `engines` 要求的 ≥20,导致 biome 等工具按 Rosetta(x64)解析二进制而报 `Cannot find module '@biomejs/cli-darwin-x64/biome'` | 已加 `.nvmrc` |
+
 ### 3.3 值得保留的资产
 
 - **存储分层设计**(PG 元数据 + CH OLAP + Redis 缓存队列 + MinIO 文件)方向正确;
