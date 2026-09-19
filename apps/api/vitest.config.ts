@@ -1,5 +1,5 @@
-import { defineConfig } from 'vitest/config';
 import path from 'path';
+import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   resolve: {
@@ -11,12 +11,21 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
-    setupFiles: ['./tests/setup.ts'],
     include: ['tests/**/*.{test,spec}.ts'],
+    // _legacy/ 是针对旧契约编写的历史测试，已停用（见 tests/_legacy/README.md）
+    exclude: ['**/node_modules/**', '**/dist/**', 'tests/_legacy/**'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html', 'lcov'],
-      exclude: ['node_modules/', 'tests/', 'dist/', '**/*.d.ts', '**/*.config.*', 'src/main.ts', 'prisma/'],
+      exclude: [
+        'node_modules/',
+        'tests/',
+        'dist/',
+        '**/*.d.ts',
+        '**/*.config.*',
+        'src/main.ts',
+        'prisma/',
+      ],
       thresholds: {
         lines: 80,
         functions: 80,
