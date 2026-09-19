@@ -1,5 +1,5 @@
-import { FastifyInstance } from 'fastify';
 import { buildApp } from '@/main';
+import type { FastifyInstance } from 'fastify';
 
 export interface TestApp extends FastifyInstance {
   prisma: ReturnType<typeof import('@prisma/client').PrismaClient>;
@@ -28,7 +28,7 @@ export async function injectRequest(
     headers?: Record<string, string>;
     cookies?: Record<string, string>;
     query?: Record<string, string>;
-  }
+  },
 ) {
   const { method, url, payload, headers = {}, cookies = {}, query } = options;
 
@@ -65,7 +65,7 @@ export const createAuthCookies = (token: string) => ({
 export async function loginUser(
   app: TestApp,
   email = 'test@example.com',
-  password = 'password123'
+  password = 'password123',
 ): Promise<{ accessToken: string; refreshToken: string }> {
   const response = await injectRequest(app, {
     method: 'POST',
@@ -83,7 +83,7 @@ export async function loginUser(
 export async function createTestProject(
   app: TestApp,
   accessToken: string,
-  overrides: Record<string, unknown> = {}
+  overrides: Record<string, unknown> = {},
 ) {
   const response = await injectRequest(app, {
     method: 'POST',
@@ -106,7 +106,7 @@ export async function createTestEvent(
   app: TestApp,
   accessToken: string,
   projectId: string,
-  overrides: Record<string, unknown> = {}
+  overrides: Record<string, unknown> = {},
 ) {
   const response = await injectRequest(app, {
     method: 'POST',
@@ -142,7 +142,12 @@ export function expectErrorResponse(response: any, expectedStatus = 400, expecte
   return body.error;
 }
 
-export function expectPaginatedResponse<T>(response: any): { items: T[]; total: number; page: number; pageSize: number } {
+export function expectPaginatedResponse<T>(response: any): {
+  items: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+} {
   const body = typeof response.body === 'string' ? JSON.parse(response.body) : response.body;
   expect(body.success).toBe(true);
   expect(body.data).toHaveProperty('items');

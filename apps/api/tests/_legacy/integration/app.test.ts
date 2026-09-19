@@ -1,5 +1,11 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
-import { createTestApp, closeTestApp, loginUser, expectSuccessResponse, createTestProject } from '../utils/testApp';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import {
+  closeTestApp,
+  createTestApp,
+  createTestProject,
+  expectSuccessResponse,
+  loginUser,
+} from '../utils/testApp';
 
 describe('API Integration Tests', () => {
   let app: any;
@@ -12,8 +18,7 @@ describe('API Integration Tests', () => {
     await closeTestApp(app);
   });
 
-  beforeEach(async () => {
-  });
+  beforeEach(async () => {});
 
   describe('Health Check', () => {
     it('should return healthy status', async () => {
@@ -66,7 +71,9 @@ describe('API Integration Tests', () => {
     });
 
     it('should create a project', async () => {
-      const project = await createTestProject(app, accessToken, { name: 'Integration Test Project' });
+      const project = await createTestProject(app, accessToken, {
+        name: 'Integration Test Project',
+      });
       expect(project.id).toBeDefined();
       expect(project.name).toBe('Integration Test Project');
     });

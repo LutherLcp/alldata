@@ -6,7 +6,6 @@
     "useIgnoreFile": true
   },
   "files": {
-    "include": ["apps/*/src/**", "packages/*/src/**"],
     "ignore": ["**/dist/**", "**/node_modules/**", "**/.turbo/**", "**/coverage/**"]
   },
   "formatter": {

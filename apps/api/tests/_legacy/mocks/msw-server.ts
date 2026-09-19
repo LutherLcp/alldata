@@ -1,13 +1,17 @@
-import { setupServer } from 'msw/node';
 import { http, HttpResponse } from 'msw';
+import { setupServer } from 'msw/node';
 
 export const handlers = [
   http.get('*/api/health', () => {
-    return HttpResponse.json({ code: 200, message: 'success', data: { status: 'ok', timestamp: new Date().toISOString() } });
+    return HttpResponse.json({
+      code: 200,
+      message: 'success',
+      data: { status: 'ok', timestamp: new Date().toISOString() },
+    });
   }),
 
   http.post('*/api/auth/login', async ({ request }) => {
-    const body = await request.json() as { username: string; password: string };
+    const body = (await request.json()) as { username: string; password: string };
     if (body.username === 'admin' && body.password === 'admin123') {
       return HttpResponse.json({
         code: 200,
@@ -15,7 +19,14 @@ export const handlers = [
         data: {
           token: 'mock-access-token',
           refresh_token: 'mock-refresh-token',
-          user_info: { id: 1, username: 'admin', email: 'admin@example.com', avatar: null, lang: 'zh-CN', projects: [] },
+          user_info: {
+            id: 1,
+            username: 'admin',
+            email: 'admin@example.com',
+            avatar: null,
+            lang: 'zh-CN',
+            projects: [],
+          },
           expire_at: Date.now() + 7 * 24 * 3600 * 1000,
         },
       });
@@ -30,7 +41,14 @@ export const handlers = [
     return HttpResponse.json({
       code: 200,
       message: 'success',
-      data: { id: 1, username: 'admin', email: 'admin@example.com', avatar: null, lang: 'zh-CN', projects: [] },
+      data: {
+        id: 1,
+        username: 'admin',
+        email: 'admin@example.com',
+        avatar: null,
+        lang: 'zh-CN',
+        projects: [],
+      },
     });
   }),
 
