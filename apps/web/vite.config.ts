@@ -1,6 +1,6 @@
+import path from 'path';
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react-swc';
-import path from 'path';
 import { defineConfig } from 'vite';
 
 /**
@@ -40,21 +40,18 @@ export default defineConfig({
     rollupOptions: {
       output: {
         // 按业务域拆分 chunk — 最大化长缓存利用率
+        // 注意：此处只需列出实际被引用的依赖，未进入依赖图的模块不会产出 chunk
         manualChunks: {
           // 核心框架
           'vendor-react': ['react', 'react-dom', 'react-router-dom'],
           // UI 组件库
           'vendor-antd': ['antd', '@ant-design/icons'],
-          // 常用分析图表 (ECharts)
+          // 图表 (ECharts)
           'vendor-echarts': ['echarts', 'echarts-for-react'],
-          // 高级多维可视化 (AntV G2 / Charts)
-          'vendor-antv-g2': ['@antv/g2', '@ant-design/charts'],
-          // 营销工作流画布引擎 (仅营销 Flow 模块使用)
-          'vendor-x6': ['@antv/x6', '@antv/x6-react-components'],
           // 状态管理 + 服务端状态
           'vendor-state': ['zustand', '@tanstack/react-query'],
           // 工具库
-          'vendor-utils': ['lodash-es', 'dayjs', 'zod', 'clsx', 'tailwind-merge', 'axios'],
+          'vendor-utils': ['dayjs', 'axios'],
           // 国际化
           'vendor-i18n': ['i18next', 'react-i18next'],
         },

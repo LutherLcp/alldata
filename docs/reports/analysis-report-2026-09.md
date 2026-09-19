@@ -103,7 +103,7 @@ api-go (Gin+GORM)  骨架,未承担流量
 | Q1 | **测试文件被 .gitignore 误排除** | `.gitignore` 中的 `*.test.ts` 规则导致 7 个测试文件中 **6 个从未入库**(仅 `utils.test.tsx` 因扩展名幸免)。23 个 harness 测试与 API 集成测试只存在于本地,全新 clone 后测试资产近乎为零,CI 的 unit-tests 作业实际空跑。已在 R0 修复 |
 | Q2 | 170 文件未提交(+7.8k 行) | Biome 格式化 + SCAN 流式清理等真实加固,停滞 6 周有丢失风险 |
 | Q3 | 前端目录命名债 | 当前 API 层目录叫 `services-new/`(暗示曾经的 services 迁移未收尾) |
-| Q4 | 零引用依赖 | `@ant-design/charts`、`@antv/g2` 在源码中 0 引用(需依赖审计确认更多) |
+| Q4 | **零引用依赖** | 依赖审计确认 `apps/web` 有 **12 个零引用依赖**(见下方 P0-E6),约占运行时依赖的一半。已在 R0 移除 |
 | Q5 | 双份配置并存 | eslint `.js`/`.mjs` 两份、commitlint 两份——Biome 迁移未收尾 |
 | Q6 | 文档失真 | README 停在 V5 功能;`docs/md_files/` 两份设计报告是 React 16/Redux/MySQL 旧项目的文档,误导性强 |
 
@@ -120,6 +120,7 @@ api-go (Gin+GORM)  骨架,未承担流量
 | E3 | **Biome 迁移只做了一半** | 仅 `api`/`web` 迁移,`harness`/`shared` 仍依赖 eslint + prettier,导致两套 lint 系统并存 | 已修复 |
 | E4 | **api 测试套件针对废弃契约** | `tests/` 按 `/api/v1/*` 前缀与不存在的 `buildApp()` 工厂编写,且 `setup.ts` 强制全局连接数据库(P1001),注定无法通过 | 已隔离并重建基线 |
 | E5 | **默认 Node 版本低于要求** | 系统 shell 默认 `/usr/local/bin/node` 为 v18.15.0,低于 `engines` 要求的 ≥20,导致 biome 等工具按 Rosetta(x64)解析二进制而报 `Cannot find module '@biomejs/cli-darwin-x64/biome'` | 已加 `.nvmrc` |
+| E6 | **12 个零引用依赖** | `apps/web` 的 `@ant-design/charts`、`@antv/g2`、`@antv/x6`、`@antv/x6-react-components`、`@hookform/resolvers`、`react-hook-form`、`@tanstack/react-query-devtools`、`clsx`、`lodash-es`、`tailwind-merge`、`zod`、`@types/lodash-es` 在全代码库 0 引用;`vite.config.ts` 的 manualChunks 还为其中两个配置了永不产出的 chunk | 已移除 |
 
 ### 3.3 值得保留的资产
 

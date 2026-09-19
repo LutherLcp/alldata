@@ -185,7 +185,7 @@ prod 拓扑(第一阶段): Nginx/Traefik ── api ×2 ── collector ×2
 
 | # | 决策 |
 |---|------|
-| F-1 | **图表库收敛为 echarts 一套**:现状 echarts 实际在用,`@ant-design/charts`、`@antv/g2` 零引用 → 移除;`@antv/x6` 仅数据血缘使用,保留(懒加载) |
+| F-1 | **图表库收敛为 echarts 一套**:现状 echarts 实际在用;`@ant-design/charts`、`@antv/g2`、`@antv/x6`、`@antv/x6-react-components` **经审计确认全代码库 0 引用**(R0 已移除,连同 `vite.config.ts` 中永不产出的 manualChunks 配置)。后续新增画布/多维可视化需求时按需引入 |
 | F-2 | `services-new/` 更名 `services/`,内含 v4.ts/v5.ts 的历史分层合并为按域组织(auth/dashboard/analysis/...) |
 | F-3 | 依赖审计:移除零引用包(react-hook-form/@hookform/resolvers 等待审计确认),目标首屏 JS ≤ 1.2MB(gzip) |
 | F-4 | 路由级代码分割 + 图表组件懒加载(V5.3 已做部分,补齐 25 个页面的分包) |
