@@ -1,3 +1,4 @@
+import { requireProjectAccess } from '@/common/middleware/projectAccess';
 /**
  * KoCRM 管理路由
  */
@@ -8,13 +9,10 @@ import { KocrmService } from './service';
 
 export async function kocrmRoutes(app: FastifyInstance) {
   const svc = new KocrmService(app);
-  const pid = (r: any) =>
-    Number((r.headers as any)['project-id']) || Number((r.query as any).project_id);
 
   // ─── Account 账户 ───
-  app.get('/accounts', { preHandler: requireAuth }, async (req, reply) => {
-    const projectId = pid(req);
-    if (!projectId) return ApiError.badRequest(reply, '缺少 project_id');
+  app.get('/accounts', { preHandler: requireProjectAccess() }, async (req, reply) => {
+    const projectId = req.projectId as number;
     return sendSuccess(reply, await svc.listAccounts(projectId));
   });
   app.post('/accounts', { preHandler: requireAuth }, async (req, reply) => {
@@ -34,9 +32,8 @@ export async function kocrmRoutes(app: FastifyInstance) {
   });
 
   // ─── Creator KOC/达人 ───
-  app.get('/creators', { preHandler: requireAuth }, async (req, reply) => {
-    const projectId = pid(req);
-    if (!projectId) return ApiError.badRequest(reply, '缺少 project_id');
+  app.get('/creators', { preHandler: requireProjectAccess() }, async (req, reply) => {
+    const projectId = req.projectId as number;
     return sendSuccess(reply, await svc.listCreators(projectId));
   });
   app.post('/creators', { preHandler: requireAuth }, async (req, reply) => {

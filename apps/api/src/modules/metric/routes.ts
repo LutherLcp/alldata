@@ -1,20 +1,18 @@
-import { ApiError, sendSuccess } from '@/common/utils/response';
-import { requireAuth } from '@/plugins/auth';
 /**
  * 指标管理路由
  */
+import { requireProjectAccess } from '@/common/middleware/projectAccess';
+import { ApiError, sendSuccess } from '@/common/utils/response';
+import { requireAuth } from '@/plugins/auth';
 import type { FastifyInstance } from 'fastify';
 import { MetricService } from './service';
 
 export async function metricRoutes(app: FastifyInstance) {
   const svc = new MetricService(app);
   const uid = (r: any) => Number(r.user.userId);
-  const pid = (r: any) =>
-    Number((r.headers as any)['project-id']) || Number((r.query as any).project_id);
 
-  app.get('/', { preHandler: requireAuth }, async (req, reply) => {
-    const projectId = pid(req);
-    if (!projectId) return ApiError.badRequest(reply, '缺少 project_id');
+  app.get('/', { preHandler: requireProjectAccess() }, async (req, reply) => {
+    const projectId = req.projectId as number;
     return sendSuccess(reply, await svc.listMetrics(projectId));
   });
 

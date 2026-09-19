@@ -1,21 +1,19 @@
-import { ApiError, sendSuccess } from '@/common/utils/response';
-import { requireAuth } from '@/plugins/auth';
 /**
  * 埋点管理路由
  */
+import { requireProjectAccess } from '@/common/middleware/projectAccess';
+import { ApiError, sendSuccess } from '@/common/utils/response';
+import { requireAuth } from '@/plugins/auth';
 import type { FastifyInstance } from 'fastify';
 import { TrackingService } from './service';
 
 export async function trackingRoutes(app: FastifyInstance) {
   const svc = new TrackingService(app);
   const uid = (r: any) => Number(r.user.userId);
-  const pid = (r: any) =>
-    Number((r.headers as any)['project-id']) || Number((r.query as any).project_id);
 
   // ─── Story ────────────────────────────────
-  app.get('/stories', { preHandler: requireAuth }, async (req, reply) => {
-    const projectId = pid(req);
-    if (!projectId) return ApiError.badRequest(reply, '缺少 project_id');
+  app.get('/stories', { preHandler: requireProjectAccess() }, async (req, reply) => {
+    const projectId = req.projectId as number;
     const list = await svc.listStories(projectId);
     return sendSuccess(reply, list);
   });
@@ -47,9 +45,8 @@ export async function trackingRoutes(app: FastifyInstance) {
   });
 
   // ─── Event ────────────────────────────────
-  app.get('/events', { preHandler: requireAuth }, async (req, reply) => {
-    const projectId = pid(req);
-    if (!projectId) return ApiError.badRequest(reply, '缺少 project_id');
+  app.get('/events', { preHandler: requireProjectAccess() }, async (req, reply) => {
+    const projectId = req.projectId as number;
     const storyId = (req.query as any).story_id ? Number((req.query as any).story_id) : undefined;
     const list = await svc.listEvents(projectId, storyId);
     return sendSuccess(reply, list);

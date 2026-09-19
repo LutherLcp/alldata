@@ -1,21 +1,19 @@
-import { ApiError, sendPaginated, sendSuccess } from '@/common/utils/response';
-import { requireAuth } from '@/plugins/auth';
 /**
  * 站内信路由
  */
+import { requireProjectAccess } from '@/common/middleware/projectAccess';
+import { ApiError, sendPaginated, sendSuccess } from '@/common/utils/response';
+import { requireAuth } from '@/plugins/auth';
 import type { FastifyInstance } from 'fastify';
 import { NoticeService } from './service';
 
 export async function noticeRoutes(app: FastifyInstance) {
   const svc = new NoticeService(app);
   const uid = (r: any) => Number(r.user.userId);
-  const pid = (r: any) =>
-    Number((r.headers as any)['project-id']) || Number((r.query as any).project_id);
 
   // 通知列表
-  app.get('/', { preHandler: requireAuth }, async (req, reply) => {
-    const projectId = pid(req);
-    if (!projectId) return ApiError.badRequest(reply, '缺少 project_id');
+  app.get('/', { preHandler: requireProjectAccess() }, async (req, reply) => {
+    const projectId = req.projectId as number;
     const q = req.query as any;
     const page = Number(q.page) || 1;
     const pageSize = Number(q.page_size) || 20;
@@ -25,9 +23,8 @@ export async function noticeRoutes(app: FastifyInstance) {
   });
 
   // 未读计数
-  app.get('/unread-count', { preHandler: requireAuth }, async (req, reply) => {
-    const projectId = pid(req);
-    if (!projectId) return ApiError.badRequest(reply, '缺少 project_id');
+  app.get('/unread-count', { preHandler: requireProjectAccess() }, async (req, reply) => {
+    const projectId = req.projectId as number;
     const result = await svc.getUnreadCount(projectId, uid(req));
     return sendSuccess(reply, result);
   });
@@ -40,9 +37,8 @@ export async function noticeRoutes(app: FastifyInstance) {
   });
 
   // 标记全部已读
-  app.post('/mark-all-read', { preHandler: requireAuth }, async (req, reply) => {
-    const projectId = pid(req);
-    if (!projectId) return ApiError.badRequest(reply, '缺少 project_id');
+  app.post('/mark-all-read', { preHandler: requireProjectAccess() }, async (req, reply) => {
+    const projectId = req.projectId as number;
     const result = await svc.markAllRead(projectId, uid(req));
     return sendSuccess(reply, result, '全部已读');
   });

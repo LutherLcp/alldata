@@ -1,3 +1,4 @@
+import { requireProjectAccess } from '@/common/middleware/projectAccess';
 import { ApiError, sendPaginated, sendSuccess } from '@/common/utils/response';
 import { requireAuth } from '@/plugins/auth';
 /**
@@ -36,11 +37,10 @@ export async function userRoutes(app: FastifyInstance) {
   });
 
   // 用户行为时间线
-  app.get('/:id/timeline', { preHandler: requireAuth }, async (req, reply) => {
+  app.get('/:id/timeline', { preHandler: requireProjectAccess() }, async (req, reply) => {
     const { id } = req.params as { id: string };
     const q = req.query as any;
-    const projectId = Number(q.project_id) || Number((req.headers as any)['project-id']);
-    if (!projectId) return ApiError.badRequest(reply, '缺少 project_id');
+    const projectId = req.projectId as number;
     const timeline = await svc.getUserTimeline(Number(id), projectId, {
       startDate: q.start_date,
       endDate: q.end_date,

@@ -17,7 +17,11 @@ export function requireProjectAccess() {
     await requireAuth(request, reply);
     if (reply.sent) return;
 
-    const raw = request.projectId ?? Number(request.headers['project-id']);
+    // 兼容 header 与 query 两种传参方式（前端历史实现两者都在用）
+    const raw =
+      request.projectId ??
+      Number(request.headers['project-id']) ??
+      Number((request.query as { project_id?: unknown } | undefined)?.project_id);
     const projectId = Number(raw);
     if (!Number.isInteger(projectId) || projectId <= 0) {
       return reply.code(400).send({
@@ -47,6 +51,27 @@ export function requireProjectAccess() {
 
     request.projectId = projectId;
   };
+}
+
+/**
+ * 校验请求体中携带的 project_id 是否属于当前用户。
+ * 适用于 project_id 走请求体（而非请求头）的接口，避免这些接口绕过项目隔离。
+ */
+export async function canAccessProject(
+  request: FastifyRequest,
+  projectId: unknown,
+): Promise<boolean> {
+  const pid = Number(projectId);
+  if (!Number.isInteger(pid) || pid <= 0) return false;
+
+  const userId = Number((request as { user?: { userId?: unknown } }).user?.userId);
+  if (!Number.isInteger(userId) || userId <= 0) return false;
+
+  const membership = await request.server.prisma.userProjectRole.findUnique({
+    where: { user_id_project_id: { user_id: userId, project_id: pid } },
+    select: { id: true },
+  });
+  return Boolean(membership);
 }
 
 /**

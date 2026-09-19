@@ -1,5 +1,3 @@
-import { ApiError, sendSuccess } from '@/common/utils/response';
-import { requireAuth } from '@/plugins/auth';
 /**
  * 版本日历路由
  * GET    /api/calendar           — 列表
@@ -8,18 +6,18 @@ import { requireAuth } from '@/plugins/auth';
  * PUT    /api/calendar/:id       — 更新
  * DELETE /api/calendar/:id       — 删除
  */
+import { requireProjectAccess } from '@/common/middleware/projectAccess';
+import { ApiError, sendSuccess } from '@/common/utils/response';
+import { requireAuth } from '@/plugins/auth';
 import type { FastifyInstance } from 'fastify';
 import { CalendarService } from './service';
 
 export async function calendarRoutes(app: FastifyInstance) {
   const svc = new CalendarService(app);
   const uid = (r: any) => Number(r.user.userId);
-  const pid = (r: any) =>
-    Number((r.headers as any)['project-id']) || Number((r.query as any).project_id);
 
-  app.get('/', { preHandler: requireAuth }, async (req, reply) => {
-    const projectId = pid(req);
-    if (!projectId) return ApiError.badRequest(reply, '缺少 project_id');
+  app.get('/', { preHandler: requireProjectAccess() }, async (req, reply) => {
+    const projectId = req.projectId as number;
     const q = req.query as any;
     const list = await svc.list(projectId, {
       startDate: q.start_date,

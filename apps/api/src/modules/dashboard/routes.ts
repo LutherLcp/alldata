@@ -1,8 +1,9 @@
-import { ApiError, sendSuccess } from '@/common/utils/response';
-import { requireAuth } from '@/plugins/auth';
 /**
  * 看板模块路由
  */
+import { requireProjectAccess } from '@/common/middleware/projectAccess';
+import { ApiError, sendSuccess } from '@/common/utils/response';
+import { requireAuth } from '@/plugins/auth';
 import type { FastifyInstance } from 'fastify';
 import { DashboardService } from './service';
 
@@ -11,10 +12,8 @@ export async function dashboardRoutes(app: FastifyInstance) {
   const uid = (r: any) => Number(r.user.userId);
 
   // ─── 文件夹 ──────────────────────────────
-  app.get('/folders', { preHandler: requireAuth }, async (req, reply) => {
-    const projectId =
-      Number((req.headers as any)['project-id']) || Number((req.query as any).project_id);
-    if (!projectId) return ApiError.badRequest(reply, '缺少 project_id');
+  app.get('/folders', { preHandler: requireProjectAccess() }, async (req, reply) => {
+    const projectId = req.projectId as number;
     const tree = await svc.getFolderTree(projectId);
     return sendSuccess(reply, tree);
   });
@@ -38,13 +37,11 @@ export async function dashboardRoutes(app: FastifyInstance) {
   });
 
   // ─── 看板 ────────────────────────────────
-  app.get('/', { preHandler: requireAuth }, async (req, reply) => {
-    const projectId =
-      Number((req.headers as any)['project-id']) || Number((req.query as any).project_id);
+  app.get('/', { preHandler: requireProjectAccess() }, async (req, reply) => {
+    const projectId = req.projectId as number;
     const folderId = (req.query as any).folder_id
       ? Number((req.query as any).folder_id)
       : undefined;
-    if (!projectId) return ApiError.badRequest(reply, '缺少 project_id');
     const list = await svc.listDashboards(projectId, folderId);
     return sendSuccess(reply, list);
   });

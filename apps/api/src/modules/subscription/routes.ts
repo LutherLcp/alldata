@@ -1,21 +1,19 @@
-import { ApiError, sendSuccess } from '@/common/utils/response';
-import { requireAuth } from '@/plugins/auth';
 /**
  * 推送订阅路由
  */
+import { requireProjectAccess } from '@/common/middleware/projectAccess';
+import { ApiError, sendSuccess } from '@/common/utils/response';
+import { requireAuth } from '@/plugins/auth';
 import type { FastifyInstance } from 'fastify';
 import { SubscriptionService } from './service';
 
 export async function subscriptionRoutes(app: FastifyInstance) {
   const svc = new SubscriptionService(app);
   const uid = (r: any) => Number(r.user.userId);
-  const pid = (r: any) =>
-    Number((r.headers as any)['project-id']) || Number((r.query as any).project_id);
 
   // ─── Subscription ───
-  app.get('/subscriptions', { preHandler: requireAuth }, async (req, reply) => {
-    const projectId = pid(req);
-    if (!projectId) return ApiError.badRequest(reply, '缺少 project_id');
+  app.get('/subscriptions', { preHandler: requireProjectAccess() }, async (req, reply) => {
+    const projectId = req.projectId as number;
     return sendSuccess(reply, await svc.listSubscriptions(projectId));
   });
 
@@ -47,9 +45,8 @@ export async function subscriptionRoutes(app: FastifyInstance) {
   });
 
   // ─── PushConfig ───
-  app.get('/push-configs', { preHandler: requireAuth }, async (req, reply) => {
-    const projectId = pid(req);
-    if (!projectId) return ApiError.badRequest(reply, '缺少 project_id');
+  app.get('/push-configs', { preHandler: requireProjectAccess() }, async (req, reply) => {
+    const projectId = req.projectId as number;
     return sendSuccess(reply, await svc.listPushConfigs(projectId));
   });
 

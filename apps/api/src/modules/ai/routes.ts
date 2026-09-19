@@ -1,3 +1,4 @@
+import { canAccessProject } from '@/common/middleware/projectAccess';
 import { ApiError, sendSuccess } from '@/common/utils/response';
 import { requireAuth } from '@/plugins/auth';
 /**
@@ -103,6 +104,10 @@ export async function aiRoutes(app: FastifyInstance) {
       return ApiError.badRequest(reply, '缺少 question 或 project_id 参数');
     }
 
+    if (!(await canAccessProject(req, body.project_id))) {
+      return ApiError.forbidden(reply, '无权访问该项目');
+    }
+
     try {
       // 1. 获取项目事件与属性 Schema 上下文
       const events = await app.prisma.eventDefinition.findMany({
@@ -199,6 +204,10 @@ export async function aiRoutes(app: FastifyInstance) {
       return ApiError.badRequest(reply, '缺少 project_id、data_type 或 data_id 参数');
     }
 
+    if (!(await canAccessProject(req, body.project_id))) {
+      return ApiError.forbidden(reply, '无权访问该项目');
+    }
+
     try {
       const result = await insightSvc.generateInsight(body);
       return sendSuccess(reply, result);
@@ -288,6 +297,10 @@ export async function aiRoutes(app: FastifyInstance) {
     ) {
       return ApiError.badRequest(reply, '缺少 project_id、metric_name 或 data_points 参数');
     }
+
+    if (!(await canAccessProject(req, body.project_id))) {
+      return ApiError.forbidden(reply, '无权访问该项目');
+    }
     if (body.data_points.length < 3) {
       return ApiError.badRequest(reply, '数据点数量不足，至少需要 3 个');
     }
@@ -323,6 +336,10 @@ export async function aiRoutes(app: FastifyInstance) {
         reply,
         '缺少 project_id、metric_name、check_interval 或 detection_methods 参数',
       );
+    }
+
+    if (!(await canAccessProject(req, body.project_id))) {
+      return ApiError.forbidden(reply, '无权访问该项目');
     }
 
     try {
