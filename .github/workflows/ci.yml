@@ -2,25 +2,21 @@ name: CI
 
 on:
   push:
-    branches: [main, develop]
+    branches: [master, main, develop]
     tags: ['v*']
   pull_request:
-    branches: [main, develop]
+    branches: [master, main, develop]
 
 env:
   NODE_VERSION: '20'
   PNPM_VERSION: '9.6.0'
-  TURBO_VERSION: '2.0.0'
 
 jobs:
-  lint-and-typecheck:
-    name: Lint & TypeCheck
+  quality:
+    name: Lint · TypeCheck · Format
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 2
+      - uses: actions/checkout@v4
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v3
@@ -37,81 +33,20 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Run lint
+      - name: Lint (Biome, all packages)
         run: pnpm lint
 
-      - name: Run typecheck
-        run: |
-          pnpm --filter @alldata/api run typecheck
-          pnpm --filter @alldata/web run typecheck
-          pnpm --filter @alldata/shared run typecheck
+      - name: TypeCheck (all packages)
+        run: pnpm typecheck
 
-      - name: Check formatting
-        run: pnpm format --check
+      - name: Format check
+        run: pnpm format:check
 
-  unit-tests:
-    name: Unit Tests
+  tests:
+    name: Tests
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 2
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: ${{ env.PNPM_VERSION }}
-          run_install: false
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Run unit tests
-        run: pnpm test --coverage
-        env:
-          NODE_ENV: test
-
-      - name: Upload coverage
-        uses: codecov/codecov-action@v4
-        with:
-          files: ./coverage/lcov.info
-          flags: unittests
-          fail_ci_if_error: false
-
-  integration-tests-api:
-    name: Integration Tests (API)
-    runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:16-alpine
-        env:
-          POSTGRES_DB: alldata_test
-          POSTGRES_USER: alldata
-          POSTGRES_PASSWORD: alldata123
-        ports: ['5432:5432']
-        options: >-
-          --health-cmd="pg_isready -U alldata -d alldata_test"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
-      redis:
-        image: redis:7-alpine
-        ports: ['6379:6379']
-        options: >-
-          --health-cmd="redis-cli ping"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v3
@@ -130,33 +65,21 @@ jobs:
 
       - name: Generate Prisma Client
         run: pnpm db:generate
-        working-directory: ./apps/api
-        env:
-          DATABASE_URL: postgresql://alldata:alldata123@localhost:5432/alldata_test?schema=public
 
-      - name: Run database migrations
-        run: pnpm db:migrate deploy
-        working-directory: ./apps/api
-        env:
-          DATABASE_URL: postgresql://alldata:alldata123@localhost:5432/alldata_test?schema=public
-
-      - name: Run integration tests
-        run: pnpm test:integration
-        working-directory: ./apps/api
+      # 当前测试不依赖外部服务（api 集成测试待 R1 重写，见 apps/api/tests/_legacy/README.md）
+      - name: Run tests (all packages)
+        run: pnpm test
         env:
           NODE_ENV: test
-          DATABASE_URL: postgresql://alldata:alldata123@localhost:5432/alldata_test?schema=public
-          REDIS_URL: redis://localhost:6379
-          JWT_SECRET: test-secret-key-for-testing-only
-          COOKIE_SECRET: test-cookie-secret
+          JWT_SECRET: test-secret-key-for-testing-only-at-least-32
+          COOKIE_SECRET: test-cookie-secret-for-testing-only-32chars
 
-  e2e-tests:
-    name: E2E Tests (Playwright)
+  build:
+    name: Build
     runs-on: ubuntu-latest
-    needs: [lint-and-typecheck, unit-tests]
+    needs: [quality]
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v3
@@ -173,46 +96,22 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build applications
+      - name: Generate Prisma Client
+        run: pnpm db:generate
+
+      - name: Build all packages
         run: pnpm build
-
-      - name: Install Playwright browsers
-        run: pnpm exec playwright install --with-deps chromium
-        working-directory: ./apps/web
-
-      - name: Start services
-        run: |
-          docker compose -f docker-compose.yml -f docker-compose.test.yml up -d
         env:
-          POSTGRES_PASSWORD: alldata123
-          MINIO_ROOT_PASSWORD: minioadmin123
+          # 构建期 prisma generate 需要占位连接串，不建立真实连接
+          DATABASE_URL: postgresql://placeholder:placeholder@localhost:5432/placeholder?schema=public
 
-      - name: Wait for services
-        run: |
-          sleep 15
-          until curl -sf http://localhost:4000/api/v1/health; do sleep 3; done
-          until curl -sf http://localhost:3000; do sleep 3; done
-
-      - name: Run E2E tests
-        run: pnpm exec playwright test
-        working-directory: ./apps/web
-
-      - name: Upload Playwright report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-report
-          path: apps/web/playwright-report
-          retention-days: 7
-
-  build-docker:
+  docker-build:
     name: Build Docker Images
     runs-on: ubuntu-latest
-    needs: [lint-and-typecheck, unit-tests, integration-tests-api]
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/tags/v'))
+    needs: [tests, build]
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -235,24 +134,8 @@ jobs:
           tags: alldata/web:${{ github.sha }}
           load: true
 
-  deploy-staging:
-    name: Deploy Staging
-    runs-on: ubuntu-latest
-    needs: [e2e-tests, build-docker]
-    if: github.ref == 'refs/heads/develop'
-    environment: staging
-    steps:
-      - name: Deploy to staging
-        run: echo "Deploy to staging environment"
-        # Add your staging deployment commands here
-
-  deploy-production:
-    name: Deploy Production
-    runs-on: ubuntu-latest
-    needs: [e2e-tests, build-docker]
-    if: startsWith(github.ref, 'refs/tags/v')
-    environment: production
-    steps:
-      - name: Deploy to production
-        run: echo "Deploy to production environment"
-        # Add your production deployment commands here
+# 说明：
+# - E2E（Playwright）作业已移除：仓库尚无 apps/web/playwright.config.ts 与用例，
+#   原作业必然失败。E2E 冒烟为 R1 交付项（见 docs/reports/roadmap-2026-2027.md）。
+# - 原 ci.yml 触发分支写作 main/develop，而仓库实际使用 master，导致 CI 从未运行；
+#   同时健康检查路径写为 /api/v1/health（实际为 /api/health）。
