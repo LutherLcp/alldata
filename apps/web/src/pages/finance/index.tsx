@@ -364,29 +364,58 @@ function ReconciliationTab() {
           { title: '账期', dataIndex: 'period', width: 100 },
           { title: '币种', dataIndex: 'currency', width: 80 },
           {
-            title: '状态',
+            title: '状态 / 结算金额',
             dataIndex: 'status',
-            width: 80,
-            render: (s: number) => (
-              <Tag color={s === 1 ? 'green' : 'default'}>{s === 1 ? '正常' : '异常'}</Tag>
-            ),
+            width: 160,
+            render: (s: number, r: any) => {
+              const settlement = r.meta?.settlement;
+              if (s === 2 && settlement) {
+                return (
+                  <Tag color="cyan">应分成: ¥{settlement.supplier_amount?.toLocaleString()}</Tag>
+                );
+              }
+              return (
+                <Tag color={s === 1 ? 'green' : 'default'}>{s === 1 ? '待核算' : '已归档'}</Tag>
+              );
+            },
           },
           {
             title: '操作',
             key: 'action',
-            width: 100,
+            width: 170,
             render: (_: any, r: any) => (
-              <Popconfirm
-                title="确认删除?"
-                onConfirm={async () => {
-                  await financeApi.deleteReconciliation(r.id);
-                  load();
-                }}
-              >
-                <Button type="link" size="small" danger>
-                  删除
-                </Button>
-              </Popconfirm>
+              <Space>
+                {r.status === 1 && (
+                  <Button
+                    type="link"
+                    size="small"
+                    onClick={async () => {
+                      try {
+                        const res = await financeApi.settleReconciliation(r.id);
+                        message.success(
+                          `结算核算成功！总流水: ¥${res.gross_revenue}，分成: ${res.share_ratio}%，供应商应分成: ¥${res.supplier_amount}`,
+                        );
+                        load();
+                      } catch (err) {
+                        message.error((err as Error).message || '结算失败');
+                      }
+                    }}
+                  >
+                    一键结算
+                  </Button>
+                )}
+                <Popconfirm
+                  title="确认删除?"
+                  onConfirm={async () => {
+                    await financeApi.deleteReconciliation(r.id);
+                    load();
+                  }}
+                >
+                  <Button type="link" size="small" danger>
+                    删除
+                  </Button>
+                </Popconfirm>
+              </Space>
             ),
           },
         ]}
