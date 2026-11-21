@@ -39,7 +39,7 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: false,
-    chunkSizeWarningLimit: 600,
+    chunkSizeWarningLimit: 1400,
     rollupOptions: {
       output: {
         // 按业务域拆分 chunk — 最大化长缓存利用率
@@ -47,6 +47,10 @@ export default defineConfig({
         manualChunks: {
           // 核心框架
           'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          // UI 组件库
+          'vendor-antd': ['antd', '@ant-design/icons'],
+          // 可视化图表
+          'vendor-echarts': ['echarts', 'echarts-for-react'],
           // 状态管理 + 服务端状态
           'vendor-state': ['zustand', '@tanstack/react-query'],
           // 工具库
