@@ -18,10 +18,9 @@ export function requireProjectAccess() {
     if (reply.sent) return;
 
     // 兼容 header 与 query 两种传参方式（前端历史实现两者都在用）
-    const raw =
-      request.projectId ??
-      Number(request.headers['project-id']) ??
-      Number((request.query as { project_id?: unknown } | undefined)?.project_id);
+    const headerPid = request.headers['project-id'];
+    const queryPid = (request.query as { project_id?: unknown } | undefined)?.project_id;
+    const raw = request.projectId ?? (headerPid !== undefined ? headerPid : queryPid);
     const projectId = Number(raw);
     if (!Number.isInteger(projectId) || projectId <= 0) {
       return reply.code(400).send({
