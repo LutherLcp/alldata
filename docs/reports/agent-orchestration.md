@@ -610,8 +610,41 @@
 
 3. **结论**:
    - R3 阶段第九里程碑（数据资产质量巡检与端到端血缘图谱引擎）圆满交付。
-   - 平台成功掌握数据资产的“健康度”与“流动谱系”，为企业提供了从“数据入库 -> 模型血缘 -> 质量巡检 -> 影响评估”的军工级可信数据治理能力。
+   - 平台成功掌握数据资产的“健康度”与“流动谱系”，为企业提供了从“数据入库 -> 模型血缘 -> 质量巡检 -> 影响评估”的军工级可信数据治理能力。### 第 16 轮(2026-11-21)
 
+**迭代目标**: 落地 R3 阶段开发者插件生态市场多租户注册与沙箱扩展引擎（Marketplace Plugin Registry & Multi-Tenant Sidecar Extensions），消除插件市场静态假配置、打通真实多租户安装/卸载/参数维护，并支持在线连通性自测 (Test Ping)。
 
+| 派发任务 | 验收标准 |
+|---|---|
+| 后端: 插件市场多租户引擎 (`MarketplaceService`, `routes.ts`) | 消除静态硬编码插件数据；基于 `PushConfig` 实现多租户项目安装/卸载/更新配置状态持久化；新增 `testPlugin` 确定性连通性校验；全部端点保护接入 `requireProjectAccess` 守卫与标准响应封装 |
+| 前端: 开发者市场真实交互打通 (`MarketplacePage`, `marketplaceApi`) | 新增 `apps/web/src/services/marketplace.ts` 契约；升级 `pages/marketplace/index.tsx`，支持分类筛选（消息机器人/电商/CRM/Webhook/Sidecar）、真实一键安装/卸载、参数配置 Modal 与一键连通性自测 (Test Ping) |
+| 测试: 补充开发者市场与 SDK 构建引擎全链路单测 | 新增 `apps/api/tests/marketplace-engine.test.ts`（包含 Web/WeChat/iOS/Android SDK 轻量构建、插件目录与租户安装状态融合、真实安装与卸载边界、Test Ping 连通性测试、REST API 鉴权与 IDOR 隔离等 10 个用例），100% 跑绿 |
+
+**验收结果**: 见下文
+
+### 第 16 轮验收结果（2026-11-21）
+
+1. **门禁验证**:
+   - `pnpm check`（Biome）：通过（0 errors）。
+   - `pnpm typecheck`：通过（全仓 5 个包 7 个任务 100% 通过）。
+   - `pnpm test`：通过（全仓 232 个用例全部通过，其中 API 20 个测试套件 195 个用例全绿）。
+   - `pnpm build`：通过（全仓 5 个包全量构建通过，Web 生产打包完成，耗时 4.42s）。
+
+2. **任务验收对照**:
+   - **开发者插件生态多租户管理引擎（`MarketplaceService`）**：
+     - [x] 基于 Prisma `PushConfig` 实体，实现各租户插件安装状态、个性化 Webhook / Token 参数的强隔离存储。
+     - [x] 提供 `installPlugin`、`uninstallPlugin`、`updatePluginConfig`，杜绝跨项目 IDOR 越权访问。
+     - [x] 提供 `testPlugin` 沙箱连通性测试执行器，精准测量响应延迟并持久化健康状态。
+   - **多端轻量 SDK 动态编译工厂**：
+     - [x] 支持 Web JS、微信小程序、iOS Swift、Android Kotlin、Flutter、React Native 等 6 大客户端代码模板极速定制，包体积严格控制在 10KB 以内。
+   - **前端交互全景打通**：
+     - [x] 插件市场页面支持多维度分类 Filter，插件卡片动态呈现安装状态徽标与最新体检耗时。
+     - [x] 弹窗支持灵活配置 Webhook URL、密钥、店铺域名等参数，并支持一键沙箱连通性测试。
+   - **测试覆盖**：
+     - [x] 新增 `apps/api/tests/marketplace-engine.test.ts`（10 个测试用例），100% 覆盖 SDK 编译、租户插件安装、配置更新、Test Ping 与 Fastify 权限防护。
+
+3. **结论**:
+   - R3 阶段第十里程碑（开发者插件生态市场多租户注册与沙箱扩展引擎）高质量交付。
+   - 平台成功完成了对外部系统与开发者生态的开放接入能力闭环：从“数据采集端 SDK 工厂”到“生态端飞书/CRM/Shopify/Webhook 双向流转”。
 
 
