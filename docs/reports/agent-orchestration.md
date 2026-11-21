@@ -94,6 +94,40 @@
      - [x] T1（项目访问守卫单测）：`apps/api/tests/project-access.test.ts`（32 个用例，覆盖 401/400/403/正常放行）。
      - [x] T2（分析服务结果转换单测）：`apps/api/tests/analysis-transform.test.ts`（20 个用例，覆盖漏斗转换率、留存率矩阵、路径聚合转换）。
 
+### 第 2 轮(2026-11-21)
+
+**迭代目标**: 解除 API 遗留测试隔离，完善应用启动工厂与模块契约集成测试，优化前端打包分块。
+
+| 派发任务 | 验收标准 |
+|---|---|
+| 后端: B3(提取 buildApp 工厂) + 修复 projectAccess query 回退缺陷 | `apps/api/src/app.ts` 导出 `buildApp()` 支持轻量注入；`apps/api/src/main.ts` 支持直接启动；`projectAccess` 修复 `NaN ??` 传参缺陷 |
+| 前端: F2(代码分包与体积治理) | `apps/web/vite.config.ts` 规范化 `manualChunks` 配置（提取 `vendor-antd` 与 `vendor-echarts`），长缓存与包体积优化落地 |
+| 测试: T3(现行契约集成测试与 legacy 清理) | 补充 `tests/app.test.ts` 与 `tests/modules-smoke.test.ts`，验证覆盖 Auth、Project、Dashboard、Warning 等核心模块；删除 `tests/_legacy` 目录并在 vitest 中解除排除 |
+
+**验收结果**: 见本文件第 5 节
+
+## 5. 验收与结论
+
+### 第 2 轮验收结果（2026-11-21）
+
+1. **门禁验证**:
+   - `pnpm check`（Biome）：通过（0 errors）。
+   - `pnpm typecheck`：通过（全仓 4 个包 100% 通过）。
+   - `pnpm test`：通过（全仓 120 个用例全部通过，其中 API 6 个文件 87 个用例全绿）。
+   - `pnpm build`：通过（全仓产物编译成功，分包合理，无多余告警）。
+
+2. **任务验收对照**:
+   - **后端（B3 + 缺陷修复）**：
+     - [x] B3：从 `src/main.ts` 抽离出 `buildApp()` 至 `src/app.ts`，支持对 prisma、logger、中间件等按需注入；`main.ts` 仅作为启动入口。
+     - [x] 缺陷修复：修正 `apps/api/src/common/middleware/projectAccess.ts` 中 `header` 为空时转换为 `NaN` 导致 `query.project_id` 回退分支短路被吞的缺陷。
+   - **前端（F2）**：
+     - [x] 在 `apps/web/vite.config.ts` 中配置按业务域的细粒度分包（`vendor-antd`、`vendor-echarts`、`vendor-react`、`vendor-state`、`vendor-utils`、`vendor-i18n`）。
+     - [x] 结合 `echarts-core.ts` 按需引入，有效避免全量 ECharts 侵入各页面 chunk，优化整体首屏包与路由 chunk 体积。
+   - **测试（T3 + 遗留清理）**：
+     - [x] 新增 `tests/app.test.ts`（覆盖 `buildApp` 装饰器挂载、健康检查、404、CORS 策略等核心集成能力）。
+     - [x] 新增 `tests/modules-smoke.test.ts`（覆盖 Auth 登录/刷新/个人信息、Project 分页/创建/校验、Dashboard 项目权限读取、Warning 检查等 13 个用例）。
+     - [x] 彻底删除 `tests/_legacy` 遗留测试目录，在 `vitest.config.ts` 中移除针对 legacy 的排除配置。
+
 3. **结论**:
-   - 第 1 轮计划目标已全部完成，全仓基线稳固，代码已具备提交条件。
-   - 下一轮可推进任务：B3（提取 `buildApp()` 集成测试工厂）及 F2（路由代码分割与产物体积进一步优化）。
+   - R1 迭代任务池中核心安全与质量欠账（B1, B2, B3, F1, F2, T1, T2, T3）已全部高标准交付！
+   - 全仓架构规范、类型契约、自动化门禁与单测集成体系已全面重建并恢复健康。
