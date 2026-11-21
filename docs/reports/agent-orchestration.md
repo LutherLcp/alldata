@@ -431,6 +431,46 @@
    - R3 阶段第四里程碑（营销自动化 Flow 画布执行引擎与分流触达闭环）高质量交付。
    - 平台成功构建了“CDP 人群分群 -> 智能预警监控 -> 异常归因诊断 -> A/B 科学分流 -> 营销自动化触达”的现代化全域数据与业务运营一体化闭环。
 
+### 第 11 轮(2026-11-21)
+
+**迭代目标**: 落地 R3 阶段体验分析与 AI Data Copilot 智能问答引擎（Experience Analytics & AI Data Copilot Text-to-SQL / Session Replay / Heatmap）。
+
+| 派发任务 | 验收标准 |
+|---|---|
+| 后端: AI Data Copilot 与 Session Replay 重放引擎 (`ExperienceService`, `routes.ts`) | 实现多意图 Text-to-SQL 自然语言问答编译器（精准识别漏斗卡点、设备渠道占比、Cohort 留存与 PV/UV 趋势并生成 ClickHouse SQL）；实现 Session 会话与 DOM 行为时序录制/详情查询/错误过滤接口；实现页面点击热力图冷热分布计算；全量接入 `requireProjectAccess` 租户鉴权守卫 |
+| 前端: 封装 `experienceApi` 并全面打通体验探查中心 | 新建 `apps/web/src/services/experience.ts`；重构 `pages/experience/index.tsx`，消除 mock 与 `setTimeout`，打通 Copilot 自然语言实时问答（自动渲染推荐图表类型与动态数据表）、Session Replay 视频级时序轨迹回放抽屉、以及点击密度热力图冷热分布覆盖层 |
+| 测试: 补充体验分析与 Copilot 引擎全链路自动化单测 | 新增 `apps/api/tests/experience-engine.test.ts`（包含 Text-to-SQL 意图解析、漏斗/占比/留存/趋势 SQL 生成、Session 过滤与录入生命周期、热力图计算、REST API 问答与 IDOR 拦截 8 个用例），100% 跑绿 |
+
+**验收结果**: 见下文
+
+### 第 11 轮验收结果（2026-11-21）
+
+1. **门禁验证**:
+   - `pnpm check`（Biome）：通过（0 errors）。
+   - `pnpm typecheck`：通过（全仓 5 个包 7 个任务 100% 通过）。
+   - `pnpm test`：通过（全仓 190 个用例全部通过，其中 API 15 个测试套件 153 个用例全绿）。
+   - `pnpm build`：通过（全仓 5 个包全量构建通过，Web 生产打包完成，耗时 5.01s）。
+
+2. **任务验收对照**:
+   - **AI Data Copilot 智能问答与 Text-to-SQL 引擎（`ExperienceService`）**：
+     - [x] 支持自然语言多意图识别：涵盖全流程转化漏斗（`funnel`）、多维终端/渠道占比（`device`）、新客留存（`retention`）以及时间序列流量走势。
+     - [x] 自动组装符合租户隔离约束的 ClickHouse 统计 SQL，推导推荐图表形态（`bar` / `pie` / `line`）与数据结果集。
+     - [x] 提供 Session Replay 会话流存取（`listSessions`、`getSession`、`ingestSession`）与异常标记（`has_error`）检索。
+     - [x] 提供页面点击密度热力图（Heatmap）与核心热点坐标（Points）聚合计算。
+     - [x] 全面接入 `requireProjectAccess` 鉴权与租户 IDOR 防护。
+   - **前端体验分析中心打通**：
+     - [x] 新增 `apps/web/src/services/experience.ts` 规范 API 客户端。
+     - [x] 消除 `pages/experience/index.tsx` 假数据，打通真实 Copilot 自然语言对话，动态展现生成的 SQL、推荐图表与二维明细表格。
+     - [x] 实现 Session Replay 真实回放弹窗，清晰按时间线展示用户在关键页面的点击坐标与控制台异常捕获。
+     - [x] 实现热力图路由切换（首页/收银台/仪表盘）与冷热分布探针渲染。
+   - **测试覆盖**：
+     - [x] 新增 `apps/api/tests/experience-engine.test.ts`（8 个测试用例），100% 覆盖意图识别、SQL 构造、会话重放与 REST API 鉴权。
+
+3. **结论**:
+   - R3 阶段第五里程碑（体验分析与 AI Data Copilot 智能问答引擎）圆满交付。
+   - 平台成功将大模型自然语言交互与微观用户操作行为（DOM 事件回放、点击热力图）深度融合，达成宏观业务指标分析与微观用户体验洞察的双向统一。
+
+
 
 
 
