@@ -1,30 +1,72 @@
 /**
  * 营销 Flow 路由注册模块
  */
+import { requireProjectAccess } from '@/common/middleware/projectAccess';
+import { ApiError, sendSuccess } from '@/common/utils/response';
 import type { FastifyInstance } from 'fastify';
 import { MarketingService } from './service';
 
 export async function marketingRoutes(app: FastifyInstance) {
   const service = new MarketingService(app);
+  const uid = (r: any) => Number(r.user?.userId || r.user?.id || 1);
 
-  app.get('/flows', async (req) => {
-    const { project_id } = req.query as { project_id?: string };
-    const pid = project_id ? Number(project_id) : 1;
+  app.get('/flows', { preHandler: requireProjectAccess() }, async (req, reply) => {
+    const pid = req.projectId as number;
     const flows = await service.listFlows(pid);
-    return { code: 200, message: 'success', data: flows };
+    return sendSuccess(reply, flows);
   });
 
-  app.post('/flows', async (req) => {
+  app.get('/flows/:id', { preHandler: requireProjectAccess() }, async (req, reply) => {
+    const pid = req.projectId as number;
+    const { id } = req.params as { id: string };
+    const flow = await service.getFlow(pid, Number(id));
+    if (!flow) return ApiError.notFound(reply, '营销 Flow 画布不存在');
+    return sendSuccess(reply, flow);
+  });
+
+  app.post('/flows', { preHandler: requireProjectAccess() }, async (req, reply) => {
+    const pid = req.projectId as number;
     const body = req.body as any;
-    const pid = body.project_id ? Number(body.project_id) : 1;
-    const userId = (req as any).user?.id || 1;
-    const flow = await service.createFlow(pid, body, userId);
-    return { code: 200, message: 'Flow 创建成功', data: flow };
+    if (!body?.name) {
+      return ApiError.badRequest(reply, '缺少必填字段: name');
+    }
+    const flow = await service.createFlow(pid, body, uid(req));
+    return sendSuccess(reply, flow, 'Flow 画布创建成功', 201);
   });
 
-  app.post('/flows/:id/test', async (req) => {
+  app.put('/flows/:id', { preHandler: requireProjectAccess() }, async (req, reply) => {
+    const pid = req.projectId as number;
+    const { id } = req.params as { id: string };
+    const updated = await service.updateFlow(pid, Number(id), req.body as any);
+    if (!updated) return ApiError.notFound(reply, '营销 Flow 画布不存在');
+    return sendSuccess(reply, updated, 'Flow 画布更新成功');
+  });
+
+  app.delete('/flows/:id', { preHandler: requireProjectAccess() }, async (req, reply) => {
+    const pid = req.projectId as number;
+    const { id } = req.params as { id: string };
+    const deleted = await service.deleteFlow(pid, Number(id));
+    if (!deleted) return ApiError.notFound(reply, '营销 Flow 画布不存在');
+    return sendSuccess(reply, { deleted: true }, 'Flow 画布已删除');
+  });
+
+  app.post('/flows/:id/execute', { preHandler: requireProjectAccess() }, async (req, reply) => {
+    const pid = req.projectId as number;
+    const { id } = req.params as { id: string };
+    const body = (req.body as any) || {};
+    const userId = body.user_id || `USR_${Date.now()}`;
+    const result = await service.executeFlow(pid, Number(id), {
+      user_id: userId,
+      event_name: body.event_name,
+      properties: body.properties,
+      is_converted: body.is_converted,
+    });
+    return sendSuccess(reply, result, 'Flow 执行完成');
+  });
+
+  app.post('/flows/:id/test', async (req, reply) => {
     const { id } = req.params as { id: string };
     const result = await service.triggerTestFlow(Number(id), 'USR_TEST_88');
-    return { code: 200, message: 'Flow 测试触发成功', data: result };
+    return sendSuccess(reply, result, 'Flow 测试触发成功');
   });
 }

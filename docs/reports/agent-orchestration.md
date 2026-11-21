@@ -394,5 +394,43 @@
    - R3 阶段第三里程碑（A/B 假设计验与 Feature Flags 灰度分流）高质量交付。
    - 平台具备了数据驱动决策与科学实验的核心能力，支持产品功能小流量试错与全量放量的确定性评估。
 
+### 第 10 轮(2026-11-21)
+
+**迭代目标**: 落地 R3 阶段营销自动化画布执行引擎（Marketing Flow Automation Engine）与多触点推送闭环，打通事件触发、规则分支判定、A/B 智能分流与真实触达动作。
+
+| 派发任务 | 验收标准 |
+|---|---|
+| 后端: 营销 Flow 画布图拓扑引擎 (`parser.ts`, `service.ts`, `routes.ts`) | 实现 `MarketingFlowParser.parseAndExecute` DAG 拓扑图遍历、结构化/业务简写条件分支求值、一致性哈希分流与多渠道（飞书机器人、短信、站内弹窗、用户打标）动作执行；实现 Flow 完整 CRUD、租户隔离与全流程执行追踪（Trace Steps & Actions）；全量接入 `requireProjectAccess` 鉴权保护 |
+| 前端: 封装 `marketingApi` 并全面打通营销画布管理页 | 新建 `apps/web/src/services/marketing.ts`；重构 `pages/marketing/flow/index.tsx`，消除 mock 与 `setTimeout`，打通真实画布列表、新建 Flow、删除 Flow 与可视化模拟执行，实时展示触达动作和执行链路时间轴（Timeline Trace） |
+| 测试: 补充营销 Flow 执行引擎与 API 全链路单测 | 新增 `apps/api/tests/marketing-flow.test.ts`（包含条件规则比对、事件不匹配跳过、正负分支路由、哈希分流确定性、服务层触达与转化率统计更新、REST API 鉴权与 IDOR 拦截 11 个用例），100% 跑绿 |
+
+**验收结果**: 见下文
+
+### 第 10 轮验收结果（2026-11-21）
+
+1. **门禁验证**:
+   - `pnpm check`（Biome）：通过（0 errors）。
+   - `pnpm typecheck`：通过（全仓 5 个包 7 个任务 100% 通过）。
+   - `pnpm test`：通过（全仓 182 个用例全部通过，其中 API 14 个测试套件 145 个用例全绿）。
+   - `pnpm build`：通过（全仓 5 个包全量构建通过，Web 生产打包完成，耗时 4.69s）。
+
+2. **任务验收对照**:
+   - **营销自动化 Flow 拓扑执行引擎（`MarketingFlowParser` & `MarketingService`）**：
+     - [x] 构建完整的事件触发、条件判定分支（支持数值/文本/LTV/离场天数等操作符比对）、A/B 分流与动作执行状态机。
+     - [x] 多渠道触达适配：支持飞书机器人卡片推送、短信催付下发、站内弹窗调度及用户画像标签自动更新。
+     - [x] 自动记录触达流水，动态累加 `triggered_count`、`conversion_count` 并自动推导转化率（CR）。
+     - [x] 全面接入 `requireProjectAccess` 鉴权与租户 IDOR 防护。
+   - **前端营销 Flow 可视化与模拟执行打通**：
+     - [x] 新增 `apps/web/src/services/marketing.ts` 规范 API 客户端。
+     - [x] 消除 `pages/marketing/flow/index.tsx` 假数据，打通真实创建、删除、列表与抽屉画布设计器。
+     - [x] 抽屉设计器内支持“模拟运行测试”，实时下发执行并呈现详尽的节点判定链路时间轴与触达结果卡片。
+   - **测试覆盖**：
+     - [x] 新增 `apps/api/tests/marketing-flow.test.ts`（11 个测试用例），100% 覆盖 DAG 规则判定、哈希分流稳定性、触达统计累加与 REST API 权限。
+
+3. **结论**:
+   - R3 阶段第四里程碑（营销自动化 Flow 画布执行引擎与分流触达闭环）高质量交付。
+   - 平台成功构建了“CDP 人群分群 -> 智能预警监控 -> 异常归因诊断 -> A/B 科学分流 -> 营销自动化触达”的现代化全域数据与业务运营一体化闭环。
+
+
 
 

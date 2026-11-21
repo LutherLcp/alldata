@@ -1,4 +1,8 @@
+import { type FlowExecutionResponse, marketingApi } from '@/services/marketing';
+import { useGlobalStore } from '@/stores/global';
+import type { MarketingFlow } from '@alldata/shared/types';
 import {
+  CheckCircleOutlined,
   DeleteOutlined,
   PartitionOutlined,
   PlayCircleOutlined,
@@ -7,6 +11,7 @@ import {
   RightOutlined,
 } from '@ant-design/icons';
 import {
+  Alert,
   Button,
   Card,
   Col,
@@ -21,79 +26,111 @@ import {
   Statistic,
   Table,
   Tag,
+  Timeline,
   Typography,
   message,
 } from 'antd';
-/**
- * 智能营销自动化 Flow 画布与调度管理中心页
- */
 import { useCallback, useEffect, useState } from 'react';
 
 const { Text } = Typography;
 
 export default function MarketingFlowPage() {
-  const [flows, setFlows] = useState<any[]>([]);
+  const currentProject = useGlobalStore((s) => s.currentProject);
+  const projectId = currentProject?.id || 1;
+
+  const [flows, setFlows] = useState<MarketingFlow[]>([]);
   const [loading, setLoading] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [selectedFlow, setSelectedFlow] = useState<any>(null);
+  const [selectedFlow, setSelectedFlow] = useState<MarketingFlow | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [executing, setExecuting] = useState(false);
+  const [lastExecution, setLastExecution] = useState<FlowExecutionResponse | null>(null);
   const [form] = Form.useForm();
 
   const loadData = useCallback(async () => {
     setLoading(true);
-    setTimeout(() => {
-      setFlows([
-        {
-          id: 1,
-          name: '流失风险用户飞书卡片自动关怀 Flow',
-          description: '当高价值用户超过14天未访问时，自动触发飞书卡片与优惠券推送',
-          status: 2,
-          trigger_type: 'event',
-          nodes: [
-            { id: 'n1', type: 'trigger', label: '触发: 用户离场 > 14天' },
-            { id: 'n2', type: 'condition', label: '判断: LTV得分 >= 80' },
-            { id: 'n3', type: 'action', label: '触达: 发送飞书机器人关怀卡片' },
-          ],
-          triggered_count: 1250,
-          conversion_count: 312,
-          conversion_rate: 24.96,
-          created_at: '2026-07-25 14:00:00',
-        },
-        {
-          id: 2,
-          name: '新客首单未支付短信催付 Flow',
-          description: '加购商品30分钟内未提交订单，自动下发催付提醒',
-          status: 2,
-          trigger_type: 'event',
-          nodes: [
-            { id: 'n1', type: 'trigger', label: '触发: 提交订单' },
-            { id: 'n2', type: 'condition', label: '判断: 30分钟未支付' },
-            { id: 'n3', type: 'action', label: '触达: 触发短信催付通知' },
-          ],
-          triggered_count: 3400,
-          conversion_count: 1120,
-          conversion_rate: 32.94,
-          created_at: '2026-07-28 10:30:00',
-        },
-      ]);
+    try {
+      const data = await marketingApi.listFlows(projectId);
+      setFlows(data || []);
+      if (selectedFlow) {
+        const found = (data || []).find((f) => f.id === selectedFlow.id);
+        if (found) setSelectedFlow(found);
+      }
+    } catch (err) {
+      message.error((err as Error).message || '加载营销 Flow 失败');
+    } finally {
       setLoading(false);
-    }, 300);
-  }, []);
+    }
+  }, [projectId, selectedFlow]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
 
-  const handleOpenCanvas = (flow: any) => {
+  const handleOpenCanvas = (flow: MarketingFlow) => {
     setSelectedFlow(flow);
+    setLastExecution(null);
     setDrawerOpen(true);
   };
 
   const handleSave = async () => {
-    const v = await form.validateFields();
-    message.success(`营销 Flow "${v.name}" 已新建，可双击进入节点画布设计`);
-    setModalOpen(false);
-    loadData();
+    try {
+      const v = await form.validateFields();
+      await marketingApi.createFlow({
+        project_id: projectId,
+        name: v.name,
+        description: v.description,
+        trigger_type: v.trigger_type,
+      });
+      message.success(`营销 Flow "${v.name}" 已新建，可双击进入节点画布设计`);
+      setModalOpen(false);
+      form.resetFields();
+      loadData();
+    } catch (err) {
+      message.error((err as Error).message || '创建营销 Flow 失败');
+    }
+  };
+
+  const handleDelete = async (flowId: number) => {
+    try {
+      await marketingApi.deleteFlow(flowId, projectId);
+      message.success('工作流已成功删除');
+      loadData();
+    } catch (err) {
+      message.error((err as Error).message || '删除失败');
+    }
+  };
+
+  const handleSimulateExecute = async () => {
+    if (!selectedFlow) return;
+    setExecuting(true);
+    try {
+      const userId = `USR_${Math.floor(1000 + (Date.now() % 9000))}`;
+      const result = await marketingApi.executeFlow(
+        selectedFlow.id,
+        {
+          user_id: userId,
+          event_name: 'submit_order',
+          properties: {
+            ltv: 92,
+            days: 16,
+            timeout_min: 35,
+            converted: true,
+          },
+          is_converted: true,
+        },
+        projectId,
+      );
+      setLastExecution(result);
+      message.success(
+        `全流程自动化模拟执行完成！已下发 ${result.executed_actions.length} 个触达动作`,
+      );
+      loadData();
+    } catch (err) {
+      message.error((err as Error).message || '执行模拟失败');
+    } finally {
+      setExecuting(false);
+    }
   };
 
   return (
@@ -133,34 +170,53 @@ export default function MarketingFlowPage() {
             title: 'Flow 工作流名称',
             dataIndex: 'name',
             width: 260,
-            render: (t: string, r: any) => <a onClick={() => handleOpenCanvas(r)}>{t}</a>,
+            render: (t: string, r: MarketingFlow) => (
+              <Button type="link" style={{ padding: 0 }} onClick={() => handleOpenCanvas(r)}>
+                {t}
+              </Button>
+            ),
+          },
+          {
+            title: '触发机制',
+            dataIndex: 'trigger_type',
+            width: 110,
+            render: (t: string) => {
+              const map: Record<string, string> = {
+                event: '事件触发',
+                cron: '定时轮询',
+                cohort: '人群包准入',
+              };
+              return <Tag color="geekblue">{map[t] || t}</Tag>;
+            },
           },
           {
             title: '状态',
             dataIndex: 'status',
             width: 90,
             render: (s: number) => (
-              <Tag color={s === 2 ? 'success' : 'default'}>{s === 2 ? '运行中' : '草稿'}</Tag>
+              <Tag color={s === 2 ? 'success' : 'default'}>
+                {s === 2 ? '运行中' : s === 3 ? '已暂停' : '草稿'}
+              </Tag>
             ),
           },
           {
             title: '累计触达人数',
             dataIndex: 'triggered_count',
             width: 140,
-            render: (c: number) => <Tag color="blue">{c.toLocaleString()} 人</Tag>,
+            render: (c: number) => <Tag color="blue">{(c || 0).toLocaleString()} 人</Tag>,
           },
           {
             title: '转化人数',
             dataIndex: 'conversion_count',
             width: 120,
-            render: (c: number) => `${c} 人`,
+            render: (c: number) => `${c || 0} 人`,
           },
           {
             title: '转化率 (CR)',
             dataIndex: 'conversion_rate',
             width: 120,
             render: (r: number) => (
-              <Text style={{ fontWeight: 'bold', color: '#52c41a' }}>{r}%</Text>
+              <Text style={{ fontWeight: 'bold', color: '#52c41a' }}>{r || 0}%</Text>
             ),
           },
           { title: '创建时间', dataIndex: 'created_at', width: 180 },
@@ -168,7 +224,7 @@ export default function MarketingFlowPage() {
             title: '操作',
             key: 'action',
             width: 180,
-            render: (_: any, r: any) => (
+            render: (_: any, r: MarketingFlow) => (
               <Space>
                 <Button
                   type="link"
@@ -178,7 +234,7 @@ export default function MarketingFlowPage() {
                 >
                   设计画布
                 </Button>
-                <Popconfirm title="确认删除该工作流?" onConfirm={() => message.success('已删除')}>
+                <Popconfirm title="确认删除该工作流?" onConfirm={() => handleDelete(r.id)}>
                   <Button type="link" size="small" danger icon={<DeleteOutlined />}>
                     删除
                   </Button>
@@ -229,9 +285,8 @@ export default function MarketingFlowPage() {
             <Button
               icon={<PlayCircleOutlined />}
               type="primary"
-              onClick={() =>
-                message.success('模拟全流程自动化测试成功！已触发飞书消息并更新分析日志')
-              }
+              loading={executing}
+              onClick={handleSimulateExecute}
             >
               模拟运行测试
             </Button>
@@ -245,7 +300,7 @@ export default function MarketingFlowPage() {
                 <Card size="small">
                   <Statistic
                     title="当前触达总人数"
-                    value={selectedFlow.triggered_count}
+                    value={selectedFlow.triggered_count || 0}
                     suffix="人"
                   />
                 </Card>
@@ -254,7 +309,7 @@ export default function MarketingFlowPage() {
                 <Card size="small">
                   <Statistic
                     title="最终转化人数"
-                    value={selectedFlow.conversion_count}
+                    value={selectedFlow.conversion_count || 0}
                     suffix="人"
                     valueStyle={{ color: '#52c41a' }}
                   />
@@ -264,7 +319,7 @@ export default function MarketingFlowPage() {
                 <Card size="small">
                   <Statistic
                     title="整体营销 ROI 转化率"
-                    value={selectedFlow.conversion_rate}
+                    value={selectedFlow.conversion_rate || 0}
                     suffix="%"
                     valueStyle={{ color: '#722ed1' }}
                   />
@@ -272,12 +327,58 @@ export default function MarketingFlowPage() {
               </Col>
             </Row>
 
+            {lastExecution && (
+              <Alert
+                style={{ marginBottom: 20 }}
+                type={lastExecution.triggered ? 'success' : 'warning'}
+                message={`测试执行流水: 用户 [${lastExecution.user_id}] - ${
+                  lastExecution.triggered ? '触达成功' : '未触发'
+                }`}
+                description={
+                  <div style={{ marginTop: 8 }}>
+                    <div style={{ marginBottom: 8 }}>
+                      <strong>触达动作:</strong>{' '}
+                      {lastExecution.executed_actions.length === 0 ? (
+                        <Text type="secondary">无触发动作</Text>
+                      ) : (
+                        lastExecution.executed_actions.map((act) => (
+                          <Tag key={act.node_id} color="cyan">
+                            {act.channel}: {act.detail}
+                          </Tag>
+                        ))
+                      )}
+                    </div>
+                    <Timeline
+                      style={{ marginTop: 12 }}
+                      items={lastExecution.trace.map((step) => ({
+                        color:
+                          step.status === 'executed' || step.status === 'matched'
+                            ? 'green'
+                            : step.status === 'passed'
+                              ? 'blue'
+                              : 'gray',
+                        children: (
+                          <div>
+                            <Text strong>{step.label}</Text> ({step.type}) -{' '}
+                            <Tag>{step.status}</Tag>
+                            {step.detail && <span> {step.detail}</span>}
+                          </div>
+                        ),
+                      }))}
+                    />
+                  </div>
+                }
+                showIcon
+                icon={<CheckCircleOutlined />}
+              />
+            )}
+
             <Card
               title="Flow 节点连线控制树 (Flow Engine Graph)"
               style={{ minHeight: 350, backgroundColor: '#f8f9fa' }}
             >
               <Space size="large" align="center" style={{ flexWrap: 'wrap', padding: '20px 0' }}>
-                {selectedFlow.nodes.map((n: any, idx: number) => (
+                {(selectedFlow.nodes || []).map((n: any, idx: number) => (
                   <Space key={n.id}>
                     <Card
                       size="small"
@@ -288,7 +389,9 @@ export default function MarketingFlowPage() {
                             ? '2px solid #1890ff'
                             : n.type === 'condition'
                               ? '2px solid #faad14'
-                              : '2px solid #52c41a',
+                              : n.type === 'split'
+                                ? '2px solid #722ed1'
+                                : '2px solid #52c41a',
                       }}
                     >
                       <Tag
@@ -297,7 +400,9 @@ export default function MarketingFlowPage() {
                             ? 'blue'
                             : n.type === 'condition'
                               ? 'warning'
-                              : 'success'
+                              : n.type === 'split'
+                                ? 'purple'
+                                : 'success'
                         }
                         style={{ marginBottom: 8 }}
                       >
@@ -305,11 +410,13 @@ export default function MarketingFlowPage() {
                           ? '触发节点'
                           : n.type === 'condition'
                             ? '条件分支'
-                            : '触达动作'}
+                            : n.type === 'split'
+                              ? '分流节点'
+                              : '触达动作'}
                       </Tag>
                       <div style={{ fontWeight: 'bold' }}>{n.label}</div>
                     </Card>
-                    {idx < selectedFlow.nodes.length - 1 && (
+                    {idx < (selectedFlow.nodes?.length || 0) - 1 && (
                       <RightOutlined style={{ fontSize: 24, color: '#bfbfbf' }} />
                     )}
                   </Space>
