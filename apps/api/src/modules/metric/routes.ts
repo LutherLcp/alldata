@@ -44,4 +44,40 @@ export async function metricRoutes(app: FastifyInstance) {
     if (!removed) return ApiError.notFound(reply, '指标不存在');
     return sendSuccess(reply, null, '删除成功');
   });
+
+  // ─── Semantic Query & Presets ──────────────
+  app.post('/query', { preHandler: requireProjectAccess() }, async (req, reply) => {
+    const projectId = req.projectId as number;
+    const body = req.body as any;
+    if (!body || !Array.isArray(body.metric_ids) || body.metric_ids.length === 0) {
+      return ApiError.badRequest(reply, '缺少 metric_ids 数组');
+    }
+    if (!body.time_range || !body.time_range.start || !body.time_range.end) {
+      return ApiError.badRequest(reply, '缺少有效的 time_range');
+    }
+
+    try {
+      const result = await svc.executeSemanticQuery(projectId, {
+        project_id: projectId,
+        metric_ids: body.metric_ids.map(Number),
+        dimensions: body.dimensions,
+        time_range: body.time_range,
+        filters: body.filters,
+        limit: body.limit,
+      });
+      return sendSuccess(reply, result);
+    } catch (err: any) {
+      return ApiError.badRequest(reply, err.message);
+    }
+  });
+
+  app.post(
+    '/seed-presets',
+    { preHandler: [requireAuth, requireProjectAccess()] },
+    async (req, reply) => {
+      const projectId = req.projectId as number;
+      const list = await svc.seedPresetMetrics(projectId, uid(req));
+      return sendSuccess(reply, list, '预置指标初始化成功');
+    },
+  );
 }

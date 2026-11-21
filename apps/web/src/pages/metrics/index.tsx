@@ -1,6 +1,11 @@
 import { metricApi } from '@/services/metric';
 import { useGlobalStore } from '@/stores/global';
-import { DeleteOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons';
+import {
+  DeleteOutlined,
+  PlusOutlined,
+  ReloadOutlined,
+  ThunderboltOutlined,
+} from '@ant-design/icons';
 import { Button, Card, Form, Input, Modal, Popconfirm, Space, Table, Tag, message } from 'antd';
 /**
  * 指标管理页
@@ -40,13 +45,27 @@ export default function MetricsPage() {
     loadData();
   };
 
+  const handleSeedPresets = async () => {
+    if (!projectId) return;
+    try {
+      await metricApi.seedPresets(projectId);
+      message.success('预置标准指标已初始化');
+      loadData();
+    } catch {
+      message.error('初始化预置指标失败');
+    }
+  };
+
   return (
     <Card
-      title="指标管理"
+      title="指标管理与语义模型"
       extra={
         <Space>
           <Button icon={<ReloadOutlined />} onClick={loadData}>
             刷新
+          </Button>
+          <Button icon={<ThunderboltOutlined />} onClick={handleSeedPresets}>
+            初始化预置指标
           </Button>
           <Button
             type="primary"
@@ -68,18 +87,36 @@ export default function MetricsPage() {
         size="small"
         pagination={{ pageSize: 20 }}
         columns={[
-          { title: '指标名', dataIndex: 'name', width: 150 },
+          { title: '指标标识', dataIndex: 'name', width: 140 },
           {
-            title: '显示名',
+            title: '显示名称',
             dataIndex: 'display_name',
-            width: 150,
-            render: (v: string) => v || '-',
+            width: 160,
+            render: (v: string) => <strong>{v || '-'}</strong>,
           },
           {
-            title: '公式',
+            title: '语义公式与类型',
             dataIndex: 'formula',
-            width: 200,
-            render: (f: any) => <code>{JSON.stringify(f)}</code>,
+            width: 280,
+            render: (f: any) => {
+              if (!f || typeof f !== 'object') return '-';
+              if (f.type === 'composite') {
+                return (
+                  <Space size="small">
+                    <Tag color="purple">复合派生</Tag>
+                    <code>{f.expression || '-'}</code>
+                  </Space>
+                );
+              }
+              return (
+                <Space size="small">
+                  <Tag color="blue">基础原子</Tag>
+                  <span>
+                    {f.agg_type || 'count'}({f.event_name || '全部事件'})
+                  </span>
+                </Space>
+              );
+            },
           },
           {
             title: '状态',

@@ -204,3 +204,43 @@
 3. **结论**:
    - R2 阶段第二里程碑（OneID 身份图谱与前端 Dogfooding）验收完毕，成功消除未登录用户与登录用户行为断裂的分析断层。
    - 下一阶段演进方向：R2 阶段第三步 —— 统一指标语义层（Metric Semantic Layer）与指标模型沉淀。
+
+### 第 5 轮(2026-11-21)
+
+**迭代目标**: 落地 R2 阶段统一指标语义层（Metric Semantic Layer）与指标模型沉淀。
+
+| 派发任务 | 验收标准 |
+|---|---|
+| 后端: 语义层编译器与多维计算执行 | 实现 `SemanticCompiler` 支持原子指标（count/uv/sum/avg/max/min）与复合派生指标嵌套编译；实现 `POST /api/metrics/query` 多维查询与 `POST /api/metrics/seed-presets` 预置标准指标生成；支持 `x-project-id` 跨域兼容 |
+| 共享包: 扩展指标语义契约 | `packages/shared/src/types/index.ts` 新增 `SemanticQueryInput` 与 `SemanticQueryResult` |
+| 前端: 指标中心与语义化增强 | `apps/web/src/services/metric.ts` 补充 `query` 与 `seedPresets`；`apps/web/src/pages/metrics/index.tsx` 增加“初始化预置指标”按钮并对基础/复合公式进行可视化 Tag 渲染 |
+| 测试: 补充指标语义层单测与接口测试 | 新增 `apps/api/tests/metric-semantic.test.ts`（包含编译器逻辑、预置生成、语义查询、多租户参数校验共 5 个用例），100% 跑绿 |
+
+**验收结果**: 见下文
+
+### 第 5 轮验收结果（2026-11-21）
+
+1. **门禁验证**:
+   - `pnpm check`（Biome）：通过（0 errors）。
+   - `pnpm typecheck`：通过（全仓 5 个包 7 个任务 100% 通过）。
+   - `pnpm test`：通过（全仓 139 个用例全部通过，其中 API 9 个测试套件 102 个用例全绿）。
+   - `pnpm build`：通过（全仓 5 个包全量构建通过，Web 生产打包完成）。
+
+2. **任务验收对照**:
+   - **语义计算引擎（`SemanticCompiler`）**：
+     - [x] 多指标多事件折叠：利用 ClickHouse `*If` 条件聚合在单扫描中并发计算不同事件的多个基础指标。
+     - [x] 复合派生指标支持：自动解析表达式依赖，外层投影自动注入零除保护 `nullIf(..., 0)`。
+     - [x] 严格参数化与租户隔离：时间范围、项目 ID 与属性过滤均强制通过 ClickHouse 占位符传递。
+   - **服务与端点（`MetricService` & Routes）**：
+     - [x] `POST /api/metrics/query`：接收多指标 ID、维度、时间周期及过滤，返回结构化多维分析结果。
+     - [x] `POST /api/metrics/seed-presets`：一键初始化 DAU、页面浏览量 (PV)、交互点击量、人均浏览深度等企业级开箱即用指标。
+     - [x] `requireProjectAccess` 扩展支持 `x-project-id` 请求头。
+   - **前端呈现与交互**：
+     - [x] Web 指标服务层扩展支持语义查询与预置生成。
+     - [x] 指标管理页面提供“初始化预置指标”一键灌入，并智能展示“基础原子”与“复合派生”语义标签及公式详情。
+   - **测试覆盖**：
+     - [x] 新增 `apps/api/tests/metric-semantic.test.ts`，覆盖编译器多指标/复合指标、API 预置生成及语义查询全链路。
+
+3. **结论**:
+   - R2 阶段第三里程碑（统一指标语义层）圆满交付。从事件采集、ID对齐到统一业务口径指标沉淀的技术底座已完全闭环。
+   - 下一阶段演进方向：R2 阶段第四步 —— AI 智能归因引擎（AI Smart Attribution）与异常波动自动化根因诊断（Root-Cause Analysis）。

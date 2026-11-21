@@ -467,6 +467,36 @@ export interface MetricFormula {
   expression?: string; // 组合指标表达式
 }
 
+export interface SemanticQueryInput {
+  project_id: number;
+  metric_ids: number[];
+  dimensions?: string[];
+  time_range: {
+    start: string;
+    end: string;
+    granularity?: 'day' | 'hour' | 'week' | 'month';
+  };
+  filters?: Array<{
+    field: string;
+    op: string;
+    value: unknown;
+  }>;
+  limit?: number;
+}
+
+export interface SemanticQueryResult {
+  metrics: Array<{
+    id: number;
+    name: string;
+    display_name?: string;
+    alias: string;
+    type: 'simple' | 'composite';
+  }>;
+  dimensions: string[];
+  rows: Array<Record<string, unknown>>;
+  sql?: string;
+}
+
 // ============================================================
 // 数据资产域
 // ============================================================

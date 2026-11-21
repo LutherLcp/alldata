@@ -17,8 +17,8 @@ export function requireProjectAccess() {
     await requireAuth(request, reply);
     if (reply.sent) return;
 
-    // 兼容 header 与 query 两种传参方式（前端历史实现两者都在用）
-    const headerPid = request.headers['project-id'];
+    // 兼容 header 与 query 两种传参方式（前端历史实现两者都在用，同时支持 x-project-id）
+    const headerPid = request.headers['project-id'] ?? request.headers['x-project-id'];
     const queryPid = (request.query as { project_id?: unknown } | undefined)?.project_id;
     const raw = request.projectId ?? (headerPid !== undefined ? headerPid : queryPid);
     const projectId = Number(raw);

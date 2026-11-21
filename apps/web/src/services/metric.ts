@@ -9,4 +9,6 @@ export const metricApi = {
   create: (data: any) => post('/metrics', data),
   update: (id: number, data: any) => put(`/metrics/${id}`, data),
   delete: (id: number) => del(`/metrics/${id}`),
+  query: (data: any) => post('/metrics/query', data),
+  seedPresets: (projectId: number) => post('/metrics/seed-presets', { project_id: projectId }),
 };
