@@ -1,31 +1,58 @@
 import { requireProjectAccess } from '@/common/middleware/projectAccess';
 import { ApiError, sendSuccess } from '@/common/utils/response';
 /**
- * 数据血缘图谱与 GDPR 隐私安全 Fastify 路由
+ * 数据血缘拓扑、GDPR 隐私遗忘物理擦除与企业级脱敏审计 Fastify 路由
  *
- * project_id 一律取自经过成员校验的 request.projectId。
- * 此前该模块在缺失 project-id 头时回退到 project 1，导致任意登录用户
- * 可读取甚至物理擦除 project 1 的数据，已修正。
+ * 全量端点受 requireProjectAccess() 多租户守卫保护，彻底根治跨租户越权 (IDOR)。
  */
 import type { FastifyInstance } from 'fastify';
-import { executeGDPRForget, getProjectDataLineage } from './service';
+import { SecurityService } from './service';
 
 export async function securityRoutes(app: FastifyInstance) {
-  // 获取数据血缘拓扑结构
+  const svc = new SecurityService(app);
+  const uid = (r: any) => Number(r.user?.userId || 1);
+
+  // 获取真实数据血缘拓扑结构
   app.get('/lineage', { preHandler: requireProjectAccess() }, async (req, reply) => {
-    const lineage = await getProjectDataLineage(req.projectId as number);
+    const lineage = await svc.getProjectDataLineage(req.projectId as number);
     return sendSuccess(reply, lineage);
   });
 
-  // 执行 GDPR 一键遗忘物理擦除
+  // 执行 GDPR 一键遗忘物理擦除 (Right to be Forgotten)
   app.post('/gdpr/forget', { preHandler: requireProjectAccess() }, async (req, reply) => {
-    const { distinct_id } = req.body as { distinct_id: string };
+    const { distinct_id } = (req.body as { distinct_id: string }) || {};
 
-    if (!distinct_id) {
+    if (!distinct_id || !distinct_id.trim()) {
       return ApiError.badRequest(reply, 'distinct_id 不能为空');
     }
 
-    const res = await executeGDPRForget(distinct_id, req.projectId as number);
-    return sendSuccess(reply, res, 'GDPR 用户数据已成功物理擦除');
+    const ip = req.ip || '';
+    const userAgent = req.headers['user-agent'] || '';
+
+    const res = await svc.executeGDPRForget(
+      distinct_id.trim(),
+      req.projectId as number,
+      uid(req),
+      ip,
+      userAgent,
+    );
+
+    return sendSuccess(reply, res, 'GDPR 用户数据已成功物理擦除并存证');
+  });
+
+  // 获取项目的 GDPR 合规擦除历史审计档案
+  app.get('/gdpr/history', { preHandler: requireProjectAccess() }, async (req, reply) => {
+    const history = await svc.getGDPRHistory(req.projectId as number);
+    return sendSuccess(reply, history);
+  });
+
+  // 敏感字段动态脱敏预检工具
+  app.post('/masking/preview', { preHandler: requireProjectAccess() }, async (req, reply) => {
+    const { payload, rules } = (req.body as any) || {};
+    if (!payload || typeof payload !== 'object') {
+      return ApiError.badRequest(reply, '缺少待脱敏的 payload 对象');
+    }
+    const preview = svc.previewMasking(payload, rules || {});
+    return sendSuccess(reply, preview, '脱敏规则预检完成');
   });
 }
