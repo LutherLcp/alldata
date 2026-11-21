@@ -1,5 +1,7 @@
 /**
  * 指标管理路由
+ *
+ * 按 ID 的读写在服务层带 project_id 过滤，跨项目访问统一返回 404。
  */
 import { requireProjectAccess } from '@/common/middleware/projectAccess';
 import { ApiError, sendSuccess } from '@/common/utils/response';
@@ -16,9 +18,9 @@ export async function metricRoutes(app: FastifyInstance) {
     return sendSuccess(reply, await svc.listMetrics(projectId));
   });
 
-  app.get('/:id', { preHandler: requireAuth }, async (req, reply) => {
+  app.get('/:id', { preHandler: requireProjectAccess() }, async (req, reply) => {
     const { id } = req.params as { id: string };
-    const m = await svc.getMetric(Number(id));
+    const m = await svc.getMetric(Number(id), req.projectId as number);
     if (!m) return ApiError.notFound(reply, '指标不存在');
     return sendSuccess(reply, m);
   });
@@ -29,14 +31,17 @@ export async function metricRoutes(app: FastifyInstance) {
     return sendSuccess(reply, await svc.createMetric(body, uid(req)), '创建成功', 201);
   });
 
-  app.put('/:id', { preHandler: requireAuth }, async (req, reply) => {
+  app.put('/:id', { preHandler: requireProjectAccess() }, async (req, reply) => {
     const { id } = req.params as { id: string };
-    return sendSuccess(reply, await svc.updateMetric(Number(id), req.body as any), '更新成功');
+    const m = await svc.updateMetric(Number(id), req.projectId as number, req.body as any);
+    if (!m) return ApiError.notFound(reply, '指标不存在');
+    return sendSuccess(reply, m, '更新成功');
   });
 
-  app.delete('/:id', { preHandler: requireAuth }, async (req, reply) => {
+  app.delete('/:id', { preHandler: requireProjectAccess() }, async (req, reply) => {
     const { id } = req.params as { id: string };
-    await svc.deleteMetric(Number(id));
+    const removed = await svc.deleteMetric(Number(id), req.projectId as number);
+    if (!removed) return ApiError.notFound(reply, '指标不存在');
     return sendSuccess(reply, null, '删除成功');
   });
 }

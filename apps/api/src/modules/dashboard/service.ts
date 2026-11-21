@@ -1,5 +1,9 @@
 /**
  * 看板服务 — 文件夹/看板/报表/软链 CRUD
+ *
+ * 所有按 ID 的操作都带 project_id 过滤：路由层的成员校验只能保证「用户是请求头里
+ * 那个项目的成员」，不能阻止用别人的资源 ID 直接访问（IDOR），因此数据访问本身
+ * 必须限定在项目范围内。软链（SoftLink）自身没有 project_id，通过所属看板关联校验。
  */
 import type { FastifyInstance } from 'fastify';
 
@@ -43,12 +47,25 @@ export class DashboardService {
     });
   }
 
-  async updateFolder(id: number, data: { name?: string; sort_order?: number; parent_id?: number }) {
-    return this.prisma.dashboardFolder.update({ where: { id }, data });
+  async updateFolder(
+    id: number,
+    projectId: number,
+    data: { name?: string; sort_order?: number; parent_id?: number },
+  ) {
+    // updateMany 可同时带上 project_id 条件，未命中说明不属于该项目
+    const result = await this.prisma.dashboardFolder.updateMany({
+      where: { id, project_id: projectId },
+      data,
+    });
+    if (result.count === 0) return null;
+    return this.prisma.dashboardFolder.findUnique({ where: { id } });
   }
 
-  async deleteFolder(id: number) {
-    return this.prisma.dashboardFolder.delete({ where: { id } });
+  async deleteFolder(id: number, projectId: number) {
+    const result = await this.prisma.dashboardFolder.deleteMany({
+      where: { id, project_id: projectId },
+    });
+    return result.count > 0;
   }
 
   // ─── 看板 ──────────────────────────────────────────
@@ -63,9 +80,9 @@ export class DashboardService {
     });
   }
 
-  async getDashboard(id: number) {
-    return this.prisma.dashboard.findUnique({
-      where: { id },
+  async getDashboard(id: number, projectId: number) {
+    return this.prisma.dashboard.findFirst({
+      where: { id, project_id: projectId },
       include: {
         reports: { orderBy: { created_at: 'asc' } },
         soft_links: { where: { status: 1 } },
@@ -93,6 +110,7 @@ export class DashboardService {
 
   async updateDashboard(
     id: number,
+    projectId: number,
     data: {
       name?: string;
       description?: string;
@@ -103,17 +121,21 @@ export class DashboardService {
     },
     userId: number,
   ) {
-    return this.prisma.dashboard.update({
-      where: { id },
+    const result = await this.prisma.dashboard.updateMany({
+      where: { id, project_id: projectId },
       data: { ...data, updated_by: userId },
     });
+    if (result.count === 0) return null;
+    return this.prisma.dashboard.findUnique({ where: { id } });
   }
 
-  async archiveDashboard(id: number) {
-    return this.prisma.dashboard.update({
-      where: { id },
+  async archiveDashboard(id: number, projectId: number) {
+    const result = await this.prisma.dashboard.updateMany({
+      where: { id, project_id: projectId },
       data: { status: 2 },
     });
+    if (result.count === 0) return null;
+    return this.prisma.dashboard.findUnique({ where: { id } });
   }
 
   // ─── 报表 ──────────────────────────────────────────
@@ -139,6 +161,7 @@ export class DashboardService {
 
   async updateReport(
     id: number,
+    projectId: number,
     data: {
       name?: string;
       chart_type?: string;
@@ -148,16 +171,37 @@ export class DashboardService {
       position?: any;
     },
   ) {
-    return this.prisma.report.update({ where: { id }, data });
+    const result = await this.prisma.report.updateMany({
+      where: { id, project_id: projectId },
+      data,
+    });
+    if (result.count === 0) return null;
+    return this.prisma.report.findUnique({ where: { id } });
   }
 
-  async deleteReport(id: number) {
-    return this.prisma.report.delete({ where: { id } });
+  async deleteReport(id: number, projectId: number) {
+    const result = await this.prisma.report.deleteMany({
+      where: { id, project_id: projectId },
+    });
+    return result.count > 0;
   }
 
   // ─── 软链 ──────────────────────────────────────────
 
-  async createSoftLink(dashboardId: number, userId: number, name?: string, expireAt?: Date) {
+  async createSoftLink(
+    dashboardId: number,
+    projectId: number,
+    userId: number,
+    name?: string,
+    expireAt?: Date,
+  ) {
+    // SoftLink 自身没有 project_id，先确认所属看板属于该项目
+    const dashboard = await this.prisma.dashboard.findFirst({
+      where: { id: dashboardId, project_id: projectId },
+      select: { id: true },
+    });
+    if (!dashboard) return null;
+
     const token = crypto.randomUUID().replace(/-/g, '');
     return this.prisma.softLink.create({
       data: { dashboard_id: dashboardId, token, name, expire_at: expireAt, created_by: userId },
@@ -171,7 +215,13 @@ export class DashboardService {
     });
   }
 
-  async revokeSoftLink(id: number) {
-    return this.prisma.softLink.update({ where: { id }, data: { status: 2 } });
+  async revokeSoftLink(id: number, projectId: number) {
+    // 通过所属看板关联校验项目归属
+    const result = await this.prisma.softLink.updateMany({
+      where: { id, dashboard: { project_id: projectId } },
+      data: { status: 2 },
+    });
+    if (result.count === 0) return null;
+    return this.prisma.softLink.findUnique({ where: { id } });
   }
 }

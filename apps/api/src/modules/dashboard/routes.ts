@@ -1,5 +1,8 @@
 /**
  * 看板模块路由
+ *
+ * 按 ID 的读写在服务层带 project_id 过滤，跨项目访问统一返回 404。
+ * 例外：GET /soft-links/:token 是分享链接的公开读取入口，凭 token 访问，不做项目校验。
  */
 import { requireProjectAccess } from '@/common/middleware/projectAccess';
 import { ApiError, sendSuccess } from '@/common/utils/response';
@@ -24,15 +27,17 @@ export async function dashboardRoutes(app: FastifyInstance) {
     return sendSuccess(reply, folder, '创建成功', 201);
   });
 
-  app.put('/folders/:id', { preHandler: requireAuth }, async (req, reply) => {
+  app.put('/folders/:id', { preHandler: requireProjectAccess() }, async (req, reply) => {
     const { id } = req.params as { id: string };
-    const folder = await svc.updateFolder(Number(id), req.body as any);
+    const folder = await svc.updateFolder(Number(id), req.projectId as number, req.body as any);
+    if (!folder) return ApiError.notFound(reply, '文件夹不存在');
     return sendSuccess(reply, folder, '更新成功');
   });
 
-  app.delete('/folders/:id', { preHandler: requireAuth }, async (req, reply) => {
+  app.delete('/folders/:id', { preHandler: requireProjectAccess() }, async (req, reply) => {
     const { id } = req.params as { id: string };
-    await svc.deleteFolder(Number(id));
+    const removed = await svc.deleteFolder(Number(id), req.projectId as number);
+    if (!removed) return ApiError.notFound(reply, '文件夹不存在');
     return sendSuccess(reply, null, '删除成功');
   });
 
@@ -46,9 +51,9 @@ export async function dashboardRoutes(app: FastifyInstance) {
     return sendSuccess(reply, list);
   });
 
-  app.get('/:id', { preHandler: requireAuth }, async (req, reply) => {
+  app.get('/:id', { preHandler: requireProjectAccess() }, async (req, reply) => {
     const { id } = req.params as { id: string };
-    const dashboard = await svc.getDashboard(Number(id));
+    const dashboard = await svc.getDashboard(Number(id), req.projectId as number);
     if (!dashboard) return ApiError.notFound(reply, '看板不存在');
     return sendSuccess(reply, dashboard);
   });
@@ -59,15 +64,22 @@ export async function dashboardRoutes(app: FastifyInstance) {
     return sendSuccess(reply, dashboard, '创建成功', 201);
   });
 
-  app.put('/:id', { preHandler: requireAuth }, async (req, reply) => {
+  app.put('/:id', { preHandler: requireProjectAccess() }, async (req, reply) => {
     const { id } = req.params as { id: string };
-    const dashboard = await svc.updateDashboard(Number(id), req.body as any, uid(req));
+    const dashboard = await svc.updateDashboard(
+      Number(id),
+      req.projectId as number,
+      req.body as any,
+      uid(req),
+    );
+    if (!dashboard) return ApiError.notFound(reply, '看板不存在');
     return sendSuccess(reply, dashboard, '更新成功');
   });
 
-  app.delete('/:id', { preHandler: requireAuth }, async (req, reply) => {
+  app.delete('/:id', { preHandler: requireProjectAccess() }, async (req, reply) => {
     const { id } = req.params as { id: string };
-    await svc.archiveDashboard(Number(id));
+    const archived = await svc.archiveDashboard(Number(id), req.projectId as number);
+    if (!archived) return ApiError.notFound(reply, '看板不存在');
     return sendSuccess(reply, null, '归档成功');
   });
 
@@ -78,27 +90,32 @@ export async function dashboardRoutes(app: FastifyInstance) {
     return sendSuccess(reply, report, '创建成功', 201);
   });
 
-  app.put('/reports/:id', { preHandler: requireAuth }, async (req, reply) => {
+  app.put('/reports/:id', { preHandler: requireProjectAccess() }, async (req, reply) => {
     const { id } = req.params as { id: string };
-    const report = await svc.updateReport(Number(id), req.body as any);
+    const report = await svc.updateReport(Number(id), req.projectId as number, req.body as any);
+    if (!report) return ApiError.notFound(reply, '报表不存在');
     return sendSuccess(reply, report, '更新成功');
   });
 
-  app.delete('/reports/:id', { preHandler: requireAuth }, async (req, reply) => {
+  app.delete('/reports/:id', { preHandler: requireProjectAccess() }, async (req, reply) => {
     const { id } = req.params as { id: string };
-    await svc.deleteReport(Number(id));
+    const removed = await svc.deleteReport(Number(id), req.projectId as number);
+    if (!removed) return ApiError.notFound(reply, '报表不存在');
     return sendSuccess(reply, null, '删除成功');
   });
 
   // ─── 软链 ────────────────────────────────
-  app.post('/soft-links', { preHandler: requireAuth }, async (req, reply) => {
+  app.post('/soft-links', { preHandler: requireProjectAccess() }, async (req, reply) => {
     const { dashboard_id, name, expire_at } = req.body as any;
+    if (!dashboard_id) return ApiError.badRequest(reply, '缺少必填字段 (dashboard_id)');
     const link = await svc.createSoftLink(
-      dashboard_id,
+      Number(dashboard_id),
+      req.projectId as number,
       uid(req),
       name,
       expire_at ? new Date(expire_at) : undefined,
     );
+    if (!link) return ApiError.notFound(reply, '看板不存在');
     return sendSuccess(reply, link, '创建成功', 201);
   });
 
@@ -111,9 +128,10 @@ export async function dashboardRoutes(app: FastifyInstance) {
     return sendSuccess(reply, link);
   });
 
-  app.delete('/soft-links/:id', { preHandler: requireAuth }, async (req, reply) => {
+  app.delete('/soft-links/:id', { preHandler: requireProjectAccess() }, async (req, reply) => {
     const { id } = req.params as { id: string };
-    await svc.revokeSoftLink(Number(id));
+    const revoked = await svc.revokeSoftLink(Number(id), req.projectId as number);
+    if (!revoked) return ApiError.notFound(reply, '链接不存在');
     return sendSuccess(reply, null, '已取消');
   });
 }
