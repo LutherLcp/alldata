@@ -1,10 +1,23 @@
 /**
- * 数据资产服务 — 数据表/数据集/属性/分类 CRUD
+ * 数据资产服务 — 数据表/数据集/属性/分类 CRUD + 质量巡检引擎 + 全链路血缘图谱
  *
- * 所有按 ID 的操作都带 project_id 过滤，避免跨租户按 ID 直接访问（IDOR）。
- * DataTableColumn 自身没有 project_id，通过所属数据表关联校验项目归属。
+ * 所有操作均带 project_id 严格隔离（防止跨租户越权 IDOR）。
  */
 import type { FastifyInstance } from 'fastify';
+import {
+  type ImpactAnalysisResult,
+  type LineageGraph,
+  type UpstreamProvenanceResult,
+  buildLineageGraph,
+  getImpactAnalysis,
+  getUpstreamProvenance,
+} from './lineage';
+import {
+  type ProjectQualityOverview,
+  type TableQualityProfile,
+  calculateProjectQualityOverview,
+  calculateTableQuality,
+} from './quality';
 
 export class DataAssetService {
   private prisma;
@@ -47,7 +60,6 @@ export class DataAssetService {
     projectId: number,
     data: { display_name?: string; description?: string; status?: number },
   ) {
-    // updateMany 可同时带上 project_id 条件，未命中说明不属于该项目
     const result = await this.prisma.dataTable.updateMany({
       where: { id, project_id: projectId },
       data,
@@ -65,7 +77,6 @@ export class DataAssetService {
 
   // ─── 数据表字段 ──────────────────────────
   async listColumns(tableId: number, projectId: number) {
-    // 字段表没有 project_id，先确认所属数据表属于该项目
     const table = await this.prisma.dataTable.findFirst({
       where: { id: tableId, project_id: projectId },
       select: { id: true },
@@ -90,7 +101,6 @@ export class DataAssetService {
     },
     projectId: number,
   ) {
-    // 先确认所属数据表属于该项目
     const table = await this.prisma.dataTable.findFirst({
       where: { id: data.datatable_id, project_id: projectId },
       select: { id: true },
@@ -101,7 +111,6 @@ export class DataAssetService {
   }
 
   async deleteColumn(id: number, projectId: number) {
-    // 通过所属数据表关联校验项目归属
     const result = await this.prisma.dataTableColumn.deleteMany({
       where: { id, datatable: { project_id: projectId } },
     });
@@ -235,5 +244,95 @@ export class DataAssetService {
       where: { id, project_id: projectId },
     });
     return result.count > 0;
+  }
+
+  // ─── 数据资产质量巡检 (Data Asset Quality Profiler) ─────
+  async getQualityOverview(projectId: number): Promise<ProjectQualityOverview> {
+    const tables = await this.prisma.dataTable.findMany({
+      where: { project_id: projectId },
+      include: { columns: true },
+      orderBy: { created_at: 'desc' },
+    });
+
+    return calculateProjectQualityOverview(projectId, tables);
+  }
+
+  async getTableQuality(tableId: number, projectId: number): Promise<TableQualityProfile | null> {
+    const table = await this.prisma.dataTable.findFirst({
+      where: { id: tableId, project_id: projectId },
+      include: { columns: { orderBy: { sort_order: 'asc' } } },
+    });
+
+    if (!table) return null;
+    return calculateTableQuality(table, table.columns);
+  }
+
+  async scanQuality(projectId: number): Promise<ProjectQualityOverview> {
+    return this.getQualityOverview(projectId);
+  }
+
+  // ─── 全链路血缘图谱与影响面分析 (Data Lineage & Impact) ───
+  async getLineageGraph(projectId: number): Promise<LineageGraph> {
+    const [tables, datasets, metrics, dashboards, warnings] = await Promise.all([
+      this.prisma.dataTable.findMany({
+        where: { project_id: projectId },
+        select: { id: true, name: true, display_name: true, type: true, row_count: true },
+      }),
+      this.prisma.dataset.findMany({
+        where: { project_id: projectId },
+        select: {
+          id: true,
+          name: true,
+          display_name: true,
+          type: true,
+          sql_content: true,
+          config: true,
+        },
+      }),
+      this.prisma.metric.findMany({
+        where: { project_id: projectId },
+        select: { id: true, name: true, display_name: true, formula: true, category_id: true },
+      }),
+      this.prisma.dashboard.findMany({
+        where: { project_id: projectId },
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          reports: {
+            select: { id: true, name: true, query_config: true, sql_content: true },
+          },
+        },
+      }),
+      this.prisma.warning.findMany({
+        where: { project_id: projectId },
+        select: { id: true, name: true, status: true, monitor_rules: true },
+      }),
+    ]);
+
+    return buildLineageGraph({
+      tables,
+      datasets,
+      metrics,
+      dashboards,
+      warnings,
+    });
+  }
+
+  async getImpactAnalysis(nodeId: string, projectId: number): Promise<ImpactAnalysisResult | null> {
+    const graph = await this.getLineageGraph(projectId);
+    const exists = graph.nodes.some((n) => n.id === nodeId);
+    if (!exists) return null;
+    return getImpactAnalysis(graph, nodeId);
+  }
+
+  async getUpstreamProvenance(
+    nodeId: string,
+    projectId: number,
+  ): Promise<UpstreamProvenanceResult | null> {
+    const graph = await this.getLineageGraph(projectId);
+    const exists = graph.nodes.some((n) => n.id === nodeId);
+    if (!exists) return null;
+    return getUpstreamProvenance(graph, nodeId);
   }
 }

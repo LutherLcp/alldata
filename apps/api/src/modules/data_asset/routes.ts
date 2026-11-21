@@ -1,12 +1,13 @@
 /**
  * 数据资产路由
- * 数据表:   GET/POST/PUT/DELETE /api/assets/tables
- * 数据集:   GET/POST/PUT/DELETE /api/assets/datasets
- * 属性:     GET/POST/PUT/DELETE /api/assets/attributes
- * 分类:     GET/POST/DELETE      /api/assets/categories
+ * 数据表:       GET/POST/PUT/DELETE /api/assets/tables
+ * 数据集:       GET/POST/PUT/DELETE /api/assets/datasets
+ * 属性:         GET/POST/PUT/DELETE /api/assets/attributes
+ * 分类:         GET/POST/DELETE      /api/assets/categories
+ * 质量巡检:     GET /api/assets/quality/overview, GET /api/assets/quality/tables/:id, POST /api/assets/quality/scan
+ * 全链路血缘:   GET /api/assets/lineage, GET /api/assets/lineage/impact, GET /api/assets/lineage/provenance
  *
- * 按 ID 的读写在服务层带 project_id 过滤（字段等子资源通过所属数据表关联校验），
- * 跨项目访问统一返回 404。
+ * 所有按 ID 的读写在服务层带 project_id 过滤，防范越权 IDOR。
  */
 import { requireProjectAccess } from '@/common/middleware/projectAccess';
 import { ApiError, sendSuccess } from '@/common/utils/response';
@@ -17,6 +18,50 @@ import { DataAssetService } from './service';
 export async function dataAssetRoutes(app: FastifyInstance) {
   const svc = new DataAssetService(app);
   const uid = (r: any) => Number(r.user.userId);
+
+  // ─── 质量巡检 (Data Quality Profiler) ───
+  app.get('/quality/overview', { preHandler: requireProjectAccess() }, async (req, reply) => {
+    const overview = await svc.getQualityOverview(req.projectId as number);
+    return sendSuccess(reply, overview);
+  });
+
+  app.get('/quality/tables/:id', { preHandler: requireProjectAccess() }, async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const detail = await svc.getTableQuality(Number(id), req.projectId as number);
+    if (!detail) return ApiError.notFound(reply, '数据表不存在');
+    return sendSuccess(reply, detail);
+  });
+
+  app.post('/quality/scan', { preHandler: requireProjectAccess() }, async (req, reply) => {
+    const overview = await svc.scanQuality(req.projectId as number);
+    return sendSuccess(reply, overview, '全库质量巡检完成');
+  });
+
+  // ─── 全链路血缘 (Data Lineage & Impact) ───
+  app.get('/lineage', { preHandler: requireProjectAccess() }, async (req, reply) => {
+    const graph = await svc.getLineageGraph(req.projectId as number);
+    return sendSuccess(reply, graph);
+  });
+
+  app.get('/lineage/impact', { preHandler: requireProjectAccess() }, async (req, reply) => {
+    const q = req.query as { node_id?: string };
+    if (!q.node_id) {
+      return ApiError.badRequest(reply, '缺少必填参数 node_id');
+    }
+    const impact = await svc.getImpactAnalysis(q.node_id, req.projectId as number);
+    if (!impact) return ApiError.notFound(reply, '血缘节点不存在');
+    return sendSuccess(reply, impact);
+  });
+
+  app.get('/lineage/provenance', { preHandler: requireProjectAccess() }, async (req, reply) => {
+    const q = req.query as { node_id?: string };
+    if (!q.node_id) {
+      return ApiError.badRequest(reply, '缺少必填参数 node_id');
+    }
+    const provenance = await svc.getUpstreamProvenance(q.node_id, req.projectId as number);
+    if (!provenance) return ApiError.notFound(reply, '血缘节点不存在');
+    return sendSuccess(reply, provenance);
+  });
 
   // ─── 数据表 ──────────────────────────────
   app.get('/tables', { preHandler: requireProjectAccess() }, async (req, reply) => {

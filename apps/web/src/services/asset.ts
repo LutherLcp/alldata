@@ -1,9 +1,9 @@
 /**
- * 数据资产 API 服务 — 数据表/数据集/属性/分类
+ * 数据资产 API 服务 — 数据表/数据集/属性/分类/全链路血缘/数据质量巡检
  */
 import { del, get, post, put } from './request';
 
-// ─── 类型定义 ─────────────────────────────
+// ─── 基础资产类型 ─────────────────────────
 export interface DataTableItem {
   id: number;
   project_id: number;
@@ -71,6 +71,119 @@ export interface CategoryItem {
   created_at: string;
 }
 
+// ─── 数据质量巡检类型 ───────────────────────
+export interface ColumnQualityProfile {
+  id: number;
+  name: string;
+  displayName: string | null;
+  dataType: string;
+  isDimension: boolean;
+  hasDescription: boolean;
+  qualityStatus: 'GOOD' | 'WARNING' | 'CRITICAL';
+  issueDescription?: string;
+}
+
+export interface TableQualityProfile {
+  tableId: number;
+  tableName: string;
+  displayName: string | null;
+  tableType: string;
+  healthScore: number;
+  grade: 'A+' | 'A' | 'B' | 'C' | 'D';
+  completenessScore: number;
+  freshnessScore: number;
+  validityScore: number;
+  rowCount: number;
+  columnCount: number;
+  updatedAt: string;
+  anomalies: string[];
+  columns?: ColumnQualityProfile[];
+}
+
+export interface ProjectQualityOverview {
+  projectId: number;
+  totalTables: number;
+  totalColumns: number;
+  avgHealthScore: number;
+  gradeDistribution: {
+    'A+': number;
+    A: number;
+    B: number;
+    C: number;
+    D: number;
+  };
+  healthyTableCount: number;
+  atRiskTableCount: number;
+  topAnomalies: { issue: string; count: number }[];
+  tables: Array<Omit<TableQualityProfile, 'columns'>>;
+  evaluatedAt: string;
+}
+
+// ─── 全链路血缘与影响面类型 ──────────────────
+export type LineageNodeType = 'TABLE' | 'DATASET' | 'METRIC' | 'DASHBOARD' | 'WARNING';
+export type LineageEdgeType = 'EXTRACTS_FROM' | 'CALCULATES' | 'DISPLAYS' | 'ALERTS_ON';
+
+export interface LineageNode {
+  id: string;
+  rawId: number;
+  type: LineageNodeType;
+  name: string;
+  displayName: string;
+  meta?: Record<string, any>;
+}
+
+export interface LineageEdge {
+  id: string;
+  source: string;
+  target: string;
+  type: LineageEdgeType;
+  label?: string;
+}
+
+export interface LineageGraph {
+  nodes: LineageNode[];
+  edges: LineageEdge[];
+  summary: {
+    tableCount: number;
+    datasetCount: number;
+    metricCount: number;
+    dashboardCount: number;
+    warningCount: number;
+    totalEdges: number;
+  };
+}
+
+export interface ImpactAnalysisResult {
+  targetNode: LineageNode;
+  impactedNodes: Array<{
+    node: LineageNode;
+    depth: number;
+    path: string[];
+  }>;
+  summary: {
+    totalImpacted: number;
+    affectedDashboards: number;
+    affectedMetrics: number;
+    affectedWarnings: number;
+    riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  };
+}
+
+export interface UpstreamProvenanceResult {
+  targetNode: LineageNode;
+  upstreamNodes: Array<{
+    node: LineageNode;
+    depth: number;
+    path: string[];
+  }>;
+  summary: {
+    totalUpstream: number;
+    sourceTablesCount: number;
+    transformationsCount: number;
+    maxDepth: number;
+  };
+}
+
 // ─── API ─────────────────────────────────
 export const tableApi = {
   list: (projectId: number, type?: string) =>
@@ -133,4 +246,21 @@ export const categoryApi = {
   create: (data: { project_id: number; parent_id?: number; name: string; type: string }) =>
     post<CategoryItem>('/assets/categories', data),
   delete: (id: number) => del(`/assets/categories/${id}`),
+};
+
+export const qualityApi = {
+  getOverview: (projectId: number) =>
+    get<ProjectQualityOverview>('/assets/quality/overview', { project_id: projectId }),
+  getTableQuality: (tableId: number) =>
+    get<TableQualityProfile>(`/assets/quality/tables/${tableId}`),
+  scanQuality: (projectId: number) =>
+    post<ProjectQualityOverview>(`/assets/quality/scan?project_id=${projectId}`, {}),
+};
+
+export const lineageApi = {
+  getGraph: (projectId: number) => get<LineageGraph>('/assets/lineage', { project_id: projectId }),
+  getImpact: (nodeId: string) =>
+    get<ImpactAnalysisResult>('/assets/lineage/impact', { node_id: nodeId }),
+  getProvenance: (nodeId: string) =>
+    get<UpstreamProvenanceResult>('/assets/lineage/provenance', { node_id: nodeId }),
 };
