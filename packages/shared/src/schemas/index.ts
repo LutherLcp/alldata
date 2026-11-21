@@ -156,8 +156,23 @@ export const analysisQuerySchema = z.object({
 });
 
 // ============================================================
-// 埋点管理 Schema
+// 埋点管理与事件采集 Schema
 // ============================================================
+
+export const ingestEventItemSchema = z.object({
+  event_name: z.string().min(1).max(200),
+  event_time: z.union([z.number(), z.string()]).optional(),
+  distinct_id: z.string().optional(),
+  anonymous_id: z.string().optional(),
+  user_id: z.union([z.string(), z.number()]).optional(),
+  properties: z.record(z.unknown()).default({}),
+});
+
+export const ingestBatchSchema = z.object({
+  project_id: z.number().int().positive().optional(),
+  events: z.array(ingestEventItemSchema).min(1),
+  sent_at: z.number().optional(),
+});
 
 export const storyCreateSchema = z.object({
   name: z.string().min(1).max(300),

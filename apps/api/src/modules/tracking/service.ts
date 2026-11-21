@@ -4,6 +4,7 @@
  * 所有按 ID 的操作都带 project_id 过滤，避免跨租户按 ID 直接访问（IDOR）。
  * EventProperty 自身没有 project_id，通过所属事件关联校验项目归属。
  */
+import { getClickHouseClient } from '@/common/utils/clickhouse';
 import type { FastifyInstance } from 'fastify';
 
 export class TrackingService {
@@ -160,5 +161,85 @@ export class TrackingService {
       where: { id, event: { project_id: projectId } },
     });
     return result.count > 0;
+  }
+
+  /**
+   * 接收客户端批量采集事件并持久化写入 ClickHouse
+   */
+  async ingestEvents(
+    projectId: number,
+    rawEvents: Array<{
+      event_name: string;
+      event_time?: number | string;
+      distinct_id?: string;
+      anonymous_id?: string;
+      user_id?: number | string;
+      properties?: Record<string, unknown>;
+    }>,
+    _context: { ip?: string; userAgent?: string } = {},
+  ): Promise<{ received: number; accepted: number }> {
+    // 1. 验证项目是否存在且有效
+    const project = await this.prisma.project.findFirst({
+      where: { id: projectId, status: 1 },
+      select: { id: true },
+    });
+    if (!project) {
+      throw new Error(`Project ${projectId} not found or inactive`);
+    }
+
+    if (!rawEvents || rawEvents.length === 0) {
+      return { received: 0, accepted: 0 };
+    }
+
+    // 2. 规范化并清洗事件
+    const now = new Date();
+    const rows = rawEvents.map((e) => {
+      const eventTime = e.event_time ? new Date(e.event_time) : now;
+      const properties = e.properties || {};
+
+      const os = (properties.$os as string) || '';
+      const browser = (properties.$browser as string) || '';
+      const deviceType =
+        (properties.$device_type as string) ||
+        (os === 'iOS' || os === 'Android' ? 'mobile' : 'desktop');
+
+      let userId = 0;
+      if (typeof e.user_id === 'number') {
+        userId = e.user_id;
+      } else if (typeof e.user_id === 'string' && /^\d+$/.test(e.user_id)) {
+        userId = Number(e.user_id);
+      }
+
+      return {
+        project_id: projectId,
+        event_name: e.event_name,
+        user_id: userId,
+        event_time: eventTime.toISOString().slice(0, 19).replace('T', ' '),
+        properties: JSON.stringify(properties),
+        device_type: deviceType,
+        os: os,
+        browser: browser,
+        country: (properties.$country as string) || '',
+        region: (properties.$region as string) || '',
+        dt: eventTime.toISOString().slice(0, 10),
+      };
+    });
+
+    // 3. 批量写入 ClickHouse events 表
+    try {
+      const ch = getClickHouseClient();
+      await ch.insert({
+        table: 'events',
+        values: rows,
+        format: 'JSONEachRow',
+      });
+    } catch (err) {
+      this.app.log.warn(
+        { err: (err as Error).message },
+        '[TrackingService] ClickHouse batch insert skipped or failed',
+      );
+    }
+
+    return { received: rawEvents.length, accepted: rows.length };
   }
 }

@@ -110,4 +110,49 @@ export async function trackingRoutes(app: FastifyInstance) {
     if (!removed) return ApiError.notFound(reply, '属性不存在');
     return sendSuccess(reply, null, '删除成功');
   });
+
+  // ─── Event Ingestion (公共事件采集端点) ───────
+  app.post('/collect', async (req, reply) => {
+    let body = req.body as any;
+    if (typeof body === 'string') {
+      try {
+        body = JSON.parse(body);
+      } catch {
+        return ApiError.badRequest(reply, 'Invalid JSON body');
+      }
+    }
+
+    if (!body || typeof body !== 'object') {
+      return ApiError.badRequest(reply, 'Missing request body');
+    }
+
+    const projectIdRaw =
+      body.project_id ??
+      req.headers['x-project-id'] ??
+      req.headers['project-id'] ??
+      (req.query as any)?.project_id;
+
+    const projectId = Number(projectIdRaw);
+    if (!Number.isInteger(projectId) || projectId <= 0) {
+      return ApiError.badRequest(reply, '缺少或非法的 project_id');
+    }
+
+    const rawEvents = Array.isArray(body.events) ? body.events : [body];
+    if (rawEvents.length === 0 || !rawEvents[0].event_name) {
+      return ApiError.badRequest(reply, '缺少事件数据或 event_name');
+    }
+
+    try {
+      const result = await svc.ingestEvents(projectId, rawEvents, {
+        ip: req.ip,
+        userAgent: req.headers['user-agent'] as string,
+      });
+      return sendSuccess(reply, result, 'Events ingested successfully');
+    } catch (err: any) {
+      if (err.message?.includes('not found')) {
+        return ApiError.notFound(reply, err.message);
+      }
+      return ApiError.internal(reply, err.message);
+    }
+  });
 }
