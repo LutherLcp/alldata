@@ -37,6 +37,7 @@ Thumbs.db
 
 # Testing
 .nyc_output
+*.timestamp-*.mjs
 
 # Database
 *.db

@@ -13,6 +13,9 @@ export default defineConfig({
     react(),
     tailwindcss(), // Tailwind CSS v4 — 替代 postcss + tailwindcss 插件
   ],
+  css: {
+    postcss: {},
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
@@ -44,10 +47,6 @@ export default defineConfig({
         manualChunks: {
           // 核心框架
           'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-          // UI 组件库
-          'vendor-antd': ['antd', '@ant-design/icons'],
-          // 图表 (ECharts)
-          'vendor-echarts': ['echarts', 'echarts-for-react'],
           // 状态管理 + 服务端状态
           'vendor-state': ['zustand', '@tanstack/react-query'],
           // 工具库
