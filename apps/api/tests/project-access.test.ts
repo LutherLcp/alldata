@@ -217,23 +217,17 @@ describe('requireProjectAccess — 放行', () => {
   });
 });
 
-describe('requireProjectAccess — 已知缺陷（query 传参回退）', () => {
-  it.fails(
-    '仅通过 query 传 project_id 应当放行（当前实现返回 400，query 回退分支不可达）',
-    async () => {
-      // 期望：request.projectId ?? Number(header) ?? Number(query.project_id) 的
-      // 第三段回退应该生效（源码注释也声明「兼容 header 与 query 两种传参方式」）。
-      // 实际：header 缺失时 Number(undefined) === NaN，NaN 不是 nullish，
-      // 所以 ?? 不会继续求值，raw 恒为 NaN → 400。
-      const prisma = createPrismaMock({ id: 99 });
-      const { app } = await buildGuardedApp(prisma, { userId: 7 });
+describe('requireProjectAccess — query 传参回退已修复', () => {
+  it('仅通过 query 传 project_id 应当放行', async () => {
+    // 兼容 header 与 query 两种传参方式
+    const prisma = createPrismaMock({ id: 99 });
+    const { app } = await buildGuardedApp(prisma, { userId: 7 });
 
-      const response = await app.inject({ method: 'GET', url: '/guarded?project_id=42' });
+    const response = await app.inject({ method: 'GET', url: '/guarded?project_id=42' });
 
-      expect(response.statusCode).toBe(200);
-      expect(response.json()).toEqual({ projectId: 42 });
-    },
-  );
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({ projectId: 42 });
+  });
 });
 
 describe('canAccessProject — 布尔语义', () => {

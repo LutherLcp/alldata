@@ -15,8 +15,7 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     include: ['tests/**/*.{test,spec}.ts'],
-    // _legacy/ 是针对旧契约编写的历史测试，已停用（见 tests/_legacy/README.md）
-    exclude: ['**/node_modules/**', '**/dist/**', 'tests/_legacy/**'],
+    exclude: ['**/node_modules/**', '**/dist/**'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html', 'lcov'],
