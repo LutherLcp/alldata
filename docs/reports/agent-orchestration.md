@@ -128,6 +128,41 @@
      - [x] 新增 `tests/modules-smoke.test.ts`（覆盖 Auth 登录/刷新/个人信息、Project 分页/创建/校验、Dashboard 项目权限读取、Warning 检查等 13 个用例）。
      - [x] 彻底删除 `tests/_legacy` 遗留测试目录，在 `vitest.config.ts` 中移除针对 legacy 的排除配置。
 
+### 第 3 轮(2026-11-21)
+
+**迭代目标**: 落地 R2 阶段数据采集闭环，推出轻量级 Web Tracker SDK 与后端高吞吐事件接收网关。
+
+| 派发任务 | 验收标准 |
+|---|---|
+| SDK: 新建 `@alldata/tracker` | 支持初始化、自动持久化 anonymousId、全埋点（$pageview + $web_click）、自定义埋点（track）、身份识别（identify）及 sendBeacon/fetch 微批上报 |
+| 后端: 实现 `POST /api/tracking/collect` | 支持批量事件接收，严格校验 `project_id` 合法性，自动补充上下文属性并批量写入 ClickHouse `alldata.events` 表 |
+| 测试: 补充 SDK 与采集端点单测 | `packages/tracker/tests/tracker.test.ts` (4 个用例) 与 `apps/api/tests/tracking-collect.test.ts` (5 个用例) 100% 通过 |
+
+**验收结果**: 见本文件第 5 节
+
+## 5. 验收与结论
+
+### 第 3 轮验收结果（2026-11-21）
+
+1. **门禁验证**:
+   - `pnpm check`（Biome）：通过（0 errors）。
+   - `pnpm typecheck`：通过（全仓 6 个项目 100% 通过）。
+   - `pnpm test`：通过（全仓 129 个用例全部通过，其中 API 7 个文件 92 个用例全绿，Tracker 4 个用例全绿）。
+   - `pnpm build`：通过（全仓包编译成功）。
+
+2. **任务验收对照**:
+   - **客户端 SDK（`@alldata/tracker`）**：
+     - [x] 提供零外部运行时依赖的极简 TypeScript 客户端。
+     - [x] 支持单例初始化、UUID 持久化、`identify` / `reset` 身份流转。
+     - [x] 自动采集 SPA 路由跳转（History API / popstate / hashchange）、元素点击，以及操作系统、浏览器、屏幕宽高、URL、UTM 来源等核心上下文。
+     - [x] 批量缓冲与 `sendBeacon` / `fetch` 降级容灾。
+   - **服务端采集网关（`POST /api/tracking/collect`）**：
+     - [x] 公开采集端点，支持 JSON 数组或 beacon text/plain 格式。
+     - [x] 校验项目状态（必须在 PG 中存在且 `status: 1`），非法或缺失直接拦截。
+     - [x] 自动清洗并直写 ClickHouse `alldata.events` 表。
+   - **测试覆盖**：
+     - [x] SDK 与后端采集端点单测全部跑通，无外网依赖。
+
 3. **结论**:
-   - R1 迭代任务池中核心安全与质量欠账（B1, B2, B3, F1, F2, T1, T2, T3）已全部高标准交付！
-   - 全仓架构规范、类型契约、自动化门禁与单测集成体系已全面重建并恢复健康。
+   - R2 阶段核心数据接入闭环已打通，平台现已具备接收真实业务流并沉淀入 ClickHouse 进行 6 类行为分析的完整链路。
+   - 下一阶段演进方向：ID-Mapping 用户身份图谱关联、统一指标语义层（Semantic Layer）与 AI 智能归因。

@@ -1,7 +1,10 @@
-import { defineConfig } from 'vitest/config';
 import path from 'path';
+import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
+  css: {
+    postcss: {},
+  },
   resolve: {
     alias: {
       '@alldata/shared': path.resolve(__dirname, './src'),
