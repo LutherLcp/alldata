@@ -87,6 +87,9 @@ export const dashboardApi = {
 
   deleteReport: (id: number) => del(`/dashboards/reports/${id}`),
 
+  queryReportData: (reportId: number, params?: any) =>
+    post<any>(`/dashboards/reports/${reportId}/query`, params || {}),
+
   // ─── 软链 ─────────────────────────────
   createSoftLink: (data: { dashboard_id: number; name?: string; expire_at?: string }) =>
     post('/dashboards/soft-links', data),

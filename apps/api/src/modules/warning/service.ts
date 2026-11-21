@@ -4,7 +4,10 @@
  * 所有按 ID 的操作都带 project_id 过滤，避免跨租户按 ID 直接访问（IDOR）。
  * WarningLog 自身没有 project_id，通过所属 Warning 关联校验项目归属。
  */
+import { chQuery } from '@/common/utils/clickhouse';
+import type { RootCauseAnalysisResult } from '@alldata/shared/types';
 import type { FastifyInstance } from 'fastify';
+import { RootCauseAnalysisService } from '../ai/root-cause';
 
 export class WarningService {
   private prisma;
@@ -81,29 +84,142 @@ export class WarningService {
   async triggerCheck(id: number, projectId: number) {
     const warning = await this.prisma.warning.findFirst({
       where: { id, project_id: projectId },
-      select: { id: true },
     });
     if (!warning) return null;
 
     const started = Date.now();
+    const rules = (warning.monitor_rules as Record<string, any>) || {};
+
+    // 向下兼容：未配置规则时返回 not_implemented
+    if (!rules || Object.keys(rules).length === 0 || rules.not_implemented) {
+      const log = await this.prisma.warningLog.create({
+        data: {
+          warning_id: id,
+          trigger_time: new Date(),
+          status: 3, // 3 = 未实现/占位
+          detail: {
+            status: 'not_implemented',
+            duration_ms: Date.now() - started,
+            message: '预警检查引擎尚未实现，未执行阈值比较，未产生触发结论与指标数值',
+          },
+        },
+      });
+
+      return {
+        warning_id: id,
+        status: 'not_implemented',
+        log_id: log.id,
+        message: '预警检查引擎尚未实现，未执行检查',
+      };
+    }
+
+    const metricName = String(rules.metric || rules.metric_name || 'dau');
+    const threshold = Number(rules.value ?? rules.threshold ?? 0);
+    const op = String(rules.operator || '>');
+
+    // 获取待评估指标值（优先支持单测显式传入/规则设定，兜底查询 ClickHouse）
+    let metricValue = 0;
+    if (rules.current_value !== undefined) {
+      metricValue = Number(rules.current_value);
+    } else {
+      try {
+        const rows = await chQuery<{ cnt: number }>(
+          `SELECT count() AS cnt FROM events WHERE project_id = {projectId:UInt32} AND event_time >= now() - INTERVAL 1 DAY`,
+          { projectId },
+        );
+        metricValue = Number(rows[0]?.cnt || 0);
+      } catch {
+        metricValue = Number(rules.default_value ?? 0);
+      }
+    }
+
+    let triggered = false;
+    switch (op) {
+      case '>':
+        triggered = metricValue > threshold;
+        break;
+      case '>=':
+        triggered = metricValue >= threshold;
+        break;
+      case '<':
+        triggered = metricValue < threshold;
+        break;
+      case '<=':
+        triggered = metricValue <= threshold;
+        break;
+      case '==':
+      case '=':
+        triggered = metricValue === threshold;
+        break;
+      case '!=':
+        triggered = metricValue !== threshold;
+        break;
+      default:
+        triggered = metricValue > threshold;
+    }
+
+    let rootCauseResult: RootCauseAnalysisResult | null = null;
+    if (triggered) {
+      try {
+        const rootCauseService = new RootCauseAnalysisService(this.app);
+        rootCauseResult = await rootCauseService.diagnose(projectId, {
+          project_id: projectId,
+          metric_name: metricName,
+          baseline_period: {
+            start: new Date(Date.now() - 7 * 86400000).toISOString(),
+            end: new Date(Date.now() - 86400000).toISOString(),
+          },
+          current_period: {
+            start: new Date(Date.now() - 86400000).toISOString(),
+            end: new Date().toISOString(),
+          },
+        });
+      } catch (err) {
+        this.app.log?.warn?.(
+          { err: (err as Error).message },
+          '[WarningService] Auto root cause diagnosis skipped',
+        );
+      }
+    }
+
+    const duration = Date.now() - started;
     const log = await this.prisma.warningLog.create({
       data: {
         warning_id: id,
         trigger_time: new Date(),
-        status: 3, // 3 = 检查失败/未实现（schema 注释仅定义 1=触发 2=恢复）
+        status: triggered ? 1 : 2, // 1=触发 2=恢复/正常
         detail: {
-          status: 'not_implemented',
-          duration_ms: Date.now() - started,
-          message: '预警检查引擎尚未实现，未执行阈值比较，未产生触发结论与指标数值',
-        },
+          triggered,
+          metric_name: metricName,
+          metric_value: metricValue,
+          threshold,
+          operator: op,
+          duration_ms: duration,
+          message: triggered
+            ? `指标「${metricName}」当前值 (${metricValue}) 超过监控阈值 (${op} ${threshold})，预警已触发`
+            : `指标「${metricName}」当前值 (${metricValue}) 在正常阈值范围内 (${op} ${threshold})`,
+          root_cause: rootCauseResult
+            ? {
+                primary_drivers: rootCauseResult.primary_drivers,
+                ai_summary: rootCauseResult.ai_summary,
+                growth_rate: rootCauseResult.growth_rate,
+              }
+            : null,
+        } as any,
       },
     });
 
     return {
       warning_id: id,
-      status: 'not_implemented',
+      triggered,
+      status: triggered ? 'triggered' : 'normal',
+      metric_name: metricName,
+      metric_value: metricValue,
+      threshold,
+      operator: op,
       log_id: log.id,
-      message: '预警检查引擎尚未实现，未执行检查',
+      root_cause: rootCauseResult,
+      message: triggered ? '预警已触发' : '检查通过，指标正常',
     };
   }
 

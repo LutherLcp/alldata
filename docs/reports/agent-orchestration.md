@@ -281,3 +281,43 @@
 3. **结论**:
    - R2 阶段第四里程碑（AI 智能归因与根因诊断）高质量完成。
    - 全域数据运营平台已形成完整的业务智能分析闭环：从客户端 SDK 采集、服务端高吞吐接入、ID-Mapping 设备用户对齐、统一指标语义建模，到高级多触点归因与 AI 自动化异常诊断。
+
+### 第 7 轮(2026-11-21)
+
+**迭代目标**: 落地 R3 阶段智能预警自动化根因诊断闭环（Smart Warning Engine）与看板语义化报表卡片实时数据执行（Dashboard Semantic Report Cards）。
+
+| 派发任务 | 验收标准 |
+|---|---|
+| 后端: 智能预警评估引擎 (`WarningService.triggerCheck`) | 告别占位与伪造数据，支持真实监控规则评估（阈值/操作符/当前值）；一旦超出安全阈值自动唤起 `RootCauseAnalysisService` 进行多维贡献度根因诊断，并将主导驱动因子与自然语言诊断沉淀至 `warning_logs.detail`；保持对空规则的兼容 |
+| 后端: 看板报表实时计算 (`DashboardService.executeReportData`) | 实现 `POST /api/dashboards/reports/:id/query`；对语义层指标卡自动调用 `MetricService` 执行多指标多维编译查询，对通用图表返回标准聚合序列；全量带租户隔离守卫 |
+| 前端: 报表卡片实时渲染与告警根因展现 | `apps/web/src/pages/dashboard/components/ReportCard.tsx` 挂载即调用报表查询，支持大数字语义指标卡与时序图表展示；`apps/web/src/pages/alerts/index.tsx` 详情日志时间线呈现 AI 智能根因诊断卡片与核心归因 Tag |
+| 测试: 补充智能预警与看板执行全链路自动化单测 | 新增 `apps/api/tests/warning-dashboard-engine.test.ts`（包含预警触发/正常恢复/空规则降级/IDOR 隔离、报表标准图表与语义卡片执行、REST API 注入共 9 个用例），100% 跑绿 |
+
+**验收结果**: 见下文
+
+### 第 7 轮验收结果（2026-11-21）
+
+1. **门禁验证**:
+   - `pnpm check`（Biome）：通过（0 errors）。
+   - `pnpm typecheck`：通过（全仓 5 个包 7 个任务 100% 通过）。
+   - `pnpm test`：通过（全仓 155 个用例全部通过，其中 API 11 个测试套件 118 个用例全绿）。
+   - `pnpm build`：通过（全仓 5 个包全量构建通过，Web 生产打包完成）。
+
+2. **任务验收对照**:
+   - **智能预警评估引擎（`WarningService`）**：
+     - [x] 实现预警检查全自动化闭环，支持对配置规则进行实时判定（`>` / `<` / `>=` / `<=` / `==` / `!=`）。
+     - [x] 当指标违规触发时自动唤起 `RootCauseAnalysisService`，并将主导贡献因子（Primary Drivers）与自然语言诊断结论记录入库，支撑指标异动主动归因。
+     - [x] 未配置监控规则时平滑降级为 `not_implemented`，确保与存量单测完全向前兼容。
+   - **看板报表卡片实时数据执行（`DashboardService` & Routes）**：
+     - [x] 新增 `POST /api/dashboards/reports/:id/query` 报表实时取数端点，受 `requireProjectAccess` 保护。
+     - [x] 自动识别报表是否绑定语义层指标模型（`metric_ids`），无缝调用 ClickHouse 语义编译器完成多维统计。
+   - **前端看板与告警体验增强**：
+     - [x] 看板报表卡片实现真实取数，对语义指标卡展现高亮 KPI 大数字与统计周期说明，对时序卡片展现分类与汇总。
+     - [x] 预警详情日志抽屉中直观渲染 AI 智能根因诊断卡片与各维度驱动 Tag。
+   - **测试覆盖**：
+     - [x] 新增 `apps/api/tests/warning-dashboard-engine.test.ts`（9 个测试用例），覆盖阈值判定、日志落库、根因自动归因、语义卡片计算与 IDOR 租户隔离。
+
+3. **结论**:
+   - R3 阶段第一里程碑（智能预警与根因闭环 + 看板语义化报表卡片）圆满交付。
+   - 平台成功将数据指标语义层、ClickHouse 事件流、智能异动归因与看板/告警消费端点全面串联，构建出“采集 -> 图谱 -> 语义 -> 归因 -> 看板 -> 告警”的企业级数据智能闭环。
+

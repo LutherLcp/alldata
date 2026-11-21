@@ -104,6 +104,13 @@ export async function dashboardRoutes(app: FastifyInstance) {
     return sendSuccess(reply, null, '删除成功');
   });
 
+  app.post('/reports/:id/query', { preHandler: requireProjectAccess() }, async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const data = await svc.executeReportData(Number(id), req.projectId as number, req.body as any);
+    if (!data) return ApiError.notFound(reply, '报表不存在');
+    return sendSuccess(reply, data);
+  });
+
   // ─── 软链 ────────────────────────────────
   app.post('/soft-links', { preHandler: requireProjectAccess() }, async (req, reply) => {
     const { dashboard_id, name, expire_at } = req.body as any;

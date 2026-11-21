@@ -251,13 +251,48 @@ export default function AlertsPage() {
                         dot: l.status === 1 ? <AlertOutlined /> : <CheckCircleOutlined />,
                         children: (
                           <div>
-                            <div>
+                            <div style={{ fontWeight: 500 }}>
                               {l.detail?.message || (l.status === 1 ? '预警触发' : '恢复正常')}
                             </div>
-                            <div style={{ fontSize: 12, color: '#999' }}>
-                              {new Date(l.trigger_time).toLocaleString()} · 值: {l.detail?.value} ·
-                              阈值: {l.detail?.threshold}
+                            <div style={{ fontSize: 12, color: '#999', marginTop: 2 }}>
+                              {new Date(l.trigger_time).toLocaleString()} · 当前值:{' '}
+                              {l.detail?.metric_value ?? l.detail?.value ?? '-'} · 阈值:{' '}
+                              {l.detail?.threshold ?? '-'} ({l.detail?.operator || '>'})
                             </div>
+                            {(l.detail?.root_cause?.ai_summary ||
+                              l.detail?.root_cause?.diagnosis_summary) && (
+                              <div
+                                style={{
+                                  marginTop: 6,
+                                  background: '#fff2f0',
+                                  border: '1px solid #ffccc7',
+                                  padding: '6px 10px',
+                                  borderRadius: 4,
+                                  fontSize: 12,
+                                  color: '#cf1322',
+                                }}
+                              >
+                                <div style={{ fontWeight: 600, marginBottom: 2 }}>
+                                  AI 智能根因诊断：
+                                </div>
+                                <div>
+                                  {l.detail.root_cause.ai_summary ||
+                                    l.detail.root_cause.diagnosis_summary}
+                                </div>
+                                {Array.isArray(l.detail.root_cause.primary_drivers) &&
+                                  l.detail.root_cause.primary_drivers.length > 0 && (
+                                    <Space size={4} wrap style={{ marginTop: 4 }}>
+                                      {l.detail.root_cause.primary_drivers.map(
+                                        (d: any, idx: number) => (
+                                          <Tag color="red" key={idx}>
+                                            {d.dimension}={d.value}: {d.contribution_rate}%
+                                          </Tag>
+                                        ),
+                                      )}
+                                    </Space>
+                                  )}
+                              </div>
+                            )}
                           </div>
                         ),
                       }))}
