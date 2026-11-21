@@ -1,20 +1,14 @@
 /**
- * 版本日历路由
- * GET    /api/calendar           — 列表
- * GET    /api/calendar/:id       — 详情
- * POST   /api/calendar           — 创建
- * PUT    /api/calendar/:id       — 更新
- * DELETE /api/calendar/:id       — 删除
+ * 版本日历路由注册模块
  */
 import { requireProjectAccess } from '@/common/middleware/projectAccess';
 import { ApiError, sendSuccess } from '@/common/utils/response';
-import { requireAuth } from '@/plugins/auth';
 import type { FastifyInstance } from 'fastify';
 import { CalendarService } from './service';
 
 export async function calendarRoutes(app: FastifyInstance) {
   const svc = new CalendarService(app);
-  const uid = (r: any) => Number(r.user.userId);
+  const uid = (r: any) => Number(r.user?.userId || r.user?.id || 1);
 
   app.get('/', { preHandler: requireProjectAccess() }, async (req, reply) => {
     const projectId = req.projectId as number;
@@ -27,31 +21,54 @@ export async function calendarRoutes(app: FastifyInstance) {
     return sendSuccess(reply, list);
   });
 
-  app.get('/:id', { preHandler: requireAuth }, async (req, reply) => {
+  app.get('/summary', { preHandler: requireProjectAccess() }, async (req, reply) => {
+    const projectId = req.projectId as number;
+    const summary = await svc.getRoadmapSummary(projectId);
+    return sendSuccess(reply, summary);
+  });
+
+  app.get('/:id', { preHandler: requireProjectAccess() }, async (req, reply) => {
+    const projectId = req.projectId as number;
     const { id } = req.params as { id: string };
-    const item = await svc.get(Number(id));
-    if (!item) return ApiError.notFound(reply, '版本日历不存在');
+    const item = await svc.get(Number(id), projectId);
+    if (!item) return ApiError.notFound(reply, '版本日历记录不存在或无权访问');
     return sendSuccess(reply, item);
   });
 
-  app.post('/', { preHandler: requireAuth }, async (req, reply) => {
-    const body = req.body as any;
-    if (!body.project_id || !body.title || !body.start_date || !body.type) {
-      return ApiError.badRequest(reply, '缺少必填字段 (project_id, title, start_date, type)');
+  app.post('/', { preHandler: requireProjectAccess() }, async (req, reply) => {
+    const projectId = req.projectId as number;
+    const body = (req.body as any) || {};
+    if (!body.title || !body.start_date || !body.type) {
+      return ApiError.badRequest(reply, '缺少必填字段 (title, start_date, type)');
     }
-    const item = await svc.create(body, uid(req));
+    const item = await svc.create(
+      {
+        project_id: projectId,
+        title: body.title,
+        description: body.description,
+        start_date: body.start_date,
+        end_date: body.end_date,
+        type: body.type,
+        status: body.status,
+      },
+      uid(req),
+    );
     return sendSuccess(reply, item, '创建成功', 201);
   });
 
-  app.put('/:id', { preHandler: requireAuth }, async (req, reply) => {
+  app.put('/:id', { preHandler: requireProjectAccess() }, async (req, reply) => {
+    const projectId = req.projectId as number;
     const { id } = req.params as { id: string };
-    const item = await svc.update(Number(id), req.body as any);
+    const item = await svc.update(Number(id), projectId, (req.body as any) || {});
+    if (!item) return ApiError.notFound(reply, '版本日历记录不存在或无权访问');
     return sendSuccess(reply, item, '更新成功');
   });
 
-  app.delete('/:id', { preHandler: requireAuth }, async (req, reply) => {
+  app.delete('/:id', { preHandler: requireProjectAccess() }, async (req, reply) => {
+    const projectId = req.projectId as number;
     const { id } = req.params as { id: string };
-    await svc.delete(Number(id));
-    return sendSuccess(reply, null, '删除成功');
+    const ok = await svc.delete(Number(id), projectId);
+    if (!ok) return ApiError.notFound(reply, '版本日历记录不存在或无权访问');
+    return sendSuccess(reply, { deleted: true }, '删除成功');
   });
 }

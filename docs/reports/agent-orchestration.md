@@ -540,6 +540,42 @@
    - R3 阶段第七里程碑（全域创作者矩阵与社媒影响力评估）圆满交付。
    - 平台私域营销与社交达人资产管理形成了安全隔离、精准评级、全域联动的现代化数据管理闭环。
 
+### 第 14 轮(2026-11-21)
+
+**迭代目标**: 落地 R3 阶段业务发布版本日历与全周期里程碑规划引擎（Release Calendar & Milestone Roadmap Engine），全面消除版本管理 IDOR 越权隐患并实现发布计划多维聚合。
+
+| 派发任务 | 验收标准 |
+|---|---|
+| 后端: 版本日历与里程碑概览引擎 (`CalendarService`, `routes.ts`) | 修复详情/更新/删除的租户隔离漏洞（严格校验 `where: { id, project_id }` 杜绝越权）；实现 `getRoadmapSummary` 汇总即将到来发布、进行中里程碑与维护窗口统计；全面接入 `requireProjectAccess` 守卫与标准响应封装 |
+| 前端: 扩展 `calendarApi` 并打通版本日历多租户操作 | 更新 `apps/web/src/services/calendar.ts`，补齐 `project_id` 参数并支持概览查询；更新 `pages/calendar/index.tsx`，在更新和删除操作中接入当前项目隔离 |
+| 测试: 补充版本日历全链路自动化单测 | 新增 `apps/api/tests/calendar-engine.test.ts`（包含按项目/类型/时间范围过滤、跨租户越权查询/修改/删除拦截、里程碑概览聚合、REST API 鉴权与 403 权限守卫 7 个用例），100% 跑绿 |
+
+**验收结果**: 见下文
+
+### 第 14 轮验收结果（2026-11-21）
+
+1. **门禁验证**:
+   - `pnpm check`（Biome）：通过（0 errors）。
+   - `pnpm typecheck`：通过（全仓 5 个包 7 个任务 100% 通过）。
+   - `pnpm test`：通过（全仓 212 个用例全部通过，其中 API 18 个测试套件 175 个用例全绿）。
+   - `pnpm build`：通过（全仓 5 个包全量构建通过，Web 生产打包完成，耗时 4.44s）。
+
+2. **任务验收对照**:
+   - **版本日历与里程碑规划引擎（`CalendarService`）**：
+     - [x] 修复 `get`、`update`、`delete` 越权访问风险，确保所有针对日历事件的操作均在 `project_id` 租户边界内执行。
+     - [x] 新增 `getRoadmapSummary` 聚合函数，精准核算 30 天内发布计划、活跃里程碑与计划维护窗口。
+     - [x] 全面接入 `requireProjectAccess` 鉴权与租户 IDOR 防护。
+   - **前端版本日历交互打通**：
+     - [x] 扩展 `apps/web/src/services/calendar.ts` API 契约，支持租户参数化请求与汇总拉取。
+     - [x] 更新与删除操作与当前选定项目强绑定，杜绝脏写。
+   - **测试覆盖**：
+     - [x] 新增 `apps/api/tests/calendar-engine.test.ts`（7 个测试用例），100% 覆盖租户隔离、日期范围过滤、Roadmap 概览与 Fastify REST 鉴权。
+
+3. **结论**:
+   - R3 阶段第八里程碑（业务发布版本日历与里程碑规划引擎）圆满交付。
+   - 平台至此形成了从开发发布计划、数据埋点采集、指标建模计算、归因预警诊断、人群自动化触达到财务结算分成的全生命周期统一数据中台闭环体系。
+
+
 
 
 

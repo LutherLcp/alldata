@@ -87,7 +87,7 @@ export default function CalendarPage() {
     delete data.dateRange;
 
     if (editing) {
-      await calendarApi.update(editing.id, data);
+      await calendarApi.update(editing.id, data, projectId!);
       message.success('更新成功');
     } else {
       await calendarApi.create({ project_id: projectId!, ...data });
@@ -171,8 +171,10 @@ export default function CalendarPage() {
           <Popconfirm
             title="确认删除?"
             onConfirm={async () => {
-              await calendarApi.delete(r.id);
-              loadData();
+              if (projectId) {
+                await calendarApi.delete(r.id, projectId);
+                loadData();
+              }
             }}
           >
             <Button type="link" size="small" danger icon={<DeleteOutlined />}>
