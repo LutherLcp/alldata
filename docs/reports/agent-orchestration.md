@@ -505,6 +505,42 @@
    - R3 阶段第六里程碑（财务对账结算与收益分成核算引擎）高质量交付。
    - 平台成功完成了业务指标分析到商业价值变现核算的最后一公里闭环：从“流量采集 -> 指标建模 -> 预警归因 -> 人群触达 -> 财务结算”。
 
+### 第 13 轮(2026-11-21)
+
+**迭代目标**: 落地 R3 阶段全域创作者与社媒矩阵管理引擎（KoCRM Creator Matrix & Social Influence Scoring），全面修复私域资产 IDOR 鉴权漏洞并打通达人影响力多维评估。
+
+| 派发任务 | 验收标准 |
+|---|---|
+| 后端: KoCRM 矩阵与影响力引擎 (`KocrmService`, `routes.ts`) | 修复账号与达人更新/删除的租户隔离漏洞（带 `project_id` 过滤拦截越权）；实现 `calculateCreatorInfluence` 达人影响力分层评级模型（根据粉丝量级与平台加权自动推导 0-100 综合分与 S/A/B/C 评级）；全部端点接入 `requireProjectAccess` 守卫与标准响应封装 |
+| 前端: 扩展 `kocrmApi` 并打通达人影响力评估 | 更新 `apps/web/src/services/kocrm.ts`，补齐 `project_id` 参数；更新 `pages/kocrm/index.tsx`，在达人列表增加“影响力评级”彩色 Tag 展示与“一键评估”操作，删除操作接入当前项目隔离 |
+| 测试: 补充 KoCRM 引擎与 IDOR 防护全链路单测 | 新增 `apps/api/tests/kocrm-engine.test.ts`（包含账号/达人 CRUD、跨租户更新与删除 IDOR 拦截、影响力多维打分与 S/B 级判定、REST API 鉴权与 403 权限守卫 7 个用例），100% 跑绿 |
+
+**验收结果**: 见下文
+
+### 第 13 轮验收结果（2026-11-21）
+
+1. **门禁验证**:
+   - `pnpm check`（Biome）：通过（0 errors）。
+   - `pnpm typecheck`：通过（全仓 5 个包 7 个任务 100% 通过）。
+   - `pnpm test`：通过（全仓 205 个用例全部通过，其中 API 17 个测试套件 168 个用例全绿）。
+   - `pnpm build`：通过（全仓 5 个包全量构建通过，Web 生产打包完成，耗时 4.38s）。
+
+2. **任务验收对照**:
+   - **私域创作者与矩阵管理引擎（`KocrmService`）**：
+     - [x] 修复 `updateAccount`、`deleteAccount`、`updateCreator`、`deleteCreator` 的跨租户越权漏洞，严格校验 `where: { id, project_id }`。
+     - [x] 实现 `calculateCreatorInfluence` 影响力评测引擎，支持粉丝阶梯权重与主流社媒平台动态加权，生成 S/A/B/C 分级。
+     - [x] 全面接入 `requireProjectAccess` 鉴权与租户 IDOR 防护。
+   - **前端 KoCRM 页面交互增强**：
+     - [x] 扩展 `apps/web/src/services/kocrm.ts` API 契约。
+     - [x] 达人列表支持一键触发影响力评估，直观展示分级徽标并持久化刷新。
+   - **测试覆盖**：
+     - [x] 新增 `apps/api/tests/kocrm-engine.test.ts`（7 个测试用例），100% 覆盖 IDOR 越权拦截、影响力打分与 Fastify 端点权限。
+
+3. **结论**:
+   - R3 阶段第七里程碑（全域创作者矩阵与社媒影响力评估）圆满交付。
+   - 平台私域营销与社交达人资产管理形成了安全隔离、精准评级、全域联动的现代化数据管理闭环。
+
+
 
 
 

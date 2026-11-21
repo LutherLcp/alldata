@@ -115,8 +115,10 @@ function AccountTab({ projectId }: { projectId?: number }) {
               <Popconfirm
                 title="确认删除?"
                 onConfirm={async () => {
-                  await kocrmApi.deleteAccount(r.id);
-                  load();
+                  if (projectId) {
+                    await kocrmApi.deleteAccount(r.id, projectId);
+                    load();
+                  }
                 }}
               >
                 <Button type="link" size="small" danger>
@@ -244,6 +246,26 @@ function CreatorTab({ projectId }: { projectId?: number }) {
               )) || '-',
           },
           {
+            title: '影响力评级',
+            dataIndex: 'meta',
+            width: 130,
+            render: (meta: any) => {
+              const inf = meta?.influence;
+              if (!inf) return <Tag color="default">未评估</Tag>;
+              const colors: Record<string, string> = {
+                S: 'gold',
+                A: 'purple',
+                B: 'blue',
+                C: 'default',
+              };
+              return (
+                <Tag color={colors[inf.tier] || 'blue'}>
+                  {inf.tier} 级 ({inf.score}分)
+                </Tag>
+              );
+            },
+          },
+          {
             title: '状态',
             dataIndex: 'status',
             width: 80,
@@ -254,19 +276,42 @@ function CreatorTab({ projectId }: { projectId?: number }) {
           {
             title: '操作',
             key: 'action',
-            width: 100,
+            width: 150,
             render: (_: any, r: any) => (
-              <Popconfirm
-                title="确认删除?"
-                onConfirm={async () => {
-                  await kocrmApi.deleteCreator(r.id);
-                  load();
-                }}
-              >
-                <Button type="link" size="small" danger>
-                  删除
+              <Space>
+                <Button
+                  type="link"
+                  size="small"
+                  onClick={async () => {
+                    if (projectId) {
+                      try {
+                        const res = await kocrmApi.calculateInfluence(r.id, projectId);
+                        message.success(
+                          `达人 "${r.name}" 评级: ${res.influence.tier} 级 (${res.influence.score}分)`,
+                        );
+                        load();
+                      } catch (err) {
+                        message.error((err as Error).message || '评估失败');
+                      }
+                    }
+                  }}
+                >
+                  评估
                 </Button>
-              </Popconfirm>
+                <Popconfirm
+                  title="确认删除?"
+                  onConfirm={async () => {
+                    if (projectId) {
+                      await kocrmApi.deleteCreator(r.id, projectId);
+                      load();
+                    }
+                  }}
+                >
+                  <Button type="link" size="small" danger>
+                    删除
+                  </Button>
+                </Popconfirm>
+              </Space>
             ),
           },
         ]}
