@@ -26,7 +26,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { type Layout, type Layouts, Responsive, WidthProvider } from 'react-grid-layout';
 import { useNavigate, useParams } from 'react-router-dom';
 import 'react-grid-layout/css/styles.css';
-import { type DashboardItem, type ReportItem, dashboardApi } from '@/services-new/dashboard';
+import { type DashboardItem, type ReportItem, dashboardApi } from '@/services/dashboard';
 import ReportCard from './components/ReportCard';
 import ReportEditor from './components/ReportEditor';
 

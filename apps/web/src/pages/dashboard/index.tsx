@@ -1,4 +1,4 @@
-import { type DashboardItem, type FolderNode, dashboardApi } from '@/services-new/dashboard';
+import { type DashboardItem, type FolderNode, dashboardApi } from '@/services/dashboard';
 import { useGlobalStore } from '@/stores/global';
 import {
   DashboardOutlined,

@@ -1,4 +1,7 @@
-/** V5 API 服务 — 财务/KoCRM */
+/**
+ * 财务对账 API 服务 — 供应商/分成比例/对账
+ * （原 v5.ts：早期按后端大版本划分的历史分层，已按业务域拆分）
+ */
 import { del, get, post, put } from './request';
 
 export const financeApi = {
@@ -21,17 +24,4 @@ export const financeApi = {
   deleteReconciliation: (id: number) => del(`/finance/reconciliations/${id}`),
   // 导出
   exportReport: (type: string) => post('/finance/export', { type }),
-};
-
-export const kocrmApi = {
-  // 账户
-  listAccounts: (projectId: number) => get('/kocrm/accounts', { project_id: projectId }),
-  createAccount: (data: any) => post('/kocrm/accounts', data),
-  updateAccount: (id: number, data: any) => put(`/kocrm/accounts/${id}`, data),
-  deleteAccount: (id: number) => del(`/kocrm/accounts/${id}`),
-  // 达人
-  listCreators: (projectId: number) => get('/kocrm/creators', { project_id: projectId }),
-  createCreator: (data: any) => post('/kocrm/creators', data),
-  updateCreator: (id: number, data: any) => put(`/kocrm/creators/${id}`, data),
-  deleteCreator: (id: number) => del(`/kocrm/creators/${id}`),
 };

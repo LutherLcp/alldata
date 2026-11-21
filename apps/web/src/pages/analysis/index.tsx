@@ -4,7 +4,7 @@ import {
   type AnalysisResult,
   type AnalysisType,
   analysisApi,
-} from '@/services-new/analysis';
+} from '@/services/analysis';
 import { useGlobalStore } from '@/stores/global';
 import { SearchOutlined, StopOutlined } from '@ant-design/icons';
 import {

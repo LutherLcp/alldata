@@ -1,4 +1,4 @@
-import request from '@/services-new/request';
+import request from '@/services/request';
 import type { AttributionModelType, ChannelROI } from '@alldata/shared';
 import { InfoCircleOutlined, RocketOutlined } from '@ant-design/icons';
 import {

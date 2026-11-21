@@ -1,4 +1,4 @@
-import request from '@/services-new/request';
+import request from '@/services/request';
 import type { AppPlugin, SDKPlatform } from '@alldata/shared';
 import { ApiOutlined, AppstoreOutlined, BuildOutlined, CopyOutlined } from '@ant-design/icons';
 import {

@@ -1,4 +1,6 @@
-import { downloadApi, enumApi, subscriptionApi } from '@/services-new/v4';
+import { downloadApi } from '@/services/download';
+import { enumApi } from '@/services/enum';
+import { subscriptionApi } from '@/services/subscription';
 import { useGlobalStore } from '@/stores/global';
 import { PlayCircleOutlined, PlusOutlined, ReloadOutlined, SendOutlined } from '@ant-design/icons';
 import {

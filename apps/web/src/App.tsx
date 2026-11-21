@@ -1,7 +1,4 @@
 import { AppLayout } from '@/components/layout';
-import { NotFoundPage } from '@/pages/404';
-import { LoginPage } from '@/pages/login';
-import { NoPowerPage } from '@/pages/no-power';
 import { useAuthStore } from '@/stores/auth';
 import { Spin } from 'antd';
 import { Suspense, lazy, useEffect } from 'react';
@@ -12,6 +9,12 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { Outlet } from 'react-router-dom';
 
 // 路由级懒加载
+// 以下三个页面与首屏外壳（Layout）无关，独立懒加载，避免把 antd 表单/结果页组件打进首屏包
+const LoginPage = lazy(() => import('@/pages/login').then((m) => ({ default: m.LoginPage })));
+const NoPowerPage = lazy(() =>
+  import('@/pages/no-power').then((m) => ({ default: m.NoPowerPage })),
+);
+const NotFoundPage = lazy(() => import('@/pages/404').then((m) => ({ default: m.NotFoundPage })));
 const DashboardPage = lazy(() => import('@/pages/dashboard'));
 const DashboardDetailPage = lazy(() => import('@/pages/dashboard/detail'));
 const AnalysisPage = lazy(() => import('@/pages/analysis'));
@@ -96,11 +99,20 @@ export default function App() {
         path="/login"
         element={
           <PublicRoute>
-            <LoginPage />
+            <LazyLoad>
+              <LoginPage />
+            </LazyLoad>
           </PublicRoute>
         }
       />
-      <Route path="/no-power" element={<NoPowerPage />} />
+      <Route
+        path="/no-power"
+        element={
+          <LazyLoad>
+            <NoPowerPage />
+          </LazyLoad>
+        }
+      />
 
       {/* 受保护路由 */}
       <Route
@@ -314,7 +326,14 @@ export default function App() {
       </Route>
 
       {/* 404 */}
-      <Route path="*" element={<NotFoundPage />} />
+      <Route
+        path="*"
+        element={
+          <LazyLoad>
+            <NotFoundPage />
+          </LazyLoad>
+        }
+      />
     </Routes>
   );
 }

@@ -1,4 +1,4 @@
-import { dashboardApi } from '@/services-new/dashboard';
+import { dashboardApi } from '@/services/dashboard';
 import { Col, Form, Input, Modal, Row, Select, Switch, Tabs, Typography, message } from 'antd';
 /**
  * 报表编辑器 — 配置报表类型/图表/查询/样式

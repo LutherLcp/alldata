@@ -1,4 +1,4 @@
-import { tagApi } from '@/services-new/tag';
+import { tagApi } from '@/services/tag';
 import { useGlobalStore } from '@/stores/global';
 import {
   DeleteOutlined,

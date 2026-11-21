@@ -1,4 +1,4 @@
-import { type UserItem, type UserTimelineEvent, userApi } from '@/services-new/user';
+import { type UserItem, type UserTimelineEvent, userApi } from '@/services/user';
 import { useGlobalStore } from '@/stores/global';
 import {
   CheckCircleOutlined,

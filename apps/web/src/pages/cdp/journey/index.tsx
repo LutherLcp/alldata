@@ -1,6 +1,7 @@
+import echarts from '@/components/chart/echarts-core';
 import { NodeIndexOutlined, ReloadOutlined } from '@ant-design/icons';
 import { Button, Card, Col, Row, Select, Space, Statistic, Table, Tag, Typography } from 'antd';
-import * as echarts from 'echarts';
+import type { EChartsOption } from 'echarts';
 /**
  * 客户旅程分析页 — 桑基图 (Sankey Flow Chart) 与流失节点分析
  */
@@ -15,7 +16,7 @@ export default function CustomerJourneyPage() {
     if (!chartRef.current) return;
     const chart = echarts.init(chartRef.current);
 
-    const option: echarts.EChartsOption = {
+    const option: EChartsOption = {
       title: {
         text: '全域用户转化与路径跳转桑基图 (Sankey Diagram)',
         subtext: '展示用户从首页入口至最终支付/流失的完整动态路线',

@@ -1,4 +1,4 @@
-import type { AnomalyResult } from '@/services-new/ai';
+import type { AnomalyResult } from '@/services/ai';
 import { useAIStore } from '@/stores/ai-store';
 import {
   DownOutlined,

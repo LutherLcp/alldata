@@ -1,4 +1,4 @@
-import { warningApi } from '@/services-new/v4';
+import { warningApi } from '@/services/warning';
 import { useGlobalStore } from '@/stores/global';
 import {
   AlertOutlined,

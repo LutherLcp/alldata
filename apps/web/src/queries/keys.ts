@@ -15,7 +15,7 @@
  * queryClient.invalidateQueries({ queryKey: ['dashboard'] })
  */
 
-import type { AnalysisQuery } from '@/services-new/analysis';
+import type { AnalysisQuery } from '@/services/analysis';
 
 // ─── 分析模块 ───────────────────────────────────────────
 export const analysisKeys = {

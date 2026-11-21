@@ -1,9 +1,4 @@
-import {
-  type EventDef,
-  type EventProperty,
-  type Story,
-  trackingApi,
-} from '@/services-new/tracking';
+import { type EventDef, type EventProperty, type Story, trackingApi } from '@/services/tracking';
 import { useGlobalStore } from '@/stores/global';
 import {
   BookOutlined,

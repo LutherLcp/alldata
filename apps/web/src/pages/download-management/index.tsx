@@ -1,4 +1,4 @@
-import { downloadApi } from '@/services-new/v4';
+import { downloadApi } from '@/services/download';
 import { useGlobalStore } from '@/stores/global';
 import {
   DeleteOutlined,

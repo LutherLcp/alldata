@@ -7,7 +7,7 @@ import {
   categoryApi,
   datasetApi,
   tableApi,
-} from '@/services-new/asset';
+} from '@/services/asset';
 import { useGlobalStore } from '@/stores/global';
 import {
   DeleteOutlined,

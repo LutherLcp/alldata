@@ -1,12 +1,12 @@
-import { analysisApi } from '@/services-new/analysis';
-import type { AnalysisQuery, AnalysisResult } from '@/services-new/analysis';
+import { analysisApi } from '@/services/analysis';
+import type { AnalysisQuery, AnalysisResult } from '@/services/analysis';
 /**
  * 分析引擎 — TanStack Query Hooks
  *
  * 封装事件/漏斗/留存/分布/路径/归因 6 种分析查询。
  * - 自动缓存 5 分钟（staleTime），相同参数不重复请求
  * - 支持手动刷新 / 取消查询
- * - 与 services-new/analysis.ts 的 fetcher 函数解耦
+ * - 与 services/analysis.ts 的 fetcher 函数解耦
  */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { analysisKeys } from './keys';

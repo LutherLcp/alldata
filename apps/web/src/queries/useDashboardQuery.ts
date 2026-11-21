@@ -1,5 +1,5 @@
-import { dashboardApi } from '@/services-new/dashboard';
-import type { DashboardItem, FolderNode, ReportItem } from '@/services-new/dashboard';
+import { dashboardApi } from '@/services/dashboard';
+import type { DashboardItem, FolderNode, ReportItem } from '@/services/dashboard';
 /**
  * 看板模块 — TanStack Query Hooks
  *

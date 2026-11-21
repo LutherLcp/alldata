@@ -1,9 +1,11 @@
-import type { AnalysisResult } from '@/services-new/analysis';
+import echarts from '@/components/chart/echarts-core';
+import type { AnalysisResult } from '@/services/analysis';
 /**
  * ChartSet — 通用图表渲染组件
  * 支持折线/柱状/饼图/面积图
  */
-import ReactEChartsCore from 'echarts-for-react';
+// 使用 core 版本 + 项目自定义的按需注册（echarts-core.ts），避免整包 echarts 进入 chunk
+import ReactEChartsCore from 'echarts-for-react/esm/core';
 
 interface ChartSetProps {
   data: AnalysisResult;
@@ -94,5 +96,13 @@ export default function ChartSet({
     };
   })();
 
-  return <ReactEChartsCore option={option} style={{ height, width: '100%' }} notMerge lazyUpdate />;
+  return (
+    <ReactEChartsCore
+      echarts={echarts}
+      option={option}
+      style={{ height, width: '100%' }}
+      notMerge
+      lazyUpdate
+    />
+  );
 }

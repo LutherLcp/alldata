@@ -1,4 +1,4 @@
-import { type CalendarItem, calendarApi } from '@/services-new/calendar';
+import { type CalendarItem, calendarApi } from '@/services/calendar';
 import { useGlobalStore } from '@/stores/global';
 import {
   CalendarOutlined,

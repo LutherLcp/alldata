@@ -5,8 +5,12 @@
  *   const { data: warnings } = useWarnings(projectId);
  *   const { mutate: createWarning } = useCreateWarning();
  */
-import { downloadApi, enumApi, subscriptionApi, warningApi } from '@/services-new/v4';
-import { financeApi, kocrmApi } from '@/services-new/v5';
+import { downloadApi } from '@/services/download';
+import { enumApi } from '@/services/enum';
+import { financeApi } from '@/services/finance';
+import { kocrmApi } from '@/services/kocrm';
+import { subscriptionApi } from '@/services/subscription';
+import { warningApi } from '@/services/warning';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 // ─── Query Keys ─────────────────────────

@@ -1,4 +1,4 @@
-import { authApi } from '@/services-new/auth';
+import { authApi } from '@/services/auth';
 import { useAuthStore } from '@/stores/auth';
 import { LockOutlined, UserOutlined } from '@ant-design/icons';
 import { Button, Card, Form, Input, Typography, message } from 'antd';

@@ -1,4 +1,4 @@
-import { noticeApi } from '@/services-new/v4';
+import { noticeApi } from '@/services/notice';
 import { useGlobalStore } from '@/stores/global';
 import {
   BellOutlined,

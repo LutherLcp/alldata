@@ -1,4 +1,4 @@
-import { metricApi } from '@/services-new/metric';
+import { metricApi } from '@/services/metric';
 import { useGlobalStore } from '@/stores/global';
 import { DeleteOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons';
 import { Button, Card, Form, Input, Modal, Popconfirm, Space, Table, Tag, message } from 'antd';

@@ -1,4 +1,4 @@
-import request from '@/services-new/request';
+import request from '@/services/request';
 import type { DataLineageNode } from '@alldata/shared';
 import {
   DeleteOutlined,

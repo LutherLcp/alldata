@@ -1,4 +1,4 @@
-import { tagApi } from '@/services-new/tag';
+import { tagApi } from '@/services/tag';
 /**
  * 标签管理 — TanStack Query Hooks
  */

@@ -1,4 +1,4 @@
-import { kocrmApi } from '@/services-new/v5';
+import { kocrmApi } from '@/services/kocrm';
 import { useGlobalStore } from '@/stores/global';
 import { PlusOutlined, ReloadOutlined } from '@ant-design/icons';
 import {

@@ -10,7 +10,7 @@ import {
   type ModelInfo,
   aiApi,
   streamChat,
-} from '@/services-new/ai';
+} from '@/services/ai';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 

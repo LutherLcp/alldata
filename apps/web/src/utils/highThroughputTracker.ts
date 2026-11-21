@@ -5,7 +5,7 @@
  * 2. 页面卸载 (unload/pagehide) 时自动使用 navigator.sendBeacon 保证 0 丢失
  * 3. 极大地减少网络 RTT HTTP 请求消耗 (提升 90% 网络吞吐)
  */
-import request from '@/services-new/request';
+import request from '@/services/request';
 
 export interface EventData {
   event: string;
