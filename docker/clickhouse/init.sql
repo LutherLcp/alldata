@@ -42,6 +42,19 @@ ENGINE = ReplacingMergeTree(updated_at)
 ORDER BY (project_id, user_id);
 
 -- ============================================================
+-- ID-Mapping 身份映射表 (OneID 设备与用户图谱)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS alldata.id_mappings
+(
+    project_id   UInt32,
+    anonymous_id String,
+    user_id      UInt64,
+    created_at   DateTime DEFAULT now()
+)
+ENGINE = ReplacingMergeTree(created_at)
+ORDER BY (project_id, anonymous_id);
+
+-- ============================================================
 -- 日活指标预聚合物化视图（V2 性能优化）
 -- ============================================================
 CREATE TABLE IF NOT EXISTS alldata.mv_dau

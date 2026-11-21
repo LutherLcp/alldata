@@ -6,12 +6,15 @@
  */
 import { getClickHouseClient } from '@/common/utils/clickhouse';
 import type { FastifyInstance } from 'fastify';
+import { IdMappingService } from './id-mapping.service';
 
 export class TrackingService {
   private prisma;
+  private idMapping: IdMappingService;
 
   constructor(private app: FastifyInstance) {
     this.prisma = app.prisma;
+    this.idMapping = new IdMappingService(app);
   }
 
   // ─── Story ──────────────────────────────────
@@ -191,39 +194,67 @@ export class TrackingService {
       return { received: 0, accepted: 0 };
     }
 
-    // 2. 规范化并清洗事件
+    // 2. 规范化并清洗事件，同时进行 ID-Mapping 图谱对齐
     const now = new Date();
-    const rows = rawEvents.map((e) => {
-      const eventTime = e.event_time ? new Date(e.event_time) : now;
-      const properties = e.properties || {};
+    const rows = await Promise.all(
+      rawEvents.map(async (e) => {
+        const eventTime = e.event_time ? new Date(e.event_time) : now;
+        const properties = e.properties || {};
 
-      const os = (properties.$os as string) || '';
-      const browser = (properties.$browser as string) || '';
-      const deviceType =
-        (properties.$device_type as string) ||
-        (os === 'iOS' || os === 'Android' ? 'mobile' : 'desktop');
+        const os = (properties.$os as string) || '';
+        const browser = (properties.$browser as string) || '';
+        const deviceType =
+          (properties.$device_type as string) ||
+          (os === 'iOS' || os === 'Android' ? 'mobile' : 'desktop');
 
-      let userId = 0;
-      if (typeof e.user_id === 'number') {
-        userId = e.user_id;
-      } else if (typeof e.user_id === 'string' && /^\d+$/.test(e.user_id)) {
-        userId = Number(e.user_id);
-      }
+        let userId = 0;
+        if (typeof e.user_id === 'number') {
+          userId = e.user_id;
+        } else if (typeof e.user_id === 'string' && /^\d+$/.test(e.user_id)) {
+          userId = Number(e.user_id);
+        }
 
-      return {
-        project_id: projectId,
-        event_name: e.event_name,
-        user_id: userId,
-        event_time: eventTime.toISOString().slice(0, 19).replace('T', ' '),
-        properties: JSON.stringify(properties),
-        device_type: deviceType,
-        os: os,
-        browser: browser,
-        country: (properties.$country as string) || '',
-        region: (properties.$region as string) || '',
-        dt: eventTime.toISOString().slice(0, 10),
-      };
-    });
+        const anonymousId = e.anonymous_id || (properties.$original_id as string) || '';
+
+        // 如果是 $identify 身份识别事件，建立绑定关系
+        if (e.event_name === '$identify') {
+          const identifiedIdRaw =
+            properties.$identified_id ??
+            e.user_id ??
+            (typeof e.distinct_id === 'string' && /^\d+$/.test(e.distinct_id)
+              ? Number(e.distinct_id)
+              : 0);
+          const identifiedId = Number(identifiedIdRaw);
+          if (identifiedId > 0 && anonymousId) {
+            await this.idMapping.recordMapping(projectId, anonymousId, identifiedId);
+            userId = identifiedId;
+          }
+        } else if (anonymousId && userId > 0) {
+          // 普通事件携带合法 userId 与 anonymousId，也同步建立映射
+          await this.idMapping.recordMapping(projectId, anonymousId, userId);
+        } else if (anonymousId && userId <= 0) {
+          // 未登录匿名事件：通过 ID-Mapping 引擎解析归属的 canonical user_id
+          const resolved = await this.idMapping.resolveUserId(projectId, anonymousId);
+          if (resolved) {
+            userId = resolved;
+          }
+        }
+
+        return {
+          project_id: projectId,
+          event_name: e.event_name,
+          user_id: userId,
+          event_time: eventTime.toISOString().slice(0, 19).replace('T', ' '),
+          properties: JSON.stringify(properties),
+          device_type: deviceType,
+          os: os,
+          browser: browser,
+          country: (properties.$country as string) || '',
+          region: (properties.$region as string) || '',
+          dt: eventTime.toISOString().slice(0, 10),
+        };
+      }),
+    );
 
     // 3. 批量写入 ClickHouse events 表
     try {
@@ -241,5 +272,33 @@ export class TrackingService {
     }
 
     return { received: rawEvents.length, accepted: rows.length };
+  }
+
+  /**
+   * 解析标识对应的 canonical user_id
+   */
+  async resolveIdentity(projectId: number, distinctId: string) {
+    if (/^\d+$/.test(distinctId)) {
+      return {
+        project_id: projectId,
+        distinct_id: distinctId,
+        canonical_user_id: Number(distinctId),
+        is_identified: true,
+      };
+    }
+    const resolved = await this.idMapping.resolveUserId(projectId, distinctId);
+    return {
+      project_id: projectId,
+      distinct_id: distinctId,
+      canonical_user_id: resolved,
+      is_identified: resolved !== null,
+    };
+  }
+
+  /**
+   * 获取用户/设备关联的 OneID 身份图谱
+   */
+  async getIdentityGraph(projectId: number, identifier: string | number) {
+    return this.idMapping.getIdentityGraph(projectId, identifier);
   }
 }

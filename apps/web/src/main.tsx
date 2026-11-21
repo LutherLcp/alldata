@@ -1,5 +1,6 @@
 import App from '@/App';
 import i18n from '@/lang';
+import { initTracker } from '@/utils/tracker';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ConfigProvider } from 'antd';
 import React from 'react';
@@ -31,6 +32,9 @@ export const queryClient = new QueryClient({
     },
   },
 });
+
+// 初始化全域行为事件埋点 SDK (Dogfooding)
+initTracker();
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

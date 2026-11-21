@@ -166,3 +166,41 @@
 3. **结论**:
    - R2 阶段核心数据接入闭环已打通，平台现已具备接收真实业务流并沉淀入 ClickHouse 进行 6 类行为分析的完整链路。
    - 下一阶段演进方向：ID-Mapping 用户身份图谱关联、统一指标语义层（Semantic Layer）与 AI 智能归因。
+
+### 第 4 轮(2026-11-21)
+
+**迭代目标**: 落地 R2 阶段 ID-Mapping (OneID) 身份图谱与前端自身数据 Dogfooding 闭环。
+
+| 派发任务 | 验收标准 |
+|---|---|
+| 后端: ID-Mapping 引擎与身份图谱接口 | 新增 ClickHouse `alldata.id_mappings` DDL；实现 `IdMappingService`；在 `ingestEvents` 中拦截 `$identify` 与匿名事件自动对齐 canonical user_id；新增 `GET /api/tracking/identity/resolve` 与 `/graph` 端点 |
+| 前端: 接入 `@alldata/tracker` 实现 Dogfooding | `apps/web/package.json` 引入 SDK；在 `main.tsx` 全局初始化；在 `stores/auth.ts` 登录触发 `identify`、登出触发 `reset`；在 `stores/global.ts` 注入当前项目公共属性 |
+| 测试: 补充 ID-Mapping 与身份图谱测试 | 新增 `apps/api/tests/id-mapping.test.ts`（覆盖映射注册、图谱聚合、采集贯通、异常参数 5 个用例），全绿通过 |
+
+**验收结果**: 见下文
+
+### 第 4 轮验收结果（2026-11-21）
+
+1. **门禁验证**:
+   - `pnpm check`（Biome）：通过（0 errors）。
+   - `pnpm typecheck`：通过（全仓 5 个模块 7 个构建任务 100% 通过）。
+   - `pnpm test`：通过（全仓 134 个用例全部通过，其中 API 8 个测试套件 97 个用例全绿）。
+   - `pnpm build`：通过（全仓 5 个包全量构建通过，Web 产物生产分包打包完成）。
+
+2. **任务验收对照**:
+   - **后端（ID-Mapping 引擎与图谱服务）**：
+     - [x] ClickHouse 初始化脚本新增 `alldata.id_mappings` ReplacingMergeTree 表定义。
+     - [x] 封装 `IdMappingService`，提供高性能双向设备图谱映射、ClickHouse 异步持久化与离线测试降级。
+     - [x] `POST /api/tracking/collect` 接入身份识别流程：自动从 `$identify` 建立设备-用户关联，匿名事件自动回溯填充规范化 `user_id`。
+     - [x] 提供 `GET /api/tracking/identity/resolve` 与 `GET /api/tracking/identity/graph` 端点供 CDP 与分析引擎查询设备图谱。
+   - **前端（全平台 Dogfooding 埋点接入）**：
+     - [x] 成功将 `@alldata/tracker` 接入 `apps/web` 依赖图谱。
+     - [x] 封装 `apps/web/src/utils/tracker.ts` 并在 `main.tsx` 全局自动初始化，实现 AllData 自身全埋点。
+     - [x] 在 `auth.ts` 中实现登录 `identify` 与退出 `reset`，实现前后端身份打通。
+     - [x] 升级 `highThroughputTracker.ts` 适配层，平滑收敛历史埋点架构。
+   - **测试覆盖**：
+     - [x] 新增 `apps/api/tests/id-mapping.test.ts`，验证服务层映射逻辑与 API 集成链路，测试用例 100% 通过。
+
+3. **结论**:
+   - R2 阶段第二里程碑（OneID 身份图谱与前端 Dogfooding）验收完毕，成功消除未登录用户与登录用户行为断裂的分析断层。
+   - 下一阶段演进方向：R2 阶段第三步 —— 统一指标语义层（Metric Semantic Layer）与指标模型沉淀。

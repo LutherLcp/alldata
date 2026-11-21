@@ -155,4 +155,41 @@ export async function trackingRoutes(app: FastifyInstance) {
       return ApiError.internal(reply, err.message);
     }
   });
+
+  // ─── Identity Mapping (OneID 身份图谱) ───────
+  app.get('/identity/resolve', async (req, reply) => {
+    const query = req.query as any;
+    const projectIdRaw =
+      query?.project_id ?? req.headers['x-project-id'] ?? req.headers['project-id'];
+    const distinctId = (query?.distinct_id || query?.anonymous_id) as string;
+
+    const projectId = Number(projectIdRaw);
+    if (!Number.isInteger(projectId) || projectId <= 0) {
+      return ApiError.badRequest(reply, '缺少或非法的 project_id');
+    }
+    if (!distinctId) {
+      return ApiError.badRequest(reply, '缺少 distinct_id 或 anonymous_id');
+    }
+
+    const result = await svc.resolveIdentity(projectId, distinctId);
+    return sendSuccess(reply, result);
+  });
+
+  app.get('/identity/graph', async (req, reply) => {
+    const query = req.query as any;
+    const projectIdRaw =
+      query?.project_id ?? req.headers['x-project-id'] ?? req.headers['project-id'];
+    const identifier = (query?.user_id || query?.distinct_id || query?.anonymous_id) as string;
+
+    const projectId = Number(projectIdRaw);
+    if (!Number.isInteger(projectId) || projectId <= 0) {
+      return ApiError.badRequest(reply, '缺少或非法的 project_id');
+    }
+    if (!identifier) {
+      return ApiError.badRequest(reply, '缺少 identifier 或 user_id');
+    }
+
+    const result = await svc.getIdentityGraph(projectId, identifier);
+    return sendSuccess(reply, result);
+  });
 }

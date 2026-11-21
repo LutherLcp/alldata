@@ -1,7 +1,8 @@
-import type { UserInfo } from '@alldata/shared';
 /**
  * 认证状态管理
  */
+import { identifyUser, resetUser } from '@/utils/tracker';
+import type { UserInfo } from '@alldata/shared';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
@@ -28,25 +29,32 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       loading: true,
 
-      setAuth: (data) =>
+      setAuth: (data) => {
+        identifyUser(data.user_info.id);
         set({
           token: data.token,
           refreshToken: data.refresh_token,
           userInfo: data.user_info,
           isAuthenticated: true,
           loading: false,
-        }),
+        });
+      },
 
-      setUserInfo: (info) => set({ userInfo: info, isAuthenticated: true }),
+      setUserInfo: (info) => {
+        identifyUser(info.id);
+        set({ userInfo: info, isAuthenticated: true });
+      },
 
-      logout: () =>
+      logout: () => {
+        resetUser();
         set({
           token: null,
           refreshToken: null,
           userInfo: null,
           isAuthenticated: false,
           loading: false,
-        }),
+        });
+      },
 
       setLoading: (loading) => set({ loading }),
 

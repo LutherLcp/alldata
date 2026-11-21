@@ -1,7 +1,8 @@
-import type { ProjectSimple } from '@alldata/shared';
 /**
  * 全局 UI 状态管理 (Zustand 客户端纯 UI 状态)
  */
+import { tracker } from '@/utils/tracker';
+import type { ProjectSimple } from '@alldata/shared';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
@@ -31,7 +32,13 @@ export const useGlobalStore = create<GlobalState>()(
       sidebarCollapsed: false,
       globalTimezone: 'UTC+8',
 
-      setCurrentProject: (project) => set({ currentProject: project }),
+      setCurrentProject: (project) => {
+        tracker.registerCommonProperties({
+          $project_id: project.id,
+          $project_name: project.name,
+        });
+        set({ currentProject: project });
+      },
       setProjects: (projects) => set({ projects }),
       setTheme: (theme) => set({ theme }),
       setLanguage: (language) => set({ language }),
