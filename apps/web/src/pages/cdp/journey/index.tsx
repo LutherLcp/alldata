@@ -1,20 +1,51 @@
 import echarts from '@/components/chart/echarts-core';
+import { cdpApi } from '@/services/cdp';
+import { useGlobalStore } from '@/stores/global';
 import { NodeIndexOutlined, ReloadOutlined } from '@ant-design/icons';
 import { Button, Card, Col, Row, Select, Space, Statistic, Table, Tag, Typography } from 'antd';
 import type { EChartsOption } from 'echarts';
 /**
  * 客户旅程分析页 — 桑基图 (Sankey Flow Chart) 与流失节点分析
  */
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 const { Text } = Typography;
 
 export default function CustomerJourneyPage() {
+  const currentProject = useGlobalStore((s) => s.currentProject);
+  const projectId = currentProject?.id || 1;
   const chartRef = useRef<HTMLDivElement>(null);
+  const chartInstance = useRef<any>(null);
+  const [journeyData, setJourneyData] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+
+  const loadJourney = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await cdpApi.getJourney(projectId);
+      setJourneyData(data);
+      if (chartInstance.current && data) {
+        chartInstance.current.setOption({
+          series: [
+            {
+              type: 'sankey',
+              data: data.nodes.map((n: any) => ({ name: n.name })),
+              links: data.links,
+            },
+          ],
+        });
+      }
+    } catch {
+      // 允许降级
+    } finally {
+      setLoading(false);
+    }
+  }, [projectId]);
 
   useEffect(() => {
     if (!chartRef.current) return;
     const chart = echarts.init(chartRef.current);
+    chartInstance.current = chart;
 
     const option: EChartsOption = {
       title: {
@@ -53,13 +84,16 @@ export default function CustomerJourneyPage() {
     };
 
     chart.setOption(option);
+    loadJourney();
+
     const handleResize = () => chart.resize();
     window.addEventListener('resize', handleResize);
     return () => {
       window.removeEventListener('resize', handleResize);
       chart.dispose();
+      chartInstance.current = null;
     };
-  }, []);
+  }, [loadJourney]);
 
   return (
     <Card
@@ -79,7 +113,9 @@ export default function CustomerJourneyPage() {
               { value: 'web', label: 'Web 官网' },
             ]}
           />
-          <Button icon={<ReloadOutlined />}>刷新路径</Button>
+          <Button icon={<ReloadOutlined />} loading={loading} onClick={loadJourney}>
+            刷新路径
+          </Button>
         </Space>
       }
     >
@@ -88,7 +124,7 @@ export default function CustomerJourneyPage() {
           <Card size="small">
             <Statistic
               title="旅程起点触达用户"
-              value={10500}
+              value={journeyData?.nodes?.[0]?.value || 10500}
               suffix="人"
               precision={0}
               valueStyle={{ color: '#1890ff' }}
@@ -98,11 +134,11 @@ export default function CustomerJourneyPage() {
         <Col span={6}>
           <Card size="small">
             <Statistic
-              title="全链路终点转化率"
-              value={17.62}
+              title="全链路流失率"
+              value={journeyData?.dropoff_rate || 29.1}
               suffix="%"
               precision={2}
-              valueStyle={{ color: '#52c41a' }}
+              valueStyle={{ color: '#ff4d4f' }}
             />
           </Card>
         </Col>

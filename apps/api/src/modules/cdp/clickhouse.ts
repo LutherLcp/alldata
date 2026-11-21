@@ -13,13 +13,41 @@ export class CDPClickHouseEngine {
               ? '>'
               : r.operator === 'lt'
                 ? '<'
-                : 'LIKE';
+                : r.operator === 'gte'
+                  ? '>='
+                  : r.operator === 'lte'
+                    ? '<='
+                    : 'LIKE';
         const val = typeof r.value === 'string' ? `'${r.value}'` : r.value;
         return `${r.property} ${op} ${val}`;
       })
       .join(' AND ');
 
     return `SELECT DISTINCT user_id FROM events WHERE project_id = ${projectId} ${conditions ? `AND (${conditions})` : ''}`;
+  }
+
+  /** 构建 Cohort 覆盖人数聚合 SQL */
+  static buildCohortCountSQL(projectId: number, rules: any[]): string {
+    const conditions = rules
+      .map((r) => {
+        const op =
+          r.operator === 'eq'
+            ? '='
+            : r.operator === 'gt'
+              ? '>'
+              : r.operator === 'lt'
+                ? '<'
+                : r.operator === 'gte'
+                  ? '>='
+                  : r.operator === 'lte'
+                    ? '<='
+                    : 'LIKE';
+        const val = typeof r.value === 'string' ? `'${r.value}'` : r.value;
+        return `${r.property} ${op} ${val}`;
+      })
+      .join(' AND ');
+
+    return `SELECT uniqExact(user_id) AS cnt FROM events WHERE project_id = ${projectId} ${conditions ? `AND (${conditions})` : ''}`;
   }
 
   /** 构建 客户旅程 路径节点查询 SQL */

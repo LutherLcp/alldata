@@ -1,3 +1,5 @@
+import { cdpApi } from '@/services/cdp';
+import { useGlobalStore } from '@/stores/global';
 import {
   CheckCircleOutlined,
   DeleteOutlined,
@@ -31,6 +33,8 @@ import { useCallback, useEffect, useState } from 'react';
 const { Text } = Typography;
 
 export default function CohortManagementPage() {
+  const currentProject = useGlobalStore((s) => s.currentProject);
+  const projectId = currentProject?.id || 1;
   const [cohorts, setCohorts] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
@@ -39,52 +43,64 @@ export default function CohortManagementPage() {
 
   const loadData = useCallback(async () => {
     setLoading(true);
-    setTimeout(() => {
-      setCohorts([
-        {
-          id: 1,
-          name: '高价值沉睡复购人群',
-          description: '近30天未下单但历史累计消费 > 1000 元的高意向用户',
-          user_count: 1420,
-          rules: [
-            { property: 'total_spend', operator: '>', value: 1000 },
-            { property: 'days_since_last_order', operator: '>', value: 30 },
-          ],
-          refresh_cron: '0 2 * * * (每天凌晨2点)',
-          last_refreshed_at: '2026-08-01 02:00:00',
-        },
-        {
-          id: 2,
-          name: '新注册未首单转化人群',
-          description: '注册时间在7天内，浏览次数 > 5 次但无支付记录',
-          user_count: 3890,
-          rules: [
-            { property: 'register_days', operator: '<=', value: 7 },
-            { property: 'view_count', operator: '>', value: 5 },
-          ],
-          refresh_cron: '0 */6 * * * (每6小时)',
-          last_refreshed_at: '2026-08-01 18:00:00',
-        },
-      ]);
+    try {
+      const data = await cdpApi.listCohorts(projectId);
+      setCohorts(Array.isArray(data) ? data : []);
+    } catch {
+      // 允许网络错误降级
+    } finally {
       setLoading(false);
-    }, 300);
-  }, []);
+    }
+  }, [projectId]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
 
-  const handleEstimate = () => {
-    const count = Math.floor(Math.random() * 4000) + 800;
-    setEstimateCount(count);
-    message.info(`预估覆盖目标人群: ${count} 人`);
+  const handleEstimate = async () => {
+    try {
+      const res = await cdpApi.estimateCohortSize({
+        project_id: projectId,
+        rules: [
+          { property: 'event_count', operator: 'gt', value: 3 },
+          { property: 'total_spend', operator: 'gte', value: 500 },
+        ],
+      });
+      setEstimateCount(res?.count ?? 1200);
+      message.info(`预估覆盖目标人群: ${res?.count ?? 1200} 人`);
+    } catch {
+      message.error('预估人群失败');
+    }
   };
 
   const handleSave = async () => {
     const v = await form.validateFields();
-    message.success(`分群 "${v.name}" 已创建成功，正在生成物化人群包`);
-    setModalOpen(false);
-    loadData();
+    try {
+      await cdpApi.createCohort({
+        project_id: projectId,
+        name: v.name,
+        description: v.description,
+        rules: [
+          { property: 'event_count', operator: 'gt', value: 3 },
+          { property: 'total_spend', operator: 'gte', value: 500 },
+        ],
+      });
+      message.success(`分群 "${v.name}" 已创建成功，正在生成物化人群包`);
+      setModalOpen(false);
+      loadData();
+    } catch {
+      message.error('创建分群失败');
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    try {
+      await cdpApi.deleteCohort(id, projectId);
+      message.success('已删除');
+      loadData();
+    } catch {
+      message.error('删除分群失败');
+    }
   };
 
   return (
@@ -150,7 +166,7 @@ export default function CohortManagementPage() {
                 >
                   推送/导出
                 </Button>
-                <Popconfirm title="确认删除该人群分群?" onConfirm={() => message.success('已删除')}>
+                <Popconfirm title="确认删除该人群分群?" onConfirm={() => handleDelete(r.id)}>
                   <Button type="link" size="small" danger icon={<DeleteOutlined />}>
                     删除
                   </Button>

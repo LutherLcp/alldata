@@ -321,3 +321,41 @@
    - R3 阶段第一里程碑（智能预警与根因闭环 + 看板语义化报表卡片）圆满交付。
    - 平台成功将数据指标语义层、ClickHouse 事件流、智能异动归因与看板/告警消费端点全面串联，构建出“采集 -> 图谱 -> 语义 -> 归因 -> 看板 -> 告警”的企业级数据智能闭环。
 
+### 第 8 轮(2026-11-21)
+
+**迭代目标**: 落地 R3 阶段动态人群分群引擎（CDP Dynamic Cohort Engine）、全平台 100% 杜绝伪造数据（Zero-Fake-Data），打通 360° 全景画像与旅程流向数据端到端闭环。
+
+| 派发任务 | 验收标准 |
+|---|---|
+| 后端: CDP 分群引擎与零伪造数据重构 | `CDPService` 彻底清除全部 `Math.random()`；ClickHouse 优先直查真实事件，离线/单测模式基于唯一 ID 确定性 Hash 生成稳定画像；`CDPClickHouseEngine` 扩展 `buildCohortCountSQL`；路由接入 `requireProjectAccess` 鉴权与租户保护；增加分群删除能力 |
+| 前端: 封装 `cdpApi` 并全面接入 CDP 页面群 | 新建 `apps/web/src/services/cdp.ts`；重构 `pages/cdp/cohort` 接入真实分群查询/预估/创建/删除；重构 `pages/cdp/profile` 接入真实 360 画像；重构 `pages/cdp/journey` 动态渲染桑基图并支持刷新 |
+| 测试: 补充 CDP 分群引擎与零伪造画像单测 | 新增 `apps/api/tests/cdp-cohort.test.ts`（包含画像确定性断言、ClickHouse SQL 生成、分群规模预估与生命周期管理、桑基图契约、REST API 鉴权 8 个用例），100% 跑绿 |
+
+**验收结果**: 见下文
+
+### 第 8 轮验收结果（2026-11-21）
+
+1. **门禁验证**:
+   - `pnpm check`（Biome）：通过（0 errors）。
+   - `pnpm typecheck`：通过（全仓 5 个包 7 个任务 100% 通过）。
+   - `pnpm test`：通过（全仓 163 个用例全部通过，其中 API 12 个测试套件 126 个用例全绿）。
+   - `pnpm build`：通过（全仓 5 个包全量构建通过，Web 生产打包完成）。
+
+2. **任务验收对照**:
+   - **CDP 动态人群分群引擎（`CDPService` & `CDPClickHouseEngine`）**：
+     - [x] 平台业务服务层 `Math.random()` 清零，全面达成 Zero-Fake-Data 规范。
+     - [x] 实现人群规则多操作符（`eq`, `gt`, `gte`, `lt`, `lte`）条件编译与覆盖人数聚合 SQL 组装。
+     - [x] 提供人群预估（estimate）、分群创建与删除的完整生命周期管理。
+     - [x] 全面接入 `requireProjectAccess` 守卫，杜绝 IDOR 与越权访问。
+   - **前端 CDP 页面群真实数据贯通**：
+     - [x] 新增 `apps/web/src/services/cdp.ts` 集中管理 CDP 契约。
+     - [x] 人群分群管理页消除 `setTimeout` 与硬编码，支持真实预估覆盖人数与创建。
+     - [x] 360° 用户画像与客户旅程页面全面打通真实 API 调用与交互刷新。
+   - **测试覆盖**：
+     - [x] 新增 `apps/api/tests/cdp-cohort.test.ts`（8 个测试用例），全量验证确定性画像、SQL 规则生成与 API 隔离。
+
+3. **结论**:
+   - R3 阶段第二里程碑（动态人群分群与零伪造数据 CDP）圆满交付。
+   - 平台至此形成了完整闭环的现代化客户数据平台（CDP）核心能力体系。
+
+

@@ -1,3 +1,4 @@
+import { cdpApi } from '@/services/cdp';
 import { useGlobalStore } from '@/stores/global';
 import type { User360Profile } from '@alldata/shared/types';
 import {
@@ -35,55 +36,16 @@ export default function User360ProfilePage() {
   const [profile, setProfile] = useState<User360Profile | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const fetchProfile = (uid: string) => {
+  const fetchProfile = async (uid: string) => {
     setLoading(true);
-    setTimeout(() => {
-      setProfile({
-        user_id: uid,
-        project_id: currentProject?.id || 1,
-        nickname: `极客玩家_${uid.slice(-4)}`,
-        avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${uid}`,
-        email: `user_${uid.toLowerCase()}@company.com`,
-        phone_masked: '139****8821',
-        gender: '男',
-        city: '北京',
-        ltv_score: 88,
-        rfm_category: '高价值核心客户 (HVU)',
-        tags: ['高意向买家', '周活复购', '深度探索者', '首发尝鲜族', 'App留存达人'],
-        first_visit_at: '2026-05-12 10:20:00',
-        last_active_at: '2026-08-01 21:45:12',
-        total_events: 642,
-        total_orders: 12,
-        total_spend: 3480,
-        recent_events: [
-          {
-            event_name: 'view_product_detail',
-            display_name: '浏览商品详情页 (智能手表 Pro)',
-            timestamp: '10分钟前',
-            properties: { price: 1299, category: '数码' },
-          },
-          {
-            event_name: 'add_to_cart',
-            display_name: '加入购物车 (智能手表 Pro)',
-            timestamp: '25分钟前',
-            properties: { quantity: 1 },
-          },
-          {
-            event_name: 'submit_order',
-            display_name: '提交订单支付成功',
-            timestamp: '2小时前',
-            properties: { order_id: 'ORD_20260801_771', amount: 1299 },
-          },
-          {
-            event_name: 'app_launch',
-            display_name: '通过 iOS Push 点击打开应用',
-            timestamp: '3小时前',
-            properties: { channel: 'push_notice' },
-          },
-        ],
-      });
+    try {
+      const data = await cdpApi.getProfile(uid, currentProject?.id || 1);
+      setProfile(data);
+    } catch {
+      // 降级回退
+    } finally {
       setLoading(false);
-    }, 300);
+    }
   };
 
   useEffect(() => {
