@@ -358,4 +358,41 @@
    - R3 阶段第二里程碑（动态人群分群与零伪造数据 CDP）圆满交付。
    - 平台至此形成了完整闭环的现代化客户数据平台（CDP）核心能力体系。
 
+### 第 9 轮(2026-11-21)
+
+**迭代目标**: 落地 R3 阶段 A/B 假设计验实验引擎（A/B Testing Hypothesis Engine）与 Feature Flags 灰度分流评估体系，完成从科学分流到统计学显著性结论的全链路贯通。
+
+| 派发任务 | 验收标准 |
+|---|---|
+| 后端: A/B 统计检验与分流引擎 (`evaluator.ts`, `service.ts`, `routes.ts`) | 实现双样本比例 Z 检验与 p-value 统计学显著性判定（`p < 0.05` 自动标识胜出组并计算相对提升率）；实现基于一致性哈希的分桶分流与百分比 Rollout 引擎；实现实验与 Feature Flags 完整 CRUD 与实时统计报表接口；全量带租户隔离守卫 |
+| 前端: 封装 `abtestApi` 并全面接入 A/B 实验管理页 | 新建 `apps/web/src/services/abtest.ts`；重构 `pages/abtest/index.tsx` 消除全部 `setTimeout` 与硬编码 mock，打通真实创建实验、变体权重配比、开关 Flag 状态与实时刷新 |
+| 测试: 补充 A/B 实验引擎与分流全链路单测 | 新增 `apps/api/tests/abtest-engine.test.ts`（包含哈希分桶均匀性、Z 检验与 p 值判定、胜出组探测、百分比灰度评估、REST API 隔离 8 个用例），100% 跑绿 |
+
+**验收结果**: 见下文
+
+### 第 9 轮验收结果（2026-11-21）
+
+1. **门禁验证**:
+   - `pnpm check`（Biome）：通过（0 errors）。
+   - `pnpm typecheck`：通过（全仓 5 个包 7 个任务 100% 通过）。
+   - `pnpm test`：通过（全仓 171 个用例全部通过，其中 API 13 个测试套件 134 个用例全绿）。
+   - `pnpm build`：通过（全仓 5 个包全量构建通过，Web 生产打包完成）。
+
+2. **任务验收对照**:
+   - **A/B 假设计验与分流引擎（`ABTestEvaluator` & `ABTestService`）**：
+     - [x] 基于统计学双样本比例 Z 检验（Two-proportion Z-test）构建实验评估矩阵，自动推导 p 值与转化率相对提升百分比。
+     - [x] 提供一致性哈希分桶算法（Consistent Hash Bucketing），确保用户在变体组与灰度百分比（0-100% Rollout）之间的确定性分流。
+     - [x] 完整提供 Flags 开关控制、实验生命周期推进与实时显著性检测报表端点。
+     - [x] 全面接入 `requireProjectAccess` 鉴权与租户 IDOR 防护。
+   - **前端 A/B 实验与 Flag 治理页面打通**：
+     - [x] 新增 `apps/web/src/services/abtest.ts` 规范 API 客户端。
+     - [x] 消除 `pages/abtest/index.tsx` 内部虚假 mock，打通真实实验列表、快速创建、变体配置与 Feature Flag 实时开关。
+   - **测试覆盖**：
+     - [x] 新增 `apps/api/tests/abtest-engine.test.ts`（8 个测试用例），100% 覆盖哈希稳定性、统计显著性与 REST API 权限。
+
+3. **结论**:
+   - R3 阶段第三里程碑（A/B 假设计验与 Feature Flags 灰度分流）高质量交付。
+   - 平台具备了数据驱动决策与科学实验的核心能力，支持产品功能小流量试错与全量放量的确定性评估。
+
+
 

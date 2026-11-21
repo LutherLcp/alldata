@@ -1,3 +1,5 @@
+import { abtestApi } from '@/services/abtest';
+import { useGlobalStore } from '@/stores/global';
 import {
   ExperimentOutlined,
   PlusOutlined,
@@ -9,6 +11,7 @@ import {
   Card,
   Form,
   Input,
+  InputNumber,
   Modal,
   Space,
   Switch,
@@ -26,6 +29,9 @@ import { useCallback, useEffect, useState } from 'react';
 const { Text } = Typography;
 
 export default function ABTestPage() {
+  const currentProject = useGlobalStore((s) => s.currentProject);
+  const projectId = currentProject?.id || 1;
+
   return (
     <Card
       title={
@@ -37,8 +43,16 @@ export default function ABTestPage() {
     >
       <Tabs
         items={[
-          { key: 'experiments', label: 'A/B 假设检验实验', children: <ExperimentTab /> },
-          { key: 'flags', label: 'Feature Flags 灰度开关', children: <FlagTab /> },
+          {
+            key: 'experiments',
+            label: 'A/B 假设检验实验',
+            children: <ExperimentTab projectId={projectId} />,
+          },
+          {
+            key: 'flags',
+            label: 'Feature Flags 灰度开关',
+            children: <FlagTab projectId={projectId} />,
+          },
         ]}
       />
     </Card>
@@ -46,7 +60,7 @@ export default function ABTestPage() {
 }
 
 // ─── A/B 实验 Tab ───
-function ExperimentTab() {
+function ExperimentTab({ projectId }: { projectId: number }) {
   const [experiments, setExperiments] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
@@ -54,42 +68,15 @@ function ExperimentTab() {
 
   const loadData = useCallback(async () => {
     setLoading(true);
-    setTimeout(() => {
-      setExperiments([
-        {
-          id: 1,
-          key: 'exp_homepage_banner_v2',
-          name: '首页大促 Banner 文案与视觉样式 A/B 实验',
-          hypothesis: '将 Banner 按钮改为红底白字高光样式可提升下单点击率 15%',
-          target_metric: 'checkout_click_rate',
-          status: 2,
-          p_value: 0.0124,
-          winning_variant: '实验组 B (Red Highlighting)',
-          variants: [
-            {
-              name: '对照组 A (Control)',
-              weight: 50,
-              sample_count: 5000,
-              conversion_count: 450,
-              conversion_rate: 9.0,
-              is_winner: false,
-            },
-            {
-              name: '实验组 B (Red Highlighting)',
-              weight: 50,
-              sample_count: 5000,
-              conversion_count: 680,
-              conversion_rate: 13.6,
-              is_winner: true,
-              p_value: 0.0124,
-            },
-          ],
-          created_at: '2026-07-20 12:00:00',
-        },
-      ]);
+    try {
+      const data = await abtestApi.listExperiments(projectId);
+      setExperiments(Array.isArray(data) ? data : []);
+    } catch {
+      // 允许降级
+    } finally {
       setLoading(false);
-    }, 300);
-  }, []);
+    }
+  }, [projectId]);
 
   useEffect(() => {
     loadData();
@@ -97,9 +84,20 @@ function ExperimentTab() {
 
   const handleSave = async () => {
     const v = await form.validateFields();
-    message.success(`A/B 实验 "${v.name}" 已创建，正通过 Hash 算法开启全量多组分流`);
-    setModalOpen(false);
-    loadData();
+    try {
+      await abtestApi.createExperiment({
+        project_id: projectId,
+        key: v.key,
+        name: v.name,
+        target_metric: v.target_metric,
+        hypothesis: v.hypothesis,
+      });
+      message.success(`A/B 实验 "${v.name}" 已创建，正通过 Hash 算法开启全量多组分流`);
+      setModalOpen(false);
+      loadData();
+    } catch {
+      message.error('创建 A/B 实验失败');
+    }
   };
 
   return (
@@ -148,7 +146,7 @@ function ExperimentTab() {
             width: 140,
             render: (p: number) => (
               <Tag color={p < 0.05 ? 'success' : 'warning'}>
-                p = {p} ({p < 0.05 ? '结果显著' : '未显著'})
+                p = {p ?? '-'} ({p < 0.05 ? '结果显著' : '未显著'})
               </Tag>
             ),
           },
@@ -156,11 +154,14 @@ function ExperimentTab() {
             title: '胜出变量',
             dataIndex: 'winning_variant',
             width: 200,
-            render: (w: string) => (
-              <Tag color="gold">
-                <TrophyOutlined /> {w}
-              </Tag>
-            ),
+            render: (w: string) =>
+              w ? (
+                <Tag color="gold">
+                  <TrophyOutlined /> {w}
+                </Tag>
+              ) : (
+                <Text type="secondary">尚未分出胜负</Text>
+              ),
           },
           {
             title: '状态',
@@ -174,7 +175,7 @@ function ExperimentTab() {
       />
 
       <Modal
-        title="新建 A/B 假设计验实验"
+        title="新建 A/B 假设检验实验"
         open={modalOpen}
         onOk={handleSave}
         onCancel={() => setModalOpen(false)}
@@ -200,41 +201,77 @@ function ExperimentTab() {
 }
 
 // ─── Feature Flags Tab ───
-function FlagTab() {
+function FlagTab({ projectId }: { projectId: number }) {
   const [flags, setFlags] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [flagModalOpen, setFlagModalOpen] = useState(false);
+  const [flagForm] = Form.useForm();
 
   const loadData = useCallback(async () => {
     setLoading(true);
-    setTimeout(() => {
-      setFlags([
-        {
-          id: 1,
-          key: 'enable_new_checkout_ui',
-          name: '新版极速收银台页面灰度开关',
-          rollout_percentage: 30,
-          status: 1,
-          created_at: '2026-07-22',
-        },
-        {
-          id: 2,
-          key: 'ai_copilot_preview',
-          name: 'AI 问答 Copilot 内测功能开关',
-          rollout_percentage: 100,
-          status: 1,
-          created_at: '2026-07-25',
-        },
-      ]);
+    try {
+      const data = await abtestApi.listFlags(projectId);
+      setFlags(Array.isArray(data) ? data : []);
+    } catch {
+      // 允许降级
+    } finally {
       setLoading(false);
-    }, 300);
-  }, []);
+    }
+  }, [projectId]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
 
+  const handleToggle = async (record: any, checked: boolean) => {
+    try {
+      await abtestApi.updateFlag(record.id, { status: checked ? 1 : 2 }, projectId);
+      message.success(`开关「${record.name}」已${checked ? '开启' : '关闭'}`);
+      loadData();
+    } catch {
+      message.error('切换开关状态失败');
+    }
+  };
+
+  const handleCreateFlag = async () => {
+    const v = await flagForm.validateFields();
+    try {
+      await abtestApi.createFlag({
+        project_id: projectId,
+        key: v.key,
+        name: v.name,
+        description: v.description,
+        rollout_percentage: v.rollout_percentage ?? 10,
+        status: 1,
+      });
+      message.success(`灰度开关「${v.name}」已创建`);
+      setFlagModalOpen(false);
+      loadData();
+    } catch {
+      message.error('创建开关失败');
+    }
+  };
+
   return (
     <div>
+      <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'flex-end' }}>
+        <Space>
+          <Button icon={<ReloadOutlined />} onClick={loadData}>
+            刷新
+          </Button>
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => {
+              flagForm.resetFields();
+              setFlagModalOpen(true);
+            }}
+          >
+            新建灰度开关
+          </Button>
+        </Space>
+      </div>
+
       <Table
         dataSource={flags}
         rowKey="id"
@@ -263,15 +300,35 @@ function FlagTab() {
             title: '状态开关',
             dataIndex: 'status',
             width: 100,
-            render: (s: number) => (
-              <Switch
-                defaultChecked={s === 1}
-                onChange={(val) => message.info(`开关状态已切换为: ${val ? '开启' : '关闭'}`)}
-              />
+            render: (s: number, record: any) => (
+              <Switch checked={s === 1} onChange={(val) => handleToggle(record, val)} />
             ),
           },
         ]}
       />
+
+      <Modal
+        title="新建 Feature Flag 灰度开关"
+        open={flagModalOpen}
+        onOk={handleCreateFlag}
+        onCancel={() => setFlagModalOpen(false)}
+        destroyOnClose
+      >
+        <Form form={flagForm} layout="vertical">
+          <Form.Item name="name" label="开关名称" rules={[{ required: true }]}>
+            <Input placeholder="例: 极速支付模块新组件" />
+          </Form.Item>
+          <Form.Item name="key" label="开关 Key" rules={[{ required: true }]}>
+            <Input placeholder="例: enable_fast_checkout_v3" />
+          </Form.Item>
+          <Form.Item name="description" label="描述">
+            <Input.TextArea rows={2} placeholder="功能说明与适用流量场景" />
+          </Form.Item>
+          <Form.Item name="rollout_percentage" label="初始灰度比例 (%)" initialValue={20}>
+            <InputNumber min={0} max={100} style={{ width: '100%' }} />
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 }
