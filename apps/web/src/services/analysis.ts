@@ -54,4 +54,6 @@ export const analysisApi = {
   runQuery: (query: AnalysisQuery) => post<AnalysisResult>('/analysis/query', query),
 
   cancelQuery: (queryId: string) => post('/analysis/query/cancel', { query_id: queryId }),
+
+  attribution: (query: any) => post('/analysis/attribution', query),
 };

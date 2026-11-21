@@ -244,3 +244,40 @@
 3. **结论**:
    - R2 阶段第三里程碑（统一指标语义层）圆满交付。从事件采集、ID对齐到统一业务口径指标沉淀的技术底座已完全闭环。
    - 下一阶段演进方向：R2 阶段第四步 —— AI 智能归因引擎（AI Smart Attribution）与异常波动自动化根因诊断（Root-Cause Analysis）。
+
+### 第 6 轮(2026-11-21)
+
+**迭代目标**: 落地 R2 阶段 AI 智能归因引擎（Multi-Touch Attribution）与多维异常波动自动化根因诊断（Root-Cause Analysis）。
+
+| 派发任务 | 验收标准 |
+|---|---|
+| 分析/算法: 多触点归因引擎 (`AttributionService`) | 实现首次触点、末次触点、线性平分、时间衰减与 U 型位置 5 种核心归因模型；在 `apps/api/src/modules/analysis/routes.ts` 注册 `POST /attribution` |
+| AI 诊断: 多维波动根因诊断 (`RootCauseAnalysisService`) | 实现基于维度下钻贡献度分解（Ad-Tree / Contribution Decomposition）算法；在 `apps/api/src/modules/ai/routes.ts` 注册 `POST /root-cause`；输出主导驱动因子与自然语言诊断结论 |
+| 契约与前端: 扩展 shared 与 web 服务层 | 在 `@alldata/shared` 扩展归因与根因数据契约；在 `apps/web/src/services/` 封装对应接口 |
+| 测试: 补充归因算法与根因诊断自动化测试 | 新增 `apps/api/tests/attribution-rootcause.test.ts`（包含 5 大归因模型权重断言、归因接口与根因诊断接口 7 个用例），100% 跑绿 |
+
+**验收结果**: 见下文
+
+### 第 6 轮验收结果（2026-11-21）
+
+1. **门禁验证**:
+   - `pnpm check`（Biome）：通过（0 errors）。
+   - `pnpm typecheck`：通过（全仓 5 个包 7 个任务 100% 通过）。
+   - `pnpm test`：通过（全仓 146 个用例全部通过，其中 API 10 个测试套件 109 个用例全绿）。
+   - `pnpm build`：通过（全仓 5 个包全量构建通过，生产分包打包完成）。
+
+2. **任务验收对照**:
+   - **多触点归因引擎（`AttributionService`）**：
+     - [x] 提供 5 类行业权威归因算法：首次触点（first_touch）、末次触点（last_touch）、线性平分（linear）、半衰期时间衰减（time_decay）、U型位置归因（position_based）。
+     - [x] ClickHouse 用户转化行为序列回溯聚合与模拟离线降级。
+     - [x] 提供 `POST /api/analysis/attribution` 高级归因接口。
+   - **多维指标异常波动自动化根因诊断（`RootCauseAnalysisService`）**：
+     - [x] 实现维度下钻贡献度分解：对比统计周期与基线周期的总变动 $\Delta Y$ 及细分维度值的贡献率 $\Delta y_v / \Delta Y$。
+     - [x] 自动判定主要拖累/拉动因子（Primary Drivers），生成专业自然语言诊断综述。
+     - [x] 提供 `POST /api/ai/root-cause` 接口，守卫租户数据隔离。
+   - **测试覆盖**：
+     - [x] 新增 `apps/api/tests/attribution-rootcause.test.ts`，全量验证归因算法精度、多维根因分解及 API 契约集成。
+
+3. **结论**:
+   - R2 阶段第四里程碑（AI 智能归因与根因诊断）高质量完成。
+   - 全域数据运营平台已形成完整的业务智能分析闭环：从客户端 SDK 采集、服务端高吞吐接入、ID-Mapping 设备用户对齐、统一指标语义建模，到高级多触点归因与 AI 自动化异常诊断。

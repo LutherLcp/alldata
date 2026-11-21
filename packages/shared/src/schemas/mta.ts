@@ -9,6 +9,7 @@ export const attributionModelTypeSchema = z.enum([
   'last_touch',
   'linear',
   'time_decay',
+  'position_based',
   'w_shaped',
   'u_shaped',
 ]);

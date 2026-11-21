@@ -498,6 +498,74 @@ export interface SemanticQueryResult {
 }
 
 // ============================================================
+// 归因分析与多触点模型
+// ============================================================
+
+import type { AttributionModelType } from '../schemas/mta.js';
+export type { AttributionModelType };
+
+export interface AttributionQueryInput {
+  project_id: number;
+  target_event: string;
+  touchpoint_events?: string[];
+  channel_property?: string;
+  model?: AttributionModelType;
+  lookback_days?: number;
+  time_range: {
+    start: string;
+    end: string;
+  };
+}
+
+export interface AttributionChannelResult {
+  channel: string;
+  attributed_conversions: number;
+  share_rate: number;
+  touchpoints_count: number;
+}
+
+export interface AttributionQueryResult {
+  model: AttributionModelType;
+  target_event: string;
+  total_conversions: number;
+  channels: AttributionChannelResult[];
+  elapsed_ms: number;
+}
+
+// ============================================================
+// 根因诊断与波动归因
+// ============================================================
+
+export interface RootCauseDimensionFactor {
+  dimension: string;
+  value: string;
+  baseline_value: number;
+  current_value: number;
+  delta: number;
+  contribution_rate: number;
+  is_primary_driver: boolean;
+}
+
+export interface RootCauseAnalysisInput {
+  project_id: number;
+  metric_name: string;
+  dimensions?: string[];
+  baseline_period: { start: string; end: string };
+  current_period: { start: string; end: string };
+}
+
+export interface RootCauseAnalysisResult {
+  metric_name: string;
+  baseline_total: number;
+  current_total: number;
+  total_delta: number;
+  growth_rate: number;
+  primary_drivers: RootCauseDimensionFactor[];
+  all_factors: RootCauseDimensionFactor[];
+  ai_summary: string;
+}
+
+// ============================================================
 // 数据资产域
 // ============================================================
 

@@ -151,6 +151,8 @@ export const aiApi = {
 
   /** 监控配置 */
   setupMonitor: (data: Record<string, unknown>) => post('/ai/anomaly/monitor', data),
+  // ─── 异常根因诊断 ───────────────────────
+  rootCause: (data: any) => post('/ai/root-cause', data),
 };
 
 /**

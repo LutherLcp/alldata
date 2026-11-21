@@ -18,6 +18,7 @@ import { AnomalyDetector } from './anomaly';
 import { AVAILABLE_MODELS, getSanitizedConfig } from './config';
 import { InsightService } from './insight';
 import { promptEngine } from './prompt-engine';
+import { RootCauseAnalysisService } from './root-cause';
 import { AIService } from './service';
 import type {
   AnalysisResult,
@@ -34,6 +35,7 @@ export async function aiRoutes(app: FastifyInstance) {
   const svc = new AIService(app);
   const insightSvc = new InsightService(app);
   const anomalyDetector = new AnomalyDetector(app);
+  const rootCauseService = new RootCauseAnalysisService(app);
 
   // ─── AI 对话（支持流式） ─────────────────────
   app.post('/chat', { preHandler: requireAuth }, async (req, reply) => {
@@ -348,5 +350,32 @@ export async function aiRoutes(app: FastifyInstance) {
     } catch (err) {
       return ApiError.internal(reply, `设置监控失败: ${(err as Error).message}`);
     }
+  });
+
+  // ─── 多维指标异常波动自动化根因诊断 ────────────
+  app.post('/root-cause', { preHandler: requireAuth }, async (req, reply) => {
+    const body = req.body as any;
+    const projectIdRaw =
+      body?.project_id ?? req.headers['project-id'] ?? req.headers['x-project-id'];
+
+    const projectId = Number(projectIdRaw);
+    if (!Number.isInteger(projectId) || projectId <= 0) {
+      return ApiError.badRequest(reply, '缺少或非法的 project_id');
+    }
+
+    const hasAccess = await canAccessProject(req, projectId);
+    if (!hasAccess) {
+      return ApiError.forbidden(reply, '无权访问该项目');
+    }
+
+    if (!body?.baseline_period?.start || !body?.current_period?.start) {
+      return ApiError.badRequest(reply, '缺少基线周期 baseline_period 或当前周期 current_period');
+    }
+
+    const result = await rootCauseService.diagnose(projectId, {
+      ...body,
+      project_id: projectId,
+    });
+    return sendSuccess(reply, result);
   });
 }
