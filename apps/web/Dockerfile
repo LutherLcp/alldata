@@ -6,12 +6,14 @@ WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
 COPY apps/web/package.json ./apps/web/
 COPY packages/shared/package.json ./packages/shared/
+COPY packages/tracker/package.json ./packages/tracker/
 RUN pnpm install --no-frozen-lockfile
 
 FROM dependencies AS builder
 WORKDIR /app
 COPY . .
 RUN pnpm --filter @alldata/shared build
+RUN pnpm --filter @alldata/tracker build
 RUN pnpm --filter @alldata/web build
 
 FROM nginx:alpine AS runner
