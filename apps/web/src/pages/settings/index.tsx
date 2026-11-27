@@ -140,8 +140,10 @@ function SubscriptionTab({ projectId }: { projectId?: number }) {
                     size="small"
                     icon={<SendOutlined />}
                     onClick={async () => {
-                      const res = (await subscriptionApi.send(r.id)) as any;
-                      message.success(`推送成功，收件人: ${res.recipients}`);
+                      const res = (await subscriptionApi.send(r.id, projectId)) as any;
+                      message.success(
+                        `推送成功，收件人: ${res.recipients_count || res.recipients || 1}`,
+                      );
                     }}
                   >
                     推送
@@ -150,7 +152,7 @@ function SubscriptionTab({ projectId }: { projectId?: number }) {
                 <Popconfirm
                   title="确认删除?"
                   onConfirm={async () => {
-                    await subscriptionApi.delete(r.id);
+                    await subscriptionApi.delete(r.id, projectId);
                     load();
                   }}
                 >
